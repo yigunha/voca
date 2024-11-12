@@ -1,0 +1,75 @@
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: Arial, sans-serif;
+    background-color: #708090; /* 슬레이트 그레이 배경색 */ 
+    color: #ffffff; /* 텍스트 색상을 흰색으로 설정 */
+}
+.header {
+    margin: 20px;
+    font-size: 24px;
+}
+.grid {
+    display: grid;
+    grid-template-columns: repeat(7, 50px);
+    gap: 5px;
+    margin-bottom: 20px;
+}
+.cell {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid #000;
+    font-size: 24px;
+    cursor: pointer;
+    background-color: #000000; /* 정사각형의 배경색을 밝은 그레이로 설정 */
+    color: #ffffff; /* 글자색을 검은색으로 설정 */
+}
+.cell.empty {
+    border: 1px dashed #ccc;
+    cursor: default;
+    background-color: #36454F; /* 정사각형의 배경색을 밝은 그레이로 설정 */
+}
+.bottom-row {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 20px;
+}
+.hidden {
+    display: none;
+}
+#end-message {
+    font-size: 32px;
+    color: red;
+    text-align: center;
+}
+.alert {
+    color: red;
+    margin-bottom: 20px;
+}
+.spacing-note {		 /* 괄호안의 숫자는..... */
+    margin-top: 20px;
+    font-size: 16px;
+    color: black;
+    text-align: center;
+}
+.button {
+    margin-top: 10px;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+}
+.button.disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+.date-time {
+    margin-top: 10px;
+    font-size: 16px;
+    color: white; /* 글자 색상 */
+    text-align: center; /* 중앙 정렬 */
+}
+
