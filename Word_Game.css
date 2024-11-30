@@ -11,12 +11,11 @@ body {
 #gameTitle {
     font-size: 24px;
     font-weight: bold;
-    margin-bottom: 20px;
     text-align: center;
 }
 
 .header {
-    margin: 20px;
+    margin: 10px;
     font-size: 24px;
 }
 
