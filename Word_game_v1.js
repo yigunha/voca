@@ -83,7 +83,7 @@
 
             allLetters = shuffleArray(allLetters);
 
-            for (let i = 0; i < 49; i++) {
+            for (let i = 0; i < 42; i++) {
                 const cell = document.createElement('div');
                 cell.classList.add('cell');
                 if (allLetters[i]) {
@@ -117,7 +117,7 @@
 
              allLetters = shuffleArray(allLetters);
 
-            for (let i = 0; i < 49; i++) {
+            for (let i = 0; i < 42; i++) {
                 const cell = document.createElement('div');
                 cell.classList.add('cell');
                 if (allLetters[i]) {
@@ -180,7 +180,7 @@
 
             allLetters = shuffleArray(allLetters);
 
-            for (let i = 0; i < 49; i++) {
+            for (let i = 0; i < 42; i++) {
                 const cell = document.createElement('div');
                 cell.classList.add('cell');
                 if (allLetters[i]) {
