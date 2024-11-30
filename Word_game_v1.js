@@ -35,7 +35,8 @@
                 alert('리스트를 선택하세요!');
                 return;
             }
-
+            
+            document.getElementById('gameTitle').style.display = 'none';
             document.getElementById('menu').style.display = 'none';
             document.getElementById('gameArea').style.display = 'block';
 
@@ -70,7 +71,6 @@
                 }
                 return array;
         }
-
 
 
         function createGrid1() {
