@@ -1,0 +1,140 @@
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: Arial, sans-serif;
+    background-color: #708090; /* 슬레이트 그레이 배경색 */ 
+    color: #ffffff; /* 텍스트 색상을 흰색으로 설정 */
+}
+
+/* 제목 영역은 항상 보이도록 고정 */
+#gameTitle {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.header {
+    margin: 20px;
+    font-size: 24px;
+}
+
+#menu {
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+#levelSelect, #listSelect {
+    margin: 10px;
+    padding: 5px;
+}
+
+#startButton {
+    margin: 10px;
+    padding: 5px 15px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#startButton:hover {
+    background-color: #45a049;
+}
+
+/* 게임 화면은 시작하기 버튼 클릭 시 보이도록 설정 */
+#gameArea {
+    display: none;
+    text-align: center;
+}
+
+
+#grid {
+    display: grid;
+    grid-template-columns: repeat(7, 50px);
+    gap: 5px;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+.cell {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid #000;
+    font-size: 24px;
+    cursor: pointer;
+    background-color: #000000; /* 정사각형의 배경색을 밝은 그레이로 설정 */
+    color: #ffffff; /* 글자색을 검은색으로 설정 */
+}
+
+.cell.empty {
+    border: 1px dashed #ccc;
+    cursor: default;
+    background-color: #36454F; /* 정사각형의 배경색을 밝은 그레이로 설정 */
+}
+
+#bottomRow {
+    display: grid;
+    grid-template-columns: repeat(7, 50px); /* 7개의 칸 */
+    gap: 5px; /* 각 칸 사이 간격 */
+    justify-content: center; /* 가운데 정렬 */
+    margin-top: 10px; /* 위쪽 여백 */
+}
+
+
+.bottom-row {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 20px;
+}
+
+.hidden {
+    display: none;
+}
+
+
+
+#selectedRow {
+    display: grid;
+    grid-template-columns: repeat(7, 50px);
+    gap: 5px;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+.selected-cell {
+    width: 50px;
+    height: 50px;
+    background-color: #fff;
+    border: 1px solid #aaa;
+}
+
+.spacing-note {		 /* 괄호안의 숫자는..... */
+    margin-top: 20px;
+    font-size: 16px;
+    color: black;
+    text-align: center;
+}
+.button {
+    margin-top: 10px;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.button.disabled {
+    cursor: not-allowed;
+    opacity: 0.5;   
+}
+
+.date-time {
+    margin-top: 10px;
+    font-size: 16px;
+    color: white; /* 글자 색상 */
+    text-align: center; /* 중앙 정렬 */
+}
