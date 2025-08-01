@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>단어 게임</title> 
+
+    <link rel="stylesheet" href="Word_Game.css">
+
+</head>
+
+<body>
+
+    <!-- 항상 보이는 제목 -->
+    <div id="gameTitle">단어 게임</div>
+     <div id="menu">
+        <select id="levelSelect">
+            <option value="1">Level 1</option> 
+            <option value="2">Level 2</option>
+            <option value="3" selected>Level 3</option>
+        </select>
+
+        <select id="listSelect">
+            <option value="" >선택하세요</option>
+            <option value="idn-4A01">4A  1과</option>
+            <option value="3A02">3A  2과</option>
+            <option value="3A03">3A  3과</option>
+            <option value="3A04">3A  4과</option>
+            <option value="3A05">3A  5과</option>
+            <option value="3A06">3A  6과</option>
+            <option value="3A07">3A  7과</option>
+            <option value="3A08">3A  8과</option>
+            <option value="3A09">3A  9과</option>
+            <option value="3A10">3A 10과</option>
+            <option value="3A11">3A 11과</option>
+            <option value="3A12">3A 12과</option>
+            <option value="3A00">3A 문법</option>
+        </select>
+
+        <button id="startButton">시작하기</button>
+        <div class="spacing-note">      
+             By 울란바토르 2 세종학당 <br>
+            &nbsp;
+        </div>
+    </div>
+
+    <!-- 게임 화면 (처음에는 숨김) -->
+    <div id="gameArea">
+        <div class="header" id="header">단어 1 / 10 : English Translation (d)</div>
+        <div class="bottom-row" id="bottomRow"></div>
+        <div id="grid"></div> <!-- 7x7 정사각형 -->
+	
+        <button class="button disabled" id="undoButton" disabled>되돌리기</button>
+
+        <p id="selectedValue"></p> <!-- 단어를 표시할 부분 -->
+        <div id="date-time" class="date-time"></div> <!-- 날짜와 시간을 표시할 div -->
+        <div id="alert" class="alert hidden">틀렸습니다. 다시 시도하세요!</div>
+        <div id="selectedRow"></div> <!-- 7x1 공간 -->
+            <div class="spacing-note">      
+            띄워쓰기를 해야 합니다. <br>
+            ( 5 ) : 괄호안의 숫자는 글자 수입니다. <br>
+            &nbsp;	<br> 
+             By 수라바야 세종학당 <br>
+            &nbsp;
+        </div>
+
+ 
+    </div>
+
+
+    <script src="Word_game_v1.js"></script>
+ 
+</body>
+</html>
