@@ -15,7 +15,7 @@ const words = [
   "유머 감각이 없다"
 ];
 
-const indonesianTranslations = [
+const englishTranslations = [
   "Ekstrovert",
   "Introvert",
   "Aktif",
