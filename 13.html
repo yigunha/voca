@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>음성 녹음 후 자동 다운로드</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f2f5;
+        }
+
+        .container {
+            background-color: #ffffff;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 90%;
+            max-width: 500px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 1.5rem;
+        }
+
+        .controls button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            margin: 0.5rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s;
+        }
+
+        .controls button:hover {
+            background-color: #0056b3;
+        }
+
+        .controls button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .audio-container {
+            margin-top: 2rem;
+        }
+
+        audio {
+            width: 100%;
+        }
+
+        .notice {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 0.75rem;
+            border-radius: 5px;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎙️ 음성 녹음 후 자동 다운로드</h1>
+        <div class="controls">
+            <button id="recordButton">녹음 시작</button>
+            <button id="stopButton" disabled>녹음 중지</button>
+            <button id="downloadButton" disabled>다운로드</button>
+        </div>
+        <div class="audio-container">
+            <h3>녹음된 오디오:</h3>
+            <audio id="audioPlayer" controls></audio>
+        </div>
+        <p id="status"></p>
+        
+        <div class="notice">
+            📱 <strong>모바일 사용자:</strong> webm 파일이 브라우저에서 재생 안 될 수 있습니다.<br>
+            다운로드된 파일을 폰의 음악 앱으로 열어서 확인하세요.
+        </div>
+    </div>
+
+    <script>
+        const recordButton = document.getElementById('recordButton');
+        const stopButton = document.getElementById('stopButton');
+        const downloadButton = document.getElementById('downloadButton');
+        const audioPlayer = document.getElementById('audioPlayer');
+        const status = document.getElementById('status');
+
+        let mediaRecorder;
+        let audioChunks = [];
+        let currentAudioBlob = null;
+
+        // 현재 날짜와 시간으로 파일명 생성
+        function getFileName() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hour = String(now.getHours()).padStart(2, '0');
+            const minute = String(now.getMinutes()).padStart(2, '0');
+            const second = String(now.getSeconds()).padStart(2, '0');
+            
+            return `음성녹음_${year}${month}${day}_${hour}${minute}${second}.webm`;
+        }
+
+        // 다운로드 함수
+        function downloadAudioFile() {
+            if (!currentAudioBlob) {
+                status.textContent = '녹음된 파일이 없습니다.';
+                return;
+            }
+
+            status.textContent = '파일을 다운로드하는 중...';
+
+            try {
+                const url = URL.createObjectURL(currentAudioBlob);
+                const a = document.createElement('a');
+                const fileName = getFileName();
+                
+                a.style.display = 'none';
+                a.href = url;
+                a.download = fileName;
+                
+                document.body.appendChild(a);
+                a.click();
+                
+                // 정리
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }, 100);
+                
+                status.textContent = '파일 다운로드 완료!';
+            } catch (error) {
+                console.error('다운로드 오류:', error);
+                status.textContent = '파일 다운로드에 실패했습니다.';
+            }
+        }
+
+        recordButton.addEventListener('click', async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = event => {
+                    audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    audioPlayer.src = audioUrl;
+
+                    // 다운로드용으로 Blob 저장
+                    currentAudioBlob = audioBlob;
+                    downloadButton.disabled = false;
+                    
+                    status.textContent = '녹음 완료! 다운로드 버튼을 눌러주세요.';
+                };
+
+                mediaRecorder.start();
+                status.textContent = '녹음 중...';
+                recordButton.disabled = true;
+                stopButton.disabled = false;
+
+            } catch (err) {
+                console.error('마이크 접근 오류:', err);
+                status.textContent = '마이크 접근에 실패했어요. 권한을 허용해주세요.';
+            }
+        });
+
+        stopButton.addEventListener('click', () => {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+                status.textContent = '녹음 중지 중...';
+                recordButton.disabled = false;
+                stopButton.disabled = true;
+            }
+        });
+
+        downloadButton.addEventListener('click', downloadAudioFile);
+    </script>
+</body>
+</html>
