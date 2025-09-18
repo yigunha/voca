@@ -30,6 +30,13 @@
             margin-bottom: 1.5rem;
         }
 
+        .controls {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+
         .controls button {
             background-color: #007bff;
             color: white;
@@ -68,16 +75,6 @@
             margin-top: 1rem;
             font-size: 0.9rem;
         }
-
-        .info-message {
-            margin-top: 1rem;
-            padding: 1rem;
-            background-color: #e2f0e2;
-            border: 1px solid #c8e6c9;
-            color: #2e7d32;
-            border-radius: 5px;
-            display: none;
-        }
     </style>
 </head>
 <body>
@@ -87,18 +84,13 @@
             <button id="recordButton">녹음 시작</button>
             <button id="stopButton" disabled>녹음 중지</button>
             <button id="downloadButton" disabled>다운로드</button>
+            <button id="openDownloadsButton" style="display: none; background-color: #2e7d32;">다운로드 폴더 열기</button>
         </div>
         <div class="audio-container">
             <h3>녹음된 오디오:</h3>
             <audio id="audioPlayer" controls></audio>
         </div>
         <p id="status"></p>
-        <div id="infoMessage" class="info-message">
-            <strong>✅ 다운로드 완료!</strong><br>
-            파일이 다운로드 폴더에 저장되었습니다.
-            <br>
-            <button onclick="openDownloadsFolder()" style="margin-top: 10px; background-color: #2e7d32;">다운로드 폴더 열기</button>
-        </div>
         
         <div class="notice">
             📱 <strong>모바일 사용자:</strong> webm 파일이 브라우저에서 재생 안 될 수 있습니다.<br>
@@ -110,9 +102,9 @@
         const recordButton = document.getElementById('recordButton');
         const stopButton = document.getElementById('stopButton');
         const downloadButton = document.getElementById('downloadButton');
+        const openDownloadsButton = document.getElementById('openDownloadsButton');
         const audioPlayer = document.getElementById('audioPlayer');
         const status = document.getElementById('status');
-        const infoMessage = document.getElementById('infoMessage');
 
         let mediaRecorder;
         let audioChunks = [];
@@ -136,8 +128,9 @@
                 return;
             }
 
-            infoMessage.style.display = 'none';
             status.textContent = '파일을 다운로드하는 중...';
+            // '다운로드 폴더 열기' 버튼을 숨깁니다.
+            openDownloadsButton.style.display = 'none';
 
             try {
                 const url = URL.createObjectURL(currentAudioBlob);
@@ -154,8 +147,10 @@
                 setTimeout(() => {
                     document.body.removeChild(a);
                     URL.revokeObjectURL(url);
-                    infoMessage.style.display = 'block';
-                    status.textContent = '';
+                    status.textContent = '파일 다운로드 완료!';
+                    // 다운로드 완료 후 '다운로드 폴더 열기' 버튼을 표시
+                    openDownloadsButton.style.display = 'inline-block';
+                    downloadButton.disabled = true; // 다운로드 버튼 비활성화
                 }, 100);
                 
             } catch (error) {
@@ -164,10 +159,7 @@
             }
         }
 
-        // 다운로드 폴더를 열기 위한 함수
         function openDownloadsFolder() {
-            // 이 URL은 모바일 기기에서 다운로드 관리자를,
-            // PC 크롬에서는 다운로드 페이지를 엽니다.
             window.open('chrome://downloads', '_blank');
         }
 
@@ -176,7 +168,9 @@
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 mediaRecorder = new MediaRecorder(stream);
                 audioChunks = [];
-                infoMessage.style.display = 'none';
+                // 새로운 녹음 시작 시 버튼 숨김
+                openDownloadsButton.style.display = 'none';
+                downloadButton.disabled = true;
 
                 mediaRecorder.ondataavailable = event => {
                     audioChunks.push(event.data);
@@ -214,6 +208,7 @@
         });
 
         downloadButton.addEventListener('click', downloadAudioFile);
+        openDownloadsButton.addEventListener('click', openDownloadsFolder);
     </script>
 </body>
 </html>
