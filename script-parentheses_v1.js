@@ -1,1 +1,442 @@
-const _0x4631fa=_0x2eaf;(function(_0x222cea,_0xd9eebe){const _0x1264e8=_0x2eaf,_0x5c3e00=_0x222cea();while(!![]){try{const _0x3aaed7=-parseInt(_0x1264e8(0x183))/0x1+-parseInt(_0x1264e8(0x1ac))/0x2*(-parseInt(_0x1264e8(0x1b4))/0x3)+-parseInt(_0x1264e8(0x17e))/0x4*(parseInt(_0x1264e8(0x17b))/0x5)+-parseInt(_0x1264e8(0x168))/0x6*(parseInt(_0x1264e8(0x163))/0x7)+parseInt(_0x1264e8(0x18f))/0x8+parseInt(_0x1264e8(0x186))/0x9*(-parseInt(_0x1264e8(0x1bf))/0xa)+parseInt(_0x1264e8(0x1a3))/0xb*(parseInt(_0x1264e8(0x185))/0xc);if(_0x3aaed7===_0xd9eebe)break;else _0x5c3e00['push'](_0x5c3e00['shift']());}catch(_0x430658){_0x5c3e00['push'](_0x5c3e00['shift']());}}}(_0x1fb7,0x498fa));let questions=[],currentQuestionIndex=0x0,gameStartTime=null,gameEndTime=null;function _0x2eaf(_0x245996,_0x17b9be){const _0x1fb736=_0x1fb7();return _0x2eaf=function(_0x2eaf21,_0x4f1884){_0x2eaf21=_0x2eaf21-0x157;let _0x4e3033=_0x1fb736[_0x2eaf21];return _0x4e3033;},_0x2eaf(_0x245996,_0x17b9be);}const dataFolderName=_0x4631fa(0x1b0),imageFolderName=dataFolderName+_0x4631fa(0x170),dataSelectorEl=document['getElementById'](_0x4631fa(0x174)),loadBtnEl=document['getElementById']('loadBtn'),studyCheckEl=document[_0x4631fa(0x188)](_0x4631fa(0x1bb)),challengeHeaderEl=document[_0x4631fa(0x188)]('challengeHeader'),descriptionAreaEl=document['getElementById'](_0x4631fa(0x1bc)),questionContainerEl=document[_0x4631fa(0x188)](_0x4631fa(0x189)),submitBtnEl=document[_0x4631fa(0x188)](_0x4631fa(0x160)),answerCheckEl=document[_0x4631fa(0x188)](_0x4631fa(0x198)),descriptionCheckEl=document[_0x4631fa(0x188)](_0x4631fa(0x196)),answerCheckboxGroupEl=document[_0x4631fa(0x16d)](_0x4631fa(0x173)),descriptionCheckboxGroupEl=document[_0x4631fa(0x16d)](_0x4631fa(0x197)),resultMessageEl=document[_0x4631fa(0x188)](_0x4631fa(0x17a)),answerMessageEl=document[_0x4631fa(0x188)](_0x4631fa(0x171)),descriptionMessageEl=document[_0x4631fa(0x188)]('descriptionMessage'),gameStatsEl=document[_0x4631fa(0x188)](_0x4631fa(0x18a));studyCheckEl[_0x4631fa(0x1b6)](_0x4631fa(0x16a),()=>{const _0x1001bf=_0x4631fa;studyCheckEl[_0x1001bf(0x15a)]?challengeHeaderEl[_0x1001bf(0x181)]['display']=_0x1001bf(0x17f):challengeHeaderEl[_0x1001bf(0x181)]['display']=_0x1001bf(0x19b);}),loadBtnEl['addEventListener']('click',()=>{const _0x3b2ff1=_0x4631fa,_0x42ae26=dataSelectorEl['value'],_0x473133=dataFolderName+_0x42ae26,_0x2b2fdb=document[_0x3b2ff1(0x188)](_0x3b2ff1(0x158));_0x2b2fdb&&_0x2b2fdb[_0x3b2ff1(0x1be)]();const _0xb6357b=document[_0x3b2ff1(0x182)](_0x3b2ff1(0x19f));_0xb6357b[_0x3b2ff1(0x18d)]=_0x473133,_0xb6357b['id']=_0x3b2ff1(0x158),_0xb6357b[_0x3b2ff1(0x193)]=()=>{const _0x75dffc=_0x3b2ff1;try{questions=window['questionsData'];if(!questions||questions[_0x75dffc(0x16f)]===0x0)throw new Error('문제\x20데이터가\x20없습니다.');descriptionAreaEl[_0x75dffc(0x181)]['display']=_0x75dffc(0x19b),questionContainerEl[_0x75dffc(0x181)][_0x75dffc(0x19d)]=_0x75dffc(0x19b),submitBtnEl[_0x75dffc(0x181)][_0x75dffc(0x19d)]=_0x75dffc(0x1ba),descriptionCheckboxGroupEl['style'][_0x75dffc(0x19d)]='inline-block',studyCheckEl[_0x75dffc(0x15a)]?answerCheckboxGroupEl['style'][_0x75dffc(0x19d)]=_0x75dffc(0x1ba):answerCheckboxGroupEl[_0x75dffc(0x181)][_0x75dffc(0x19d)]=_0x75dffc(0x17f),currentQuestionIndex=0x0,gameStartTime=new Date(),startGame(),document[_0x75dffc(0x16d)](_0x75dffc(0x184))[_0x75dffc(0x181)][_0x75dffc(0x19d)]='none';}catch(_0x4d1568){console['error'](_0x75dffc(0x161),_0x4d1568),resultMessageEl[_0x75dffc(0x178)]='오류:\x20게임을\x20시작할\x20수\x20없습니다.\x20'+_0x4d1568['message'],resultMessageEl[_0x75dffc(0x181)][_0x75dffc(0x191)]=_0x75dffc(0x19e);}},_0xb6357b[_0x3b2ff1(0x1a5)]=()=>{const _0x1df222=_0x3b2ff1;console[_0x1df222(0x15d)](_0x1df222(0x177),_0x473133),resultMessageEl[_0x1df222(0x178)]='오류:\x20'+_0x473133+'\x20파일을\x20불러올\x20수\x20없습니다.',resultMessageEl[_0x1df222(0x181)][_0x1df222(0x191)]=_0x1df222(0x19e);},document[_0x3b2ff1(0x1a6)][_0x3b2ff1(0x179)](_0xb6357b);});function shuffleArray(_0x1bd25c){const _0x429e64=_0x4631fa;for(let _0x4bc9a7=_0x1bd25c[_0x429e64(0x16f)]-0x1;_0x4bc9a7>0x0;_0x4bc9a7--){const _0x4a2a5d=Math['floor'](Math[_0x429e64(0x1bd)]()*(_0x4bc9a7+0x1));[_0x1bd25c[_0x4bc9a7],_0x1bd25c[_0x4a2a5d]]=[_0x1bd25c[_0x4a2a5d],_0x1bd25c[_0x4bc9a7]];}}function startGame(){const _0xaed7e8=_0x4631fa;shuffleArray(questions),submitBtnEl['removeEventListener'](_0xaed7e8(0x164),checkAnswer),submitBtnEl[_0xaed7e8(0x1b6)](_0xaed7e8(0x164),checkAnswer),answerCheckEl['removeEventListener'](_0xaed7e8(0x16a),toggleAnswer),answerCheckEl[_0xaed7e8(0x1b6)](_0xaed7e8(0x16a),toggleAnswer),descriptionCheckEl[_0xaed7e8(0x1ad)]('change',toggleDescription),descriptionCheckEl[_0xaed7e8(0x1b6)](_0xaed7e8(0x16a),toggleDescription),displayQuestion();}function displayQuestion(){const _0x40392f=_0x4631fa;try{if(currentQuestionIndex<questions[_0x40392f(0x16f)]){const _0x414e84=questions[currentQuestionIndex];if(!_0x414e84[_0x40392f(0x1b5)]||!_0x414e84[_0x40392f(0x1a8)])throw new Error(_0x40392f(0x180));const _0x526a75=_0x414e84['question'][_0x40392f(0x1ae)](_0x40392f(0x15b));descriptionAreaEl[_0x40392f(0x175)]='',questionContainerEl['innerHTML']='',answerMessageEl['textContent']='',descriptionMessageEl[_0x40392f(0x178)]='',resultMessageEl[_0x40392f(0x178)]='',answerCheckEl['checked']=![],descriptionCheckEl['checked']=![];if(_0x414e84[_0x40392f(0x169)]){const _0x4f7753=document['createElement']('p');_0x4f7753[_0x40392f(0x178)]=_0x414e84['description'],_0x4f7753[_0x40392f(0x181)]['display']='none',descriptionAreaEl[_0x40392f(0x179)](_0x4f7753);}if(_0x414e84[_0x40392f(0x18b)]){const _0x100109=_0x414e84[_0x40392f(0x18b)][_0x40392f(0x1ae)](','),_0x5732e5=document['createElement'](_0x40392f(0x15f));_0x5732e5[_0x40392f(0x162)]=_0x40392f(0x187),_0x5732e5[_0x40392f(0x181)][_0x40392f(0x19d)]=_0x40392f(0x1a4),_0x100109['forEach'](_0x2a4532=>{const _0x1b3995=_0x40392f,_0x2340c4=document['createElement'](_0x1b3995(0x157));_0x2340c4[_0x1b3995(0x18d)]=imageFolderName+_0x2a4532['trim']()+_0x1b3995(0x15c),_0x2340c4['alt']=_0x1b3995(0x18c),_0x2340c4[_0x1b3995(0x162)]='question-image',_0x5732e5['appendChild'](_0x2340c4);}),descriptionAreaEl[_0x40392f(0x179)](_0x5732e5);}let _0x36fb36='';for(let _0x1cb073=0x0;_0x1cb073<_0x526a75[_0x40392f(0x16f)];_0x1cb073++){const _0x42e348=_0x526a75[_0x1cb073][_0x40392f(0x199)](/\n/g,_0x40392f(0x1b1));_0x36fb36+='<span>'+_0x42e348+_0x40392f(0x1c1),_0x1cb073<_0x526a75[_0x40392f(0x16f)]-0x1&&(_0x36fb36+=_0x40392f(0x1a7)+(_0x1cb073+0x1)+_0x40392f(0x176)+_0x1cb073+'\x22>');}questionContainerEl[_0x40392f(0x175)]=_0x36fb36;const _0x4d6f86=document[_0x40392f(0x16c)](_0x40392f(0x19c));_0x4d6f86['forEach']((_0x3bc5a9,_0x3e7dab)=>{const _0x30f453=_0x40392f;_0x3bc5a9['addEventListener'](_0x30f453(0x172),_0x36a474=>{const _0x4c93b0=_0x30f453;_0x36a474[_0x4c93b0(0x1a9)]==='Enter'&&(_0x3e7dab===_0x4d6f86['length']-0x1?checkAnswer():_0x4d6f86[_0x3e7dab+0x1][_0x4c93b0(0x1c0)]());});}),_0x4d6f86[_0x40392f(0x16f)]>0x0&&setTimeout(()=>{const _0x1a3f11=_0x40392f;_0x4d6f86[0x0][_0x1a3f11(0x1c0)]();},0x64);}else gameEndTime=new Date(),showGameStats(),descriptionAreaEl[_0x40392f(0x181)][_0x40392f(0x19d)]=_0x40392f(0x17f),questionContainerEl[_0x40392f(0x178)]=_0x40392f(0x192),submitBtnEl[_0x40392f(0x181)][_0x40392f(0x19d)]=_0x40392f(0x17f),answerCheckboxGroupEl[_0x40392f(0x181)][_0x40392f(0x19d)]='none',descriptionCheckboxGroupEl['style'][_0x40392f(0x19d)]=_0x40392f(0x17f),resultMessageEl[_0x40392f(0x181)][_0x40392f(0x19d)]=_0x40392f(0x17f),answerMessageEl[_0x40392f(0x181)][_0x40392f(0x19d)]=_0x40392f(0x17f),descriptionMessageEl[_0x40392f(0x181)][_0x40392f(0x19d)]=_0x40392f(0x17f);}catch(_0x30bfe0){console[_0x40392f(0x15d)]('문제\x20표시\x20오류:',_0x30bfe0),resultMessageEl['textContent']=_0x40392f(0x16b)+_0x30bfe0[_0x40392f(0x15e)],resultMessageEl[_0x40392f(0x181)][_0x40392f(0x191)]=_0x40392f(0x19e);}}function toggleAnswer(){const _0x58e7e6=_0x4631fa,_0x439cd1=questions[currentQuestionIndex];if(answerCheckEl[_0x58e7e6(0x15a)]&&studyCheckEl[_0x58e7e6(0x15a)]){if(_0x439cd1[_0x58e7e6(0x1a8)]){let _0x35931b=_0x58e7e6(0x166);_0x439cd1[_0x58e7e6(0x1a8)][_0x58e7e6(0x1a2)]((_0x214c79,_0x5d3466)=>{const _0x201ffa=_0x58e7e6;if(_0x5d3466>0x0)_0x35931b+=_0x201ffa(0x1a0);_0x35931b+=_0x5d3466+0x1+_0x201ffa(0x1aa)+_0x214c79[_0x201ffa(0x190)](_0x201ffa(0x159));}),answerMessageEl['textContent']=_0x35931b,answerMessageEl['style'][_0x58e7e6(0x191)]='#28a745';}}else answerMessageEl['textContent']='';}function _0x1fb7(){const _0x567c9e=['31368cZlRYL','338571NHfgrO','image-container','getElementById','questionContainer','gameStats','image','문제\x20관련\x20이미지','src','tagName','1774696wHcjQR','join','color','🥳\x20게임\x20종료!\x20모든\x20문제를\x20맞혔습니다!','onload','disabled','#ffebee','descriptionCheck','.description-checkbox-group','answerCheck','replace','floor','block','.answerInput','display','red','script','\x20/\x20','green','forEach','3036AALFNL','flex','onerror','head','<input\x20type=\x22text\x22\x20class=\x22answerInput\x22\x20placeholder=\x22정답\x20','answers','key','번:\x20','getMonth','2EApRtc','removeEventListener','split','문제</p>\x0a\x20\x20\x20\x20','data-parentheses/','<br>','backgroundColor','trim','1785549aKykOK','question','addEventListener','children','borderColor','#e8f5e9','inline-block','studyCheck','descriptionArea','random','remove','80iXdqWW','focus','</span>','img','questions-script','\x20또는\x20','checked','(\x20\x20\x20)','.jpg','error','message','div','submitBtn','게임\x20시작\x20오류:','className','546NCvKPv','click','getMinutes','✅\x20정답:\x20','getHours','25170LgcGFF','description','change','오류:\x20','querySelectorAll','querySelector','초</p>\x0a\x20\x20\x20\x20\x20\x20\x20\x20<p><strong>총\x20문제\x20수:</strong>\x20','length','images/','answerMessage','keydown','.answer-checkbox-group','dataSelector','innerHTML','\x20입력\x22\x20data-index=\x22','파일\x20로드\x20오류:','textContent','appendChild','resultMessage','10055MinemH','getDate','\x0a\x20\x20\x20\x20\x20\x20\x20\x20<h3>📊\x20게임\x20통계</h3>\x0a\x20\x20\x20\x20\x20\x20\x20\x20<p><strong>시작\x20시간:</strong>\x20','28DIzCBL','none','문제\x20데이터가\x20올바르지\x20않습니다.','style','createElement','594939UFzijM','.file-selector'];_0x1fb7=function(){return _0x567c9e;};return _0x1fb7();}function toggleDescription(){const _0x5219ad=_0x4631fa,_0x1a60af=questions[currentQuestionIndex],_0x4c2326=descriptionAreaEl[_0x5219ad(0x1b7)];if(descriptionCheckEl[_0x5219ad(0x15a)]){if(_0x1a60af[_0x5219ad(0x169)])for(let _0x1a76fe of _0x4c2326){_0x1a76fe[_0x5219ad(0x18e)]==='P'&&(_0x1a76fe['style'][_0x5219ad(0x19d)]='block');}}else for(let _0xfa199 of _0x4c2326){_0xfa199['tagName']==='P'&&(_0xfa199[_0x5219ad(0x181)]['display']=_0x5219ad(0x17f));}}function checkAnswer(){const _0x3584ba=_0x4631fa,_0x43d895=questions[currentQuestionIndex],_0x9c8d7=_0x43d895[_0x3584ba(0x1a8)],_0x5cc472=document[_0x3584ba(0x16c)]('.answerInput');let _0x10d0b5=!![];_0x5cc472[_0x3584ba(0x1a2)]((_0x5745cb,_0x55a2de)=>{const _0x1c6df0=_0x3584ba;if(_0x5745cb[_0x1c6df0(0x194)])return;const _0x217d15=_0x5745cb['value'][_0x1c6df0(0x1b3)]();let _0x501780=![];if(_0x9c8d7[_0x55a2de])for(let _0x456317 of _0x9c8d7[_0x55a2de]){if(_0x217d15['toLowerCase']()===_0x456317['toLowerCase']()){_0x501780=!![];break;}}_0x501780&&_0x217d15!==''?(_0x5745cb[_0x1c6df0(0x181)][_0x1c6df0(0x1b8)]=_0x1c6df0(0x1a1),_0x5745cb[_0x1c6df0(0x181)][_0x1c6df0(0x1b2)]=_0x1c6df0(0x1b9),_0x5745cb[_0x1c6df0(0x194)]=!![]):(_0x5745cb[_0x1c6df0(0x181)]['borderColor']='red',_0x5745cb[_0x1c6df0(0x181)]['backgroundColor']=_0x1c6df0(0x195),_0x10d0b5=![]);}),_0x10d0b5?(resultMessageEl[_0x3584ba(0x178)]='✅\x20모든\x20정답을\x20맞혔습니다!',resultMessageEl[_0x3584ba(0x181)][_0x3584ba(0x191)]='green',currentQuestionIndex++,setTimeout(()=>{const _0x5160ef=_0x3584ba;resultMessageEl[_0x5160ef(0x178)]='',displayQuestion();},0x3e8)):(resultMessageEl[_0x3584ba(0x178)]='❌\x20틀린\x20답이\x20있습니다.\x20다시\x20시도해\x20보세요.',resultMessageEl[_0x3584ba(0x181)][_0x3584ba(0x191)]=_0x3584ba(0x19e));}function showGameStats(){const _0x482b45=_0x4631fa,_0x111d72=gameEndTime-gameStartTime,_0x158914=Math[_0x482b45(0x19a)](_0x111d72/(0x3e8*0x3c*0x3c)),_0x228692=Math['floor'](_0x111d72%(0x3e8*0x3c*0x3c)/(0x3e8*0x3c)),_0x5996e5=Math[_0x482b45(0x19a)](_0x111d72%(0x3e8*0x3c)/0x3e8),_0x4f73e7=_0x44313c=>{const _0x5e109d=_0x482b45;return _0x44313c['getFullYear']()+'년\x20'+(_0x44313c[_0x5e109d(0x1ab)]()+0x1)+'월\x20'+_0x44313c[_0x5e109d(0x17c)]()+'일\x20'+_0x44313c[_0x5e109d(0x167)]()+'시\x20'+_0x44313c[_0x5e109d(0x165)]()+'분';},_0x2e164e=_0x482b45(0x17d)+_0x4f73e7(gameStartTime)+'</p>\x0a\x20\x20\x20\x20\x20\x20\x20\x20<p><strong>종료\x20시간:</strong>\x20'+_0x4f73e7(gameEndTime)+'</p>\x0a\x20\x20\x20\x20\x20\x20\x20\x20<p><strong>소요\x20시간:</strong>\x20'+(_0x158914>0x0?_0x158914+'시간\x20':'')+(_0x228692>0x0?_0x228692+'분\x20':'')+_0x5996e5+_0x482b45(0x16e)+questions[_0x482b45(0x16f)]+_0x482b45(0x1af);gameStatsEl[_0x482b45(0x175)]=_0x2e164e,gameStatsEl[_0x482b45(0x181)]['display']='block';}descriptionAreaEl[_0x4631fa(0x181)]['display']='none',questionContainerEl['style'][_0x4631fa(0x19d)]=_0x4631fa(0x17f),submitBtnEl[_0x4631fa(0x181)][_0x4631fa(0x19d)]=_0x4631fa(0x17f),answerCheckboxGroupEl[_0x4631fa(0x181)]['display']=_0x4631fa(0x17f),descriptionCheckboxGroupEl['style'][_0x4631fa(0x19d)]=_0x4631fa(0x17f);
+// 전역 변수 설정
+let questions = [];
+let currentQuestionIndex = 0;
+let gameStartTime = null;
+let gameEndTime = null;
+const dataFolderName = "data-parentheses/";
+const imageFolderName = dataFolderName + "images/";
+
+// HTML 요소 가져오기
+const dataSelectorEl = document.getElementById("dataSelector");
+const loadBtnEl = document.getElementById("loadBtn");
+const studyCheckEl = document.getElementById("studyCheck");
+const challengeHeaderEl = document.getElementById("challengeHeader");
+const descriptionAreaEl = document.getElementById("descriptionArea");
+const questionContainerEl = document.getElementById("questionContainer");
+const submitBtnEl = document.getElementById("submitBtn");
+const answerCheckEl = document.getElementById("answerCheck");
+const descriptionCheckEl = document.getElementById("descriptionCheck");
+const answerCheckboxGroupEl = document.querySelector(".answer-checkbox-group");
+const descriptionCheckboxGroupEl = document.querySelector(".description-checkbox-group");
+const resultMessageEl = document.getElementById("resultMessage");
+const gameStatsEl = document.getElementById("gameStats");
+
+// Study 체크박스 변경 이벤트
+studyCheckEl.addEventListener("change", () => {
+    if (studyCheckEl.checked) {
+        challengeHeaderEl.style.display = "none";
+    } else {
+        challengeHeaderEl.style.display = "block";
+    }
+});
+
+// '게임 시작' 버튼 이벤트 리스너
+loadBtnEl.addEventListener("click", () => {
+    const selectedFile = dataSelectorEl.value;
+    const filePath = dataFolderName + selectedFile;
+
+    // 기존 스크립트 제거
+    const oldScript = document.getElementById("questions-script");
+    if (oldScript) {
+        oldScript.remove();
+    }
+
+    // 새 스크립트 로드
+    const script = document.createElement("script");
+    script.src = filePath;
+    script.id = "questions-script";
+
+    script.onload = () => {
+        try {
+            questions = window.questionsData;
+
+            if (!questions || questions.length === 0) {
+                throw new Error("문제 데이터가 없습니다.");
+            }
+
+            // UI 요소 표시
+            descriptionAreaEl.style.display = "block";
+            questionContainerEl.style.display = "block";
+            submitBtnEl.style.display = "inline-block";
+            descriptionCheckboxGroupEl.style.display = "inline-block";
+
+            // Study 모드일 때만 정답 보기 표시
+            if (studyCheckEl.checked) {
+                answerCheckboxGroupEl.style.display = "inline-block";
+            } else {
+                answerCheckboxGroupEl.style.display = "none";
+            }
+
+            // 게임 상태 초기화
+            currentQuestionIndex = 0;
+            gameStartTime = new Date();
+
+            // 게임 시작
+            startGame();
+
+            // 파일 선택 영역 숨기기
+            document.querySelector('.file-selector').style.display = 'none';
+
+        } catch (error) {
+            console.error("게임 시작 오류:", error);
+            resultMessageEl.textContent = `오류: 게임을 시작할 수 없습니다. ${error.message}`;
+            resultMessageEl.style.color = "red";
+        }
+    };
+
+    script.onerror = () => {
+        console.error("파일 로드 오류:", filePath);
+        resultMessageEl.textContent = `오류: ${filePath} 파일을 불러올 수 없습니다.`;
+        resultMessageEl.style.color = "red";
+    };
+
+    document.head.appendChild(script);
+});
+
+// 배열을 무작위로 섞는 함수
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+}
+
+// 게임 시작 함수
+function startGame() {
+    shuffleArray(questions);
+
+    submitBtnEl.removeEventListener("click", checkAnswer);
+    submitBtnEl.addEventListener("click", checkAnswer);
+    answerCheckEl.removeEventListener("change", toggleAnswer);
+    answerCheckEl.addEventListener("change", toggleAnswer);
+    descriptionCheckEl.removeEventListener("change", toggleDescription);
+    descriptionCheckEl.addEventListener("change", toggleDescription);
+    displayQuestion();
+}
+
+// 이미지 슬라이더 생성 함수 - 필름 스트립 버전
+function createImageSlider(imageNumbers) {
+    if (imageNumbers.length === 0) return null;
+
+    const container = document.createElement("div");
+
+    // 3장 이상일 때는 필름 스트립 스타일, 2장 이하는 기존 방식
+    if (imageNumbers.length >= 3) {
+        container.className = "image-slider-container";
+        container.innerHTML = `
+            <div class="slider-track" id="sliderTrack">
+                ${imageNumbers.map(num => `
+                    <div class="slide">
+                        <img src="${imageFolderName}${num.trim()}.jpg"
+                             alt="문제 관련 이미지"
+                             draggable="false">
+                    </div>
+                `).join('')}
+            </div>
+        `;
+
+        // 드래그 스크롤 기능 추가
+        setTimeout(() => {
+            setupDragScroll(container.querySelector('.slider-track'));
+        }, 100);
+
+    } else {
+        // 2장 이하는 기존 방식
+        container.className = "image-container";
+        container.innerHTML = imageNumbers.map(num => `
+            <img src="${imageFolderName}${num.trim()}.jpg"
+                 alt="문제 관련 이미지"
+                 class="question-image"
+                 draggable="false">
+        `).join('');
+    }
+
+    return container;
+}
+
+// 드래그 스크롤 기능 설정
+function setupDragScroll(track) {
+    if (!track) return;
+
+    let isDown = false;
+    let startX;
+    let scrollLeft;
+
+    track.addEventListener('mousedown', (e) => {
+        isDown = true;
+        track.style.cursor = 'grabbing';
+        startX = e.pageX - track.offsetLeft;
+        scrollLeft = track.scrollLeft;
+        e.preventDefault();
+    });
+
+    track.addEventListener('mouseleave', () => {
+        isDown = false;
+        track.style.cursor = 'grab';
+    });
+
+    track.addEventListener('mouseup', () => {
+        isDown = false;
+        track.style.cursor = 'grab';
+    });
+
+    track.addEventListener('mousemove', (e) => {
+        if (!isDown) return;
+        e.preventDefault();
+        const x = e.pageX - track.offsetLeft;
+        const walk = (x - startX) * 2; // 스크롤 속도 조절
+        track.scrollLeft = scrollLeft - walk;
+    });
+
+    // 터치 이벤트 (모바일)
+    track.addEventListener('touchstart', (e) => {
+        startX = e.touches[0].pageX - track.offsetLeft;
+        scrollLeft = track.scrollLeft;
+    }, { passive: true });
+
+    track.addEventListener('touchmove', (e) => {
+        if (!startX) return;
+        const x = e.touches[0].pageX - track.offsetLeft;
+        const walk = (x - startX) * 2;
+        track.scrollLeft = scrollLeft - walk;
+    }, { passive: true });
+
+    track.addEventListener('touchend', () => {
+        startX = null;
+    });
+}
+
+// 문제 보여주기
+function displayQuestion() {
+    try {
+        if (currentQuestionIndex < questions.length) {
+            const currentQuestion = questions[currentQuestionIndex];
+
+            if (!currentQuestion.question || !currentQuestion.answers) {
+                throw new Error("문제 데이터가 올바르지 않습니다.");
+            }
+
+            const questionParts = currentQuestion.question.split('(   )');
+
+            // 기존 내용 초기화
+            descriptionAreaEl.innerHTML = "";
+            questionContainerEl.innerHTML = "";
+            resultMessageEl.textContent = "";
+            answerCheckEl.checked = false;
+            descriptionCheckEl.checked = false;
+
+            // 이미지 표시 (최우선 - 맨 위에 표시)
+            if (currentQuestion.image) {
+                const imageNumbers = currentQuestion.image.split(",");
+                const imageSlider = createImageSlider(imageNumbers);
+                if (imageSlider) {
+                    descriptionAreaEl.appendChild(imageSlider);
+                }
+            }
+
+            // 설명 표시 (기본적으로 숨김)
+            if (currentQuestion.description) {
+                const descEl = document.createElement("p");
+                descEl.textContent = currentQuestion.description;
+                descEl.style.display = "none";
+                descriptionAreaEl.appendChild(descEl);
+            }
+
+            // 질문 텍스트와 입력창
+            let questionHTML = "";
+            for (let i = 0; i < questionParts.length; i++) {
+                const textPart = questionParts[i].replace(/\n/g, '<br>');
+                questionHTML += `<span>${textPart}</span>`;
+
+                if (i < questionParts.length - 1) {
+                    // 정답 그룹에서 가장 긴 정답의 길이를 계산
+                    const answersGroup = currentQuestion.answers[i] || [];
+                    const longestAnswerLength = answersGroup.reduce((max, answer) => Math.max(max, answer.length), 0);
+                    
+                    // 글자 수에 따라 동적으로 너비 계산 (한글과 같은 가변폭 글꼴 고려)
+                    const baseWidth = 18; // 한 글자당 대략적인 너비
+                    const padding = 24; // 좌우 패딩 값
+                    const minWidth = 150; // 최소 너비
+                    const calculatedWidth = (longestAnswerLength * baseWidth) + padding;
+                    const finalWidth = Math.max(calculatedWidth, minWidth); // 최소 너비 적용
+
+                    // input-group으로 input과 hint를 묶음
+                    questionHTML += `
+                        <div class="input-group">
+                            <input type="text" 
+                                   class="answerInput" 
+                                   placeholder="정답 ${i + 1} 입력" 
+                                   data-index="${i}"
+                                   style="width: ${finalWidth}px;">
+                            <p class="answer-hint"></p>
+                        </div>
+                    `;
+                }
+            }
+
+            questionContainerEl.innerHTML = questionHTML;
+
+            // 입력창 이벤트
+            const allInputs = document.querySelectorAll(".answerInput");
+            allInputs.forEach((input, index) => {
+                input.addEventListener("keydown", (event) => {
+                    if (event.key === "Enter") {
+                        if (index === allInputs.length - 1) {
+                            checkAnswer();
+                        } else {
+                            allInputs[index + 1].focus();
+                        }
+                    }
+                });
+            });
+
+            // 첫 번째 입력창에 포커스
+            if (allInputs.length > 0) {
+                setTimeout(() => {
+                    allInputs[0].focus();
+                }, 200);
+            }
+
+        } else {
+            // 게임 종료 - 이미지 완전 제거
+            gameEndTime = new Date();
+            showGameStats();
+            descriptionAreaEl.innerHTML = ""; // 모든 내용 제거
+            descriptionAreaEl.style.display = "none";
+            questionContainerEl.textContent = "🥳 게임 종료! 모든 문제를 맞혔습니다!";
+            submitBtnEl.style.display = "none";
+            answerCheckboxGroupEl.style.display = "none";
+            descriptionCheckboxGroupEl.style.display = "none";
+            resultMessageEl.style.display = "none";
+            gameStatsEl.style.display = "none";
+        }
+    } catch (error) {
+        console.error("문제 표시 오류:", error);
+        resultMessageEl.textContent = `오류: ${error.message}`;
+        resultMessageEl.style.color = "red";
+    }
+}
+
+// 정답 토글 함수
+function toggleAnswer() {
+    const currentQuestion = questions[currentQuestionIndex];
+    const hints = document.querySelectorAll(".answer-hint"); // 모든 힌트 요소 가져오기
+
+    if (answerCheckEl.checked && studyCheckEl.checked) {
+        if (currentQuestion.answers) {
+            hints.forEach((hint, index) => {
+                const answerGroup = currentQuestion.answers[index];
+                if (answerGroup) {
+                    hint.textContent = `정답: ${answerGroup.join(" 또는 ")}`;
+                    hint.style.display = "block";
+                }
+            });
+        }
+    } else {
+        hints.forEach(hint => {
+            hint.textContent = "";
+            hint.style.display = "none";
+        });
+    }
+}
+
+// 설명 토글 함수
+function toggleDescription() {
+    const currentQuestion = questions[currentQuestionIndex];
+    const descriptionElements = descriptionAreaEl.children;
+
+    if (descriptionCheckEl.checked) {
+        if (currentQuestion.description) {
+            for (let el of descriptionElements) {
+                if (el.tagName === 'P') {
+                    el.style.display = "block";
+                }
+            }
+        }
+    } else {
+        for (let el of descriptionElements) {
+            if (el.tagName === 'P') {
+                el.style.display = "none";
+            }
+        }
+    }
+}
+
+// 정답 확인
+function checkAnswer() {
+    const currentQuestion = questions[currentQuestionIndex];
+    const correctAnswers = currentQuestion.answers;
+    const userInputs = document.querySelectorAll(".answerInput");
+
+    let allCorrect = true;
+    userInputs.forEach((input, index) => {
+        if (input.disabled) {
+            return; // 이미 정답 처리된 입력창은 건너뜀
+        }
+        const userAnswer = input.value.trim();
+        let isCorrect = false;
+
+        // 해당 인덱스의 여러 정답 중 하나라도 맞으면 정답으로 처리
+        if (correctAnswers[index]) {
+            for (let correctAnswer of correctAnswers[index]) {
+                if (userAnswer.toLowerCase() === correctAnswer.toLowerCase()) {
+                    isCorrect = true;
+                    break;
+                }
+            }
+        }
+
+        if (isCorrect && userAnswer !== "") {
+            input.style.borderColor = "green";
+            input.style.backgroundColor = "#e8f5e9";
+            input.disabled = true;
+        } else {
+            input.style.borderColor = "red";
+            input.style.backgroundColor = "#ffebee";
+            allCorrect = false;
+        }
+    });
+
+    if (allCorrect) {
+        resultMessageEl.textContent = "✅ 모든 정답을 맞혔습니다!";
+        resultMessageEl.style.color = "green";
+        currentQuestionIndex++;
+
+        setTimeout(() => {
+            resultMessageEl.textContent = "";
+            displayQuestion();
+        }, 1000);
+    } else {
+        resultMessageEl.textContent = "❌ 틀린 답이 있습니다. 다시 시도해 보세요.";
+        resultMessageEl.style.color = "red";
+    }
+}
+
+// 게임 통계 표시
+function showGameStats() {
+    const timeDiff = gameEndTime - gameStartTime;
+    const hours = Math.floor(timeDiff / (1000 * 60 * 60));
+    const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
+
+    const formatDate = (date) => {
+        return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일 ${date.getHours()}시 ${date.getMinutes()}분`;
+    };
+
+    const statsHTML = `
+        <h3>📊 게임 통계</h3>
+        <p><strong>시작 시간:</strong> ${formatDate(gameStartTime)}</p>
+        <p><strong>종료 시간:</strong> ${formatDate(gameEndTime)}</p>
+        <p><strong>소요 시간:</strong> ${hours > 0 ? hours + '시간 ' : ''}${minutes > 0 ? minutes + '분 ' : ''}${seconds}초</p>
+        <p><strong>총 문제 수:</strong> ${questions.length}문제</p>
+    `;
+    gameStatsEl.innerHTML = statsHTML;
+    gameStatsEl.style.display = "block";
+}
+
+// 초기 화면 설정
+descriptionAreaEl.style.display = "none";
+questionContainerEl.style.display = "none";
+submitBtnEl.style.display = "none";
+answerCheckboxGroupEl.style.display = "none";
+descriptionCheckboxGroupEl.style.display = "none";

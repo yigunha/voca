@@ -56,11 +56,11 @@ h1 {
     gap: 5px;
 }
 
-.dataset-selection label {
-    font-size: 1.1rem;
-    font-weight: bold;
-    color: #333;
-}
+    .dataset-selection label {
+        font-size: 1.1rem;
+        font-weight: bold;
+        color: #333;
+    }
 
 .file-selector label, .file-selector select, .file-selector button {
     font-size: 1.1rem;
@@ -76,30 +76,30 @@ h1 {
     cursor: pointer;
 }
 
-.checkbox-group input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
-}
+    .checkbox-group input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+    }
 
 .description-area {
     margin-bottom: 20px;
     min-height: 50px;
 }
 
-.description-area p {
-    font-size: 1.2rem;
-    font-weight: bold;
-    color: #444;
-}
+    .description-area p {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: #444;
+    }
 
-.description-area img {
-    max-width: 100%;
-    height: 200px;
-    object-fit: contain;
-    border-radius: 8px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-}
+    .description-area img {
+        max-width: 100%;
+        height: 200px;
+        object-fit: contain;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
 
 .image-container {
     display: flex;
@@ -118,6 +118,74 @@ h1 {
     min-width: 150px;
 }
 
+/* 필름 스트립 스타일 이미지 슬라이더 */
+.image-slider-container {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto 20px auto;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    background: #f5f5f5;
+    padding: 10px;
+}
+
+.slider-track {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 10px 0;
+    cursor: grab;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    /* 스크롤바 스타일링 */
+    scrollbar-width: thin;
+    scrollbar-color: #007bff #f1f1f1;
+}
+
+    .slider-track::-webkit-scrollbar {
+        height: 8px;
+    }
+
+    .slider-track::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+
+    .slider-track::-webkit-scrollbar-thumb {
+        background: #007bff;
+        border-radius: 10px;
+    }
+
+        .slider-track::-webkit-scrollbar-thumb:hover {
+            background: #0056b3;
+        }
+
+    .slider-track:active {
+        cursor: grabbing;
+    }
+
+.slide {
+    flex-shrink: 0;
+    width: 200px; /* 고정 너비 설정 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+    .slide img {
+        width: 100%;
+        height: 180px;
+        object-fit: contain;
+        display: block;
+        user-select: none;
+        -webkit-user-drag: none;
+    }
+
 /* 핵심 수정 부분 - 줄 맞춤 문제 해결 */
 .question-container {
     display: inline-block; /* flex 대신 inline-block 사용 */
@@ -126,25 +194,48 @@ h1 {
     color: #555;
     margin-bottom: 30px;
     line-height: 2; /* 줄 간격 조정 */
-    /* white-space 속성 제거하여 기본 동작 사용 */
 }
 
-.question-container span {
-    display: inline; /* 인라인으로 표시 */
-    /* white-space: pre-wrap 제거 */
+    .question-container span {
+        display: inline; /* 인라인으로 표시 */
+    }
+/* 수정된 부분: input-group으로 input과 hint를 묶음 */
+.input-group {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    vertical-align: middle;
 }
 
 .answerInput {
     display: inline-block;
-    font-size: 1.2rem;
-    padding: 12px;
+    font-size: 1.5rem; /* 문제 글자 크기와 동일하게 변경 */
+    padding: 1px;
     border: 2px solid #ddd;
     border-radius: 8px;
     width: 150px;
     text-align: center;
     transition: border-color 0.3s, background-color 0.3s, box-shadow 0.3s;
-    margin: 0 5px; /* 좌우 여백 추가 */
+    margin: 0px; /* 위아래 여백을 0px로 변경 */
     vertical-align: middle; /* 수직 정렬 */
+    background-color: #f7f7f7; /* 배경색을 연한 회색으로 변경 */
+    font-weight: bold; /* 글자를 굵은체로 변경 */
+}
+
+/* 정답 힌트 스타일 추가 */
+.answer-hint {
+    display: none; /* 기본적으로 숨김 */
+    margin: 5px 5px 0 5px;
+    padding: 8px 12px;
+    background-color: #e8f5e8;
+    color: #28a745;
+    font-size: 0.9rem;
+    font-weight: bold;
+    border-radius: 6px;
+    border-left: 4px solid #28a745;
+    box-shadow: 0 2px 4px rgba(40, 167, 69, 0.1);
+    max-width: 300px;
+    word-wrap: break-word;
 }
 
 .answerInput:focus {
@@ -162,12 +253,11 @@ h1 {
     align-items: center;
 }
 
-/* ---- 이 부분이 수정되었습니다 ---- */
 .checkboxes-wrapper {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 40px; /* 두 버튼 사이의 간격을 40px로 넓힘 */
+    gap: 40px;
     margin-bottom: 15px;
 }
 
@@ -177,18 +267,19 @@ h1 {
     font-size: 1.2rem;
     color: #555;
     cursor: pointer;
-    
-    /* 체크박스 자체는 숨기기 */
-    input[type="checkbox"] {
-        display: none;
-    }
+    input [type="checkbox"]
+
+{
+    display: none;
+}
+
 }
 
 .answer-checkbox-group label, .description-checkbox-group label {
     position: relative;
     display: flex;
     align-items: center;
-    gap: 10px; /* 텍스트와 체크 표시 사이의 간격 */
+    gap: 10px;
     padding: 12px 20px;
     border-radius: 25px;
     cursor: pointer;
@@ -197,28 +288,24 @@ h1 {
     border: 2px solid;
 }
 
-/* 설명 보기 라벨 스타일 */
 .description-checkbox-group label {
-    background-color: #e6e6fa; /* 파스텔 라벤더 */
+    background-color: #e6e6fa;
     border-color: #b3b3e6;
 }
 
-/* 정답 보기 라벨 스타일 */
 .answer-checkbox-group label {
-    background-color: #fffacd; /* 파스텔 레몬 */
+    background-color: #fffacd;
     border-color: #e6e6b3;
 }
 
-/* 체크되었을 때 라벨에 체크 표시를 왼쪽에 추가 */
 .answer-checkbox-group input[type="checkbox"]:checked + label::before,
 .description-checkbox-group input[type="checkbox"]:checked + label::before {
-    content: '✓'; /* 체크 모양 특수문자 */
+    content: '✓';
     font-size: 1.5rem;
-    color: #28a745; /* 초록색 */
+    color: #28a745;
     font-weight: bold;
 }
 
-/* 체크되었을 때 라벨 배경색 변경 */
 .description-checkbox-group input[type="checkbox"]:checked + label {
     background-color: #b3b3e6;
     color: white;
@@ -228,7 +315,6 @@ h1 {
     background-color: #e6e6b3;
     color: #333;
 }
-/* ---------------------------------- */
 
 #submitBtn, #loadBtn {
     background-color: #007bff;
@@ -261,6 +347,52 @@ h1 {
     font-weight: bold;
 }
 
+/* 정답 메시지 스타일 - 세로 정렬 */
+#answerMessage {
+    font-size: 1.1rem;
+    margin-top: 20px;
+    font-weight: bold;
+    text-align: left;
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #28a745;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    
+}
+
+.answer-display {
+    line-height: 1.8;
+    color: #28a745;
+}
+
+.answer-item {
+    margin: 8px 0;
+    padding: 5px 0;
+    font-size: 1.1rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+    .answer-item:last-child {
+        border-bottom: none;
+    }
+
+/* 설명 텍스트 스타일 */
+.description-text {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #444;
+    background-color: #e8f4fd;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #007bff;
+    margin: 15px 0;
+    text-align: left;
+    line-height: 1.6;
+}
+
 .game-stats {
     background-color: #f8f9fa;
     padding: 20px;
@@ -270,7 +402,7 @@ h1 {
     line-height: 1.5;
 }
 
-/* 휴대폰 화면을 위한 반응형 디자인 */
+/* 모바일 반응형 디자인 */
 @media (max-width: 768px) {
     .game-container {
         padding: 20px;
@@ -286,9 +418,9 @@ h1 {
     }
 
     .question-container {
-        text-align: left; /* 모바일에서는 중앙 정렬 */
+        text-align: left;
     }
-    
+
     .selector-row {
         flex-direction: column;
         gap: 15px;
@@ -314,20 +446,51 @@ h1 {
     .answer-checkbox-group, .description-checkbox-group {
         justify-content: center;
     }
-    
+
     .description-area img, .question-image {
         height: 150px;
         max-width: 100%;
     }
-    
+
     .image-container {
         flex-direction: column;
         align-items: center;
     }
 
-    /* 모바일에서 버튼들이 세로로 배열되도록 설정 */
     .checkboxes-wrapper {
         flex-direction: column;
         gap: 15px;
+    }
+
+    /* 모바일용 필름 스트립 스타일 */
+    .image-slider-container {
+        max-width: 95%;
+        margin: 0 auto 15px auto;
+    }
+
+    .slide {
+        width: 150px; /* 모바일에서는 더 작게 */
+    }
+
+        .slide img {
+            height: 120px;
+        }
+
+    .slider-track {
+        gap: 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    .slide {
+        width: 120px;
+    }
+
+        .slide img {
+            height: 100px;
+        }
+
+    .slider-track {
+        gap: 6px;
     }
 }
