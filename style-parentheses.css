@@ -1,12 +1,14 @@
+/* style-parentheses.css */
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: #f0f2f5;
     display: flex;
-    justify-content: center;
+    /* justify-content: center; 이 줄을 삭제하거나 주석 처리하세요. */
     min-height: 100vh;
     margin: 0;
     padding: 20px;
     box-sizing: border-box;
+    flex-direction: column; /* 세로 정렬을 위해 추가 */
 }
 
 .game-container {
@@ -15,8 +17,8 @@ body {
     border-radius: 15px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
     text-align: center;
-    width: 90%;
-    max-width: 800px;
+    width: 100%; /* 너비를 100%로 변경 */
+    max-width: none; /* 최대 너비 제한 제거 */
 }
 
 .challenge-header {
@@ -56,11 +58,11 @@ h1 {
     gap: 5px;
 }
 
-    .dataset-selection label {
-        font-size: 1.1rem;
-        font-weight: bold;
-        color: #333;
-    }
+.dataset-selection label {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #333;
+}
 
 .file-selector label, .file-selector select, .file-selector button {
     font-size: 1.1rem;
@@ -76,30 +78,30 @@ h1 {
     cursor: pointer;
 }
 
-    .checkbox-group input[type="checkbox"] {
-        width: 18px;
-        height: 18px;
-        cursor: pointer;
-    }
+.checkbox-group input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
 
 .description-area {
     margin-bottom: 20px;
     min-height: 50px;
 }
 
-    .description-area p {
-        font-size: 1.2rem;
-        font-weight: bold;
-        color: #444;
-    }
+.description-area p {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #444;
+}
 
-    .description-area img {
-        max-width: 100%;
-        height: 200px;
-        object-fit: contain;
-        border-radius: 8px;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    }
+.description-area img {
+    max-width: 100%;
+    height: 200px;
+    object-fit: contain;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
 
 .image-container {
     display: flex;
@@ -118,11 +120,11 @@ h1 {
     min-width: 150px;
 }
 
-/* 필름 스트립 스타일 이미지 슬라이더 */
+/* 필름 스트립 이미지 슬라이더 */
 .image-slider-container {
-    width: 100%;
-    max-width: 600px;
-    margin: 0 auto 20px auto;
+    width: 100%; /* 너비를 100%로 변경 */
+    max-width: none; /* 최대 너비 제한 제거 */
+    margin: 0; /* 중앙 정렬용 margin 제거 */
     border-radius: 10px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     background: #f5f5f5;
@@ -137,36 +139,31 @@ h1 {
     cursor: grab;
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
-    /* 스크롤바 스타일링 */
     scrollbar-width: thin;
     scrollbar-color: #007bff #f1f1f1;
 }
 
-    .slider-track::-webkit-scrollbar {
-        height: 8px;
-    }
+.slider-track::-webkit-scrollbar {
+    height: 8px;
+}
 
-    .slider-track::-webkit-scrollbar-track {
-        background: #f1f1f1;
-        border-radius: 10px;
-    }
+.slider-track::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
 
-    .slider-track::-webkit-scrollbar-thumb {
-        background: #007bff;
-        border-radius: 10px;
-    }
+.slider-track::-webkit-scrollbar-thumb {
+    background: #007bff;
+    border-radius: 10px;
+}
 
-        .slider-track::-webkit-scrollbar-thumb:hover {
-            background: #0056b3;
-        }
-
-    .slider-track:active {
-        cursor: grabbing;
-    }
+.slider-track:active {
+    cursor: grabbing;
+}
 
 .slide {
     flex-shrink: 0;
-    width: 200px; /* 고정 너비 설정 */
+    width: 200px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -177,70 +174,145 @@ h1 {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-    .slide img {
-        width: 100%;
-        height: 180px;
-        object-fit: contain;
-        display: block;
-        user-select: none;
-        -webkit-user-drag: none;
-    }
+.slide img {
+    width: 100%;
+    height: 180px;
+    object-fit: contain;
+    display: block;
+    user-select: none;
+    -webkit-user-drag: none;
+}
 
-/* 핵심 수정 부분 - 줄 맞춤 문제 해결 */
+/* 문제 텍스트 레이아웃 */
 .question-container {
-    display: inline-block; /* flex 대신 inline-block 사용 */
-    text-align: left; /* 왼쪽 정렬 */
+    display: inline-block;
+    text-align: left;
     font-size: 1.5rem;
     color: #555;
     margin-bottom: 30px;
-    line-height: 2; /* 줄 간격 조정 */
+    line-height: 2;
 }
 
-    .question-container span {
-        display: inline; /* 인라인으로 표시 */
-    }
-/* 수정된 부분: input-group으로 input과 hint를 묶음 */
+.question-container span {
+    display: inline;
+}
+
+/* input-group: input + 힌트 컨테이너 */
 .input-group {
     display: inline-flex;
     flex-direction: column;
-    align-items: center; 
+    align-items: center;
+    position: relative;
+    overflow: visible;
+    z-index: 1;
+}
+
+.input-group.active {
+    z-index: 9999;
 }
 
 .answerInput {
     display: inline-block;
-    font-size: 1.2rem;
-    padding: 12px;
-    border: 2px solid #ddd;
+    font-size: 1.5rem;
+    font-weight: bold;
+    padding: 5px;
+    border: 3px solid #ddd;
     border-radius: 8px;
-    min-width: 150px;
-    width: auto; /* width를 auto로 변경 */
+    width: auto;
     text-align: center;
     transition: border-color 0.3s, background-color 0.3s, box-shadow 0.3s;
-    margin: 0 5px; /* 좌우 여백 추가 */
-    vertical-align: middle; /* 수직 정렬 */
+    margin: 0px;
+    vertical-align: middle;
+    position: relative;
+    z-index: 1;
 }
 
-/* 정답 힌트 스타일 추가 */
 .answer-hint {
-    display: none; /* 기본적으로 숨김 */
-    margin: 0px 5px 0 5px;
-    padding: 8px 12px;
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10000;
+    margin-top: 8px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border: 1px solid #28a745;
+    overflow: visible;
+    min-width: 120px;
+}
+
+.answer-hint.active {
+    z-index: 10001;
+}
+
+.answer-current {
     background-color: #e8f5e8;
     color: #28a745;
     font-size: 0.9rem;
     font-weight: bold;
+    padding: 8px 12px;
     border-radius: 6px;
-    box-shadow: 0 2px 4px rgba(40, 167, 69, 0.1);
-    max-width: 300px;
-    word-wrap: break-word;
+    cursor: pointer;
+    white-space: nowrap;
+    max-width: 150px;
+    text-align: center;
+    user-select: none;
 }
 
-.answerInput:focus {
-    outline: none;
-    border-color: #007bff;
-    box-shadow: 0 0 8px rgba(0, 123, 255, 0.2);
+.answer-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #28a745;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    z-index: 10001;
+    max-height: 200px;
+    overflow-y: auto;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
+.answer-dropdown.show {
+    display: block !important;
+}
+
+.answer-item {
+    background-color: white;
+    color: #28a745;
+    font-size: 0.9rem;
+    font-weight: bold;
+    padding: 8px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+    user-select: none;
+}
+
+.answer-item:hover {
+    background-color: #f8f9fa;
+}
+
+.answer-item.selected {
+    background-color: #28a745;
+    color: white;
+}
+
+.answer-hint::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-bottom: 6px solid #28a745;
+}
+
+/* 버튼 / 체크박스 등 (이하는 기존 스타일 유지) */
 .button-group {
     display: flex;
     flex-direction: column;
@@ -264,12 +336,11 @@ h1 {
     font-size: 1.2rem;
     color: #555;
     cursor: pointer;
-    input [type="checkbox"]
-
-{
-    display: none;
 }
 
+.answer-checkbox-group input[type="checkbox"],
+.description-checkbox-group input[type="checkbox"] {
+    display: none;
 }
 
 .answer-checkbox-group label, .description-checkbox-group label {
@@ -344,39 +415,7 @@ h1 {
     font-weight: bold;
 }
 
-/* 정답 메시지 스타일 - 세로 정렬 */
-#answerMessage {
-    font-size: 1.1rem;
-    margin-top: 20px;
-    font-weight: bold;
-    text-align: left;
-    background-color: #f8f9fa;
-    padding: 15px;
-    border-radius: 8px;
-    border-left: 4px solid #28a745;
-    max-width: 600px;
-    margin-left: auto;
-    margin-right: auto;
-    
-}
-
-.answer-display {
-    line-height: 1.8;
-    color: #28a745;
-}
-
-.answer-item {
-    margin: 8px 0;
-    padding: 5px 0;
-    font-size: 1.1rem;
-    border-bottom: 1px solid #e9ecef;
-}
-
-    .answer-item:last-child {
-        border-bottom: none;
-    }
-
-/* 설명 텍스트 스타일 */
+/* 설명 박스, 게임 통계 등 (기존 유지) */
 .description-text {
     font-size: 1.2rem;
     font-weight: bold;
@@ -399,95 +438,26 @@ h1 {
     line-height: 1.5;
 }
 
-/* 모바일 반응형 디자인 */
+/* 반응형 */
 @media (max-width: 768px) {
-    .game-container {
-        padding: 20px;
-        width: 95%;
-    }
-
-    h1 {
-        font-size: 1.8rem;
-    }
-
-    .challenge-header {
-        font-size: 1.5rem;
-    }
-
-    .question-container {
-        text-align: left;
-    }
-
-    .selector-row {
-        flex-direction: column;
-        gap: 15px;
-    }
-
-    .answerInput {
-        width: 100%;
-        max-width: 300px;
-        margin: 5px 0;
-    }
-
-    .button-group {
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    #submitBtn, #loadBtn {
-        width: 100%;
-        font-size: 1rem;
-        padding: 12px;
-    }
-
-    .answer-checkbox-group, .description-checkbox-group {
-        justify-content: center;
-    }
-
-    .description-area img, .question-image {
-        height: 150px;
-        max-width: 100%;
-    }
-
-    .image-container {
-        flex-direction: column;
-        align-items: center;
-    }
-
-    .checkboxes-wrapper {
-        flex-direction: column;
-        gap: 15px;
-    }
-
-    /* 모바일용 필름 스트립 스타일 */
+    .game-container { padding: 20px; width: 100%; }
+    .question-container { text-align: left; }
+    .answerInput { width: 100%; max-width: 300px; margin: 5px 0; }
+    #submitBtn, #loadBtn { width: 100%; font-size: 1rem; padding: 12px; }
+    .answer-current { max-width: 70px; font-size: 0.7rem; padding: 3px 6px; }
+    .answer-item { font-size: 0.7rem; padding: 3px 6px; }
+    .answer-dropdown { max-height: 100px; }
+    .answer-hint::before { top: -15px; border-left: 15px solid transparent; border-right: 15px solid transparent; border-bottom: 15px solid #28a745; }
     .image-slider-container {
-        max-width: 95%;
-        margin: 0 auto 15px auto;
-    }
-
-    .slide {
-        width: 150px; /* 모바일에서는 더 작게 */
-    }
-
-        .slide img {
-            height: 120px;
-        }
-
-    .slider-track {
-        gap: 8px;
+        width: 100%;
+        max-width: none;
     }
 }
-
 @media (max-width: 480px) {
-    .slide {
-        width: 120px;
-    }
-
-        .slide img {
-            height: 100px;
-        }
-
-    .slider-track {
-        gap: 6px;
-    }
+    .slide { width: 120px; }
+    .slide img { height: 100px; }
+    .answer-current { max-width: 60px; font-size: 0.65rem; padding: 2px 4px; }
+    .answer-item { font-size: 0.65rem; padding: 2px 4px; }
+    .answer-dropdown { max-height: 80px; }
+    .answer-hint::before { top: -12px; border-left: 12px solid transparent; border-right: 12px solid transparent; border-bottom: 12px solid #28a745; }
 }

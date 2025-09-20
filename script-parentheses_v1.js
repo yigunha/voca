@@ -1,3 +1,5 @@
+// script-parentheses_v1.js
+
 // 전역 변수 설정
 let questions = [];
 let currentQuestionIndex = 0;
@@ -48,7 +50,17 @@ loadBtnEl.addEventListener("click", () => {
 
     script.onload = () => {
         try {
-            questions = window.questionsData;
+            // 데이터 스크립트에서 window.questionsData나 questionData 등 어떤 이름인지 감지
+            // 호환성: window.questionsData 사용 (원래 데이터가 이 이름을 쓰면 OK)
+            if (window.questionsData) {
+                questions = window.questionsData;
+            } else if (window.questionData) {
+                questions = window.questionData;
+            } else if (window.defaultQuestions) {
+                questions = window.defaultQuestions;
+            } else {
+                throw new Error("문제 데이터가 없습니다.");
+            }
 
             if (!questions || questions.length === 0) {
                 throw new Error("문제 데이터가 없습니다.");
@@ -116,7 +128,7 @@ function startGame() {
 
 // 이미지 슬라이더 생성 함수 - 필름 스트립 버전
 function createImageSlider(imageNumbers) {
-    if (imageNumbers.length === 0) return null;
+    if (!imageNumbers || imageNumbers.length === 0) return null;
 
     const container = document.createElement("div");
 
@@ -212,11 +224,13 @@ function displayQuestion() {
         if (currentQuestionIndex < questions.length) {
             const currentQuestion = questions[currentQuestionIndex];
 
-            if (!currentQuestion.question || !currentQuestion.answers) {
+            if (!currentQuestion.question && !currentQuestion.sentence) {
                 throw new Error("문제 데이터가 올바르지 않습니다.");
             }
 
-            const questionParts = currentQuestion.question.split('(   )');
+            // 호환성: question 또는 sentence 필드 사용
+            const rawQuestionText = currentQuestion.question || currentQuestion.sentence || "";
+            const questionParts = rawQuestionText.split('(   )');
 
             // 기존 내용 초기화
             descriptionAreaEl.innerHTML = "";
@@ -250,12 +264,10 @@ function displayQuestion() {
 
                 if (i < questionParts.length - 1) {
                     // 정답 그룹에서 가장 긴 정답의 길이를 계산
-                    const answersGroup = currentQuestion.answers[i] || [];
+                    const answersGroup = (currentQuestion.answers && currentQuestion.answers[i]) ? currentQuestion.answers[i] : [];
                     const longestAnswerLength = answersGroup.reduce((max, answer) => Math.max(max, answer.length), 0);
-                    
-                    // 글자 수에 따라 동적으로 너비 계산 (폰트 사이즈 고려)
-                    // 1em = 16px, 1.2rem = 19.2px
-                    const dynamicWidth = Math.max(longestAnswerLength * 1.2, 12) + "ch"; // 최소 너비 12ch 설정
+
+                    const dynamicWidth = Math.max(longestAnswerLength * 2.2, 3) + "ch"; // 최소 너비
 
                     // input-group으로 input과 hint를 묶음
                     questionHTML += `
@@ -265,7 +277,7 @@ function displayQuestion() {
                                    placeholder="정답 ${i + 1} 입력" 
                                    data-index="${i}"
                                    style="width: ${dynamicWidth};">
-                            <p class="answer-hint"></p>
+                            <div class="answer-hint"></div>
                         </div>
                     `;
                 }
@@ -295,10 +307,10 @@ function displayQuestion() {
             }
 
         } else {
-            // 게임 종료 - 이미지 완전 제거
+            // 게임 종료
             gameEndTime = new Date();
             showGameStats();
-            descriptionAreaEl.innerHTML = ""; // 모든 내용 제거
+            descriptionAreaEl.innerHTML = "";
             descriptionAreaEl.style.display = "none";
             questionContainerEl.textContent = "🥳 게임 종료! 모든 문제를 맞혔습니다!";
             submitBtnEl.style.display = "none";
@@ -314,27 +326,150 @@ function displayQuestion() {
     }
 }
 
-// 정답 토글 함수
+// 정답 토글 함수 - 드롭다운 스타일 (z-index 관리 추가)
 function toggleAnswer() {
     const currentQuestion = questions[currentQuestionIndex];
-    const hints = document.querySelectorAll(".answer-hint"); // 모든 힌트 요소 가져오기
+    const hints = document.querySelectorAll(".answer-hint");
 
     if (answerCheckEl.checked && studyCheckEl.checked) {
         if (currentQuestion.answers) {
             hints.forEach((hint, index) => {
                 const answerGroup = currentQuestion.answers[index];
-                if (answerGroup) {
-                    hint.textContent = `정답: ${answerGroup.join(", ")}`;
-                    hint.style.display = "block"; // <-- 이 부분을 수정했습니다.
+                if (answerGroup && answerGroup.length > 0) {
+                    // 기존 내용 초기화
+                    hint.innerHTML = '';
+                    hint.classList.remove('active');
+                    if (hint.closest('.input-group')) {
+                        hint.closest('.input-group').classList.remove('active');
+                    }
+
+                    // 컨테이너 div 생성
+                    const containerDiv = document.createElement('div');
+                    containerDiv.style.position = 'relative';
+
+                    // 현재 선택된 정답 표시 (기본은 첫 번째)
+                    const currentDiv = document.createElement('div');
+                    currentDiv.className = 'answer-current';
+                    currentDiv.textContent = answerGroup[0];
+
+                    // 드롭다운 컨테이너
+                    const dropdownDiv = document.createElement('div');
+                    dropdownDiv.className = 'answer-dropdown';
+
+                    // 각 정답을 드롭다운 아이템으로 생성
+                    answerGroup.forEach((answer, answerIndex) => {
+                        const answerItem = document.createElement('div');
+                        answerItem.className = 'answer-item';
+                        answerItem.textContent = answer;
+                        answerItem.dataset.index = answerIndex;
+
+                        // 첫 번째 아이템은 선택된 상태로 표시
+                        if (answerIndex === 0) {
+                            answerItem.classList.add('selected');
+                        }
+
+                        // 아이템 클릭 이벤트
+                        answerItem.addEventListener('click', function(e) {
+                            e.stopPropagation();
+
+                            // 모든 아이템의 선택 상태 제거
+                            dropdownDiv.querySelectorAll('.answer-item').forEach(item => {
+                                item.classList.remove('selected');
+                            });
+
+                            // 현재 아이템 선택
+                            this.classList.add('selected');
+
+                            // 현재 표시 업데이트
+                            currentDiv.textContent = this.textContent;
+
+                            // 드롭다운 닫기 및 active 상태 제거
+                            dropdownDiv.classList.remove('show');
+                            hint.classList.remove('active');
+                            if (hint.closest('.input-group')) {
+                                hint.closest('.input-group').classList.remove('active');
+                            }
+                        });
+
+                        dropdownDiv.appendChild(answerItem);
+                    });
+
+                    // 현재 정답 클릭 시 드롭다운 토글
+                    currentDiv.addEventListener('click', function(e) {
+                        e.stopPropagation();
+
+                        // 다른 모든 드롭다운 닫기 및 active 상태 제거
+                        document.querySelectorAll('.answer-hint').forEach(otherHint => {
+                            if (otherHint !== hint) {
+                                otherHint.classList.remove('active');
+                                const otherDropdown = otherHint.querySelector('.answer-dropdown');
+                                if (otherDropdown) {
+                                    otherDropdown.classList.remove('show');
+                                }
+                                if (otherHint.closest('.input-group')) {
+                                    otherHint.closest('.input-group').classList.remove('active');
+                                }
+                            }
+                        });
+
+                        // 현재 드롭다운 토글
+                        const isOpen = dropdownDiv.classList.contains('show');
+                        if (isOpen) {
+                            dropdownDiv.classList.remove('show');
+                            hint.classList.remove('active');
+                            if (hint.closest('.input-group')) {
+                                hint.closest('.input-group').classList.remove('active');
+                            }
+                        } else {
+                            dropdownDiv.classList.add('show');
+                            hint.classList.add('active');
+                            if (hint.closest('.input-group')) {
+                                hint.closest('.input-group').classList.add('active');
+                            }
+                        }
+                    });
+
+                    // 컨테이너에 요소들 추가
+                    containerDiv.appendChild(currentDiv);
+                    containerDiv.appendChild(dropdownDiv);
+                    hint.appendChild(containerDiv);
+                    hint.style.display = "block";
                 }
             });
+
+            // 문서 클릭 시 모든 드롭다운 닫기 (이전 이벤트 리스너 제거 후 추가)
+            document.removeEventListener('click', closeAllDropdowns);
+            document.addEventListener('click', closeAllDropdowns);
         }
     } else {
         hints.forEach(hint => {
-            hint.textContent = "";
+            hint.innerHTML = "";
             hint.style.display = "none";
+            hint.classList.remove('active');
+            if (hint.closest('.input-group')) {
+                hint.closest('.input-group').classList.remove('active');
+            }
         });
+
+        // 드롭다운 닫기 이벤트 리스너 제거
+        document.removeEventListener('click', closeAllDropdowns);
     }
+}
+
+// 모든 드롭다운 닫기 함수
+function closeAllDropdowns(e) {
+    // 클릭 이벤트가 드롭다운 내부에서 발생한 경우 무시
+    if (e && e.target && e.target.closest && e.target.closest('.answer-hint')) {
+        return;
+    }
+
+    document.querySelectorAll('.answer-dropdown').forEach(dd => dd.classList.remove('show'));
+    document.querySelectorAll('.answer-hint').forEach(hint => {
+        hint.classList.remove('active');
+        if (hint.closest('.input-group')) {
+            hint.closest('.input-group').classList.remove('active');
+        }
+    });
 }
 
 // 설명 토글 함수
@@ -374,7 +509,7 @@ function checkAnswer() {
         let isCorrect = false;
 
         // 해당 인덱스의 여러 정답 중 하나라도 맞으면 정답으로 처리
-        if (correctAnswers[index]) {
+        if (correctAnswers && correctAnswers[index]) {
             for (let correctAnswer of correctAnswers[index]) {
                 if (userAnswer.toLowerCase() === correctAnswer.toLowerCase()) {
                     isCorrect = true;
