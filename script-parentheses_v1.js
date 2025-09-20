@@ -253,12 +253,9 @@ function displayQuestion() {
                     const answersGroup = currentQuestion.answers[i] || [];
                     const longestAnswerLength = answersGroup.reduce((max, answer) => Math.max(max, answer.length), 0);
                     
-                    // 글자 수에 따라 동적으로 너비 계산 (한글과 같은 가변폭 글꼴 고려)
-                    const baseWidth = 18; // 한 글자당 대략적인 너비
-                    const padding = 24; // 좌우 패딩 값
-                    const minWidth = 150; // 최소 너비
-                    const calculatedWidth = (longestAnswerLength * baseWidth) + padding;
-                    const finalWidth = Math.max(calculatedWidth, minWidth); // 최소 너비 적용
+                    // 글자 수에 따라 동적으로 너비 계산 (폰트 사이즈 고려)
+                    // 1em = 16px, 1.2rem = 19.2px
+                    const dynamicWidth = Math.max(longestAnswerLength * 1.2, 12) + "ch"; // 최소 너비 12ch 설정
 
                     // input-group으로 input과 hint를 묶음
                     questionHTML += `
@@ -267,7 +264,7 @@ function displayQuestion() {
                                    class="answerInput" 
                                    placeholder="정답 ${i + 1} 입력" 
                                    data-index="${i}"
-                                   style="width: ${finalWidth}px;">
+                                   style="width: ${dynamicWidth};">
                             <p class="answer-hint"></p>
                         </div>
                     `;
@@ -327,8 +324,8 @@ function toggleAnswer() {
             hints.forEach((hint, index) => {
                 const answerGroup = currentQuestion.answers[index];
                 if (answerGroup) {
-                    hint.textContent = `정답: ${answerGroup.join(" 또는 ")}`;
-                    hint.style.display = "block";
+                    hint.textContent = `정답: ${answerGroup.join(", ")}`;
+                    hint.style.display = "block"; // <-- 이 부분을 수정했습니다.
                 }
             });
         }

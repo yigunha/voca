@@ -188,54 +188,48 @@ h1 {
 
 /* 핵심 수정 부분 - 줄 맞춤 문제 해결 */
 .question-container {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline; /* 변경: 글자와 입력창의 기준선에 맞춰 정렬 */
-    text-align: left;
+    display: inline-block; /* flex 대신 inline-block 사용 */
+    text-align: left; /* 왼쪽 정렬 */
     font-size: 1.5rem;
     color: #555;
     margin-bottom: 30px;
-    line-height: 1.5; /* 줄 간격 조정 */
+    line-height: 2; /* 줄 간격 조정 */
 }
 
     .question-container span {
         display: inline; /* 인라인으로 표시 */
     }
-
 /* 수정된 부분: input-group으로 input과 hint를 묶음 */
 .input-group {
     display: inline-flex;
     flex-direction: column;
-    align-items: center;
-    vertical-align: middle;
+    align-items: center; 
 }
 
 .answerInput {
     display: inline-block;
-    font-size: 1.5rem; /* 문제 글자 크기와 동일하게 변경 */
+    font-size: 1.2rem;
     padding: 12px;
     border: 2px solid #ddd;
     border-radius: 8px;
-    width: 150px;
+    min-width: 150px;
+    width: auto; /* width를 auto로 변경 */
     text-align: center;
     transition: border-color 0.3s, background-color 0.3s, box-shadow 0.3s;
-    margin: 0; /* 위아래 및 좌우 여백을 모두 0으로 설정 */
+    margin: 0 5px; /* 좌우 여백 추가 */
     vertical-align: middle; /* 수직 정렬 */
-    background-color: #f7f7f7; /* 배경색을 연한 회색으로 변경 */
-    font-weight: bold; /* 글자를 굵은체로 변경 */
 }
 
 /* 정답 힌트 스타일 추가 */
 .answer-hint {
     display: none; /* 기본적으로 숨김 */
-    margin: 5px 5px 0 5px;
+    margin: 0px 5px 0 5px;
     padding: 8px 12px;
     background-color: #e8f5e8;
     color: #28a745;
     font-size: 0.9rem;
     font-weight: bold;
     border-radius: 6px;
-    border-left: 4px solid #28a745;
     box-shadow: 0 2px 4px rgba(40, 167, 69, 0.1);
     max-width: 300px;
     word-wrap: break-word;
@@ -430,9 +424,9 @@ h1 {
     }
 
     .answerInput {
-        width: auto; /* 너비를 자동으로 조정하도록 변경 */
-        max-width: 100%;
-        margin: 0;
+        width: 100%;
+        max-width: 300px;
+        margin: 5px 0;
     }
 
     .button-group {
