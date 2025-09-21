@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>빈칸 채우기 게임</title>
+    <link rel="stylesheet" href="style-parentheses.css">
+</head>
+<body>
+    <div class="game-container">
+        <div class="challenge-header" id="challengeHeader">🏆 도전</div>
+        <div class="file-selector">
+            <div class="selector-row">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="studyCheck" checked>
+                    <label for="studyCheck">Study</label>
+                </div>
+                <div class="dataset-selection">
+                    <label for="dataSelector">문제 세트 선택:</label>
+                    <select id="dataSelector">
+                        <option value="idn-parentheses_4A-05ik.js">4A - 5과</option>
+                        <option value="data2.js">문제 세트 2</option>
+			<option value="data3.js">문제 세트 3</option>
+                    </select>
+                </div>
+                <button id="loadBtn">게임 시작 🚀</button>
+            </div>
+        </div>
+
+        <div id="descriptionArea" class="description-area"></div>
+        
+        <div id="questionContainer" class="question-container"></div> 
+        
+        <div class="button-group">
+            <div class="checkboxes-wrapper">
+                <div class="description-checkbox-group" style="display: none;">
+                    <input type="checkbox" id="descriptionCheck">
+                    <label for="descriptionCheck">설명 보기</label>
+                </div>
+                <div class="answer-checkbox-group" style="display: none;">
+                    <input type="checkbox" id="answerCheck">
+                    <label for="answerCheck">정답 보기</label>
+                </div>
+            </div>
+
+            <button id="submitBtn" style="display: none;">정답 확인</button>
+        </div>
+        
+        <p id="resultMessage" class="message"></p>
+        <div id="gameStats" class="game-stats" style="display: none;"></div>
+    </div>
+
+    <script src="script-parentheses_v1.js"></script>
+</body>
+</html>
