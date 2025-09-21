@@ -12,7 +12,7 @@ body {
 }
 
 .game-container {
-    background-color: #fff;
+    background-color: #333; /* 게임 박스 배경색을 짙은 회색으로 변경했습니다. */
     padding: 40px;
     border-radius: 15px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
@@ -61,7 +61,7 @@ h1 {
 .dataset-selection label {
     font-size: 1.1rem;
     font-weight: bold;
-    color: #333;
+    color: #ffffff; /* '문제 세트 선택' 글자색을 흰색으로 변경했습니다. */
 }
 
 .file-selector label, .file-selector select, .file-selector button {
@@ -75,6 +75,7 @@ h1 {
     align-items: center;
     gap: 8px;
     font-size: 1.1rem;
+    color: #ffffff; /* 'Study' 글자색을 흰색으로 변경했습니다. */
     cursor: pointer;
 }
 
@@ -86,7 +87,7 @@ h1 {
 
 .description-area {
     margin-bottom: 20px;
-    min-height: 50px;
+    /* min-height: 50px; 이 속성을 삭제하여 이미지가 없을 때 높이가 0이 되도록 했습니다. */
 }
 
 .description-area p {
@@ -188,7 +189,7 @@ h1 {
     display: inline-block;
     text-align: left;
     font-size: 1.5rem;
-    color: #555;
+    color: #ffffff; /* 문제 글자색을 흰색으로 변경했습니다. */
     margin-bottom: 30px;
     line-height: 2;
 }
@@ -252,7 +253,7 @@ h1 {
     color: #28a745;
     font-size: 0.9rem;
     font-weight: bold;
-    padding: 8px 12px;
+    padding: 4px 8px;
     border-radius: 6px;
     cursor: pointer;
     white-space: nowrap;
@@ -286,7 +287,7 @@ h1 {
     color: #28a745;
     font-size: 0.9rem;
     font-weight: bold;
-    padding: 8px 12px;
+    padding: 4px 8px;
     cursor: pointer;
     border-bottom: 1px solid #f0f0f0;
     user-select: none;
