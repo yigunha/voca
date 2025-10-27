@@ -22,6 +22,19 @@ const elements = {
 
 // 초기화
 async function initStudentApp() {
+    try {
+        // WASM 앱 초기화 (window.initWongoApp은 HTML에서 로드됨)
+        if (typeof window.initWongoApp !== 'function') {
+            throw new Error('initWongoApp이 로드되지 않았습니다');
+        }
+        
+        app = await window.initWongoApp();
+        console.log('Student app initialized');
+    } catch (error) {
+        console.error('초기화 실패:', error);
+        alert('앱 초기화에 실패했습니다. 페이지를 새로고침해주세요.');
+        return;
+    }
     // DOM 요소 가져오기
     elements.studentNameInput = document.getElementById('studentName');
     elements.studentPasswordInput = document.getElementById('studentPassword');
@@ -84,14 +97,16 @@ async function handleStart() {
         return;
     }
     
-    if (!password || password.length !== 4) {
-        alert('비밀번호 4자리를 입력해주세요.');
+    if (!password) {
+        alert('비밀번호를 입력해주세요.');
         return;
     }
 
     try {
-        // 인증
+        // 인증 (비밀번호는 문자열로 전달)
         await app.authenticateStudent(name, password);
+        
+        console.log('인증 성공:', name);
         
         // 쿠키 저장
         setCookie('studentName', name, 30);
@@ -511,3 +526,13 @@ if (document.readyState === 'loading') {
 } else {
     initStudentApp();
 }
+
+// 전역 함수 노출 (HTML onclick에서 사용)
+window.saveToSupabase = saveToSupabase;
+window.confirmSave = confirmSave;
+window.closeSaveModal = closeSaveModal;
+window.loadFromSupabase = loadFromSupabase;
+window.loadSelectedManuscript = loadSelectedManuscript;
+window.closeLoadModal = closeLoadModal;
+window.logout = logout;
+window.copyToClipboard = copyToClipboard;

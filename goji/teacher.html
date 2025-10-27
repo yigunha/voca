@@ -100,13 +100,46 @@
 
     <!-- WASM 및 스크립트 로드 -->
     <script type="module">
-        import { initWongoApp } from './wongo-bridge.js';
+        // WASM 빌드 확인 및 로드
+        async function loadApp() {
+            try {
+                console.log('Loading wongo-bridge.js...');
+                
+                // wongo-bridge.js 로드 및 전역으로 등록
+                const bridgeModule = await import('./wongo-bridge.js');
+                window.initWongoApp = bridgeModule.initWongoApp;
+                window.WongoApp = bridgeModule.WongoApp;
+                
+                console.log('Bridge loaded, loading teacher-app.js...');
+                
+                // teacher-app.js 로드
+                await import('./teacher-app.js');
+                
+                console.log('All modules loaded successfully');
+            } catch (error) {
+                console.error('로딩 실패:', error);
+                document.body.innerHTML = `
+                    <div style="padding: 50px; text-align: center; color: white; background: #1a1a1a; min-height: 100vh;">
+                        <h1>⚠️ WASM 모듈이 빌드되지 않았습니다</h1>
+                        <p style="margin: 20px 0;">다음 명령어를 실행해주세요:</p>
+                        <pre style="background: #000; padding: 20px; border-radius: 5px; display: inline-block; text-align: left;">
+wasm-pack build --target web --out-dir www/pkg --release
+                        </pre>
+                        <p style="margin-top: 20px; color: #888;">
+                            빌드 후 페이지를 새로고침하세요.
+                        </p>
+                        <details style="margin-top: 20px; max-width: 600px; margin-left: auto; margin-right: auto;">
+                            <summary style="cursor: pointer; color: #4CAF50;">에러 상세 정보</summary>
+                            <pre style="background: #000; padding: 20px; border-radius: 5px; text-align: left; margin-top: 10px; overflow-x: auto;">
+${error.stack || error.message || error}
+                            </pre>
+                        </details>
+                    </div>
+                `;
+            }
+        }
         
-        // 전역으로 노출
-        window.initWongoApp = initWongoApp;
-        
-        // teacher-app.js 로드 후 초기화
-        import('./teacher-app.js');
+        loadApp();
     </script>
 </body>
 </html>

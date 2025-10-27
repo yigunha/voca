@@ -8,6 +8,7 @@ class WongoApp {
         this.currentManuscript = null;
         this.cols = 20;
         this.rows = 20;
+        this.wasm = null;
     }
 
     async init(wasmModule) {
@@ -18,10 +19,12 @@ class WongoApp {
     // ========== 학생 인증 ==========
     async authenticateStudent(name, password) {
         try {
-            const result = await this.wasm.authenticate_student(name, password);
+            // 비밀번호를 문자열로 확실히 변환
+            const passwordStr = String(password);
+            const result = await this.wasm.authenticate_student(name, passwordStr);
             this.currentStudent = {
                 name: result.student_name,
-                number: result.student_number
+                number: result.student_number  // 이제 문자열
             };
             return this.currentStudent;
         } catch (error) {
@@ -208,6 +211,10 @@ async function initWongoApp() {
 
 // Export for global use
 window.initWongoApp = initWongoApp;
+window.WongoApp = WongoApp;
+
+// Export for module use
+export { initWongoApp, WongoApp };
 
 // Export for use in other modules
 if (typeof module !== 'undefined' && module.exports) {
