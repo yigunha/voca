@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>원고지 - 선생님</title>
+    <link rel="stylesheet" href="teacher-style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 로그인 영역 -->
+        <div class="login-area" id="loginArea">
+            <h1>🍎 선생님 로그인</h1>
+            <div class="login-form">
+                <label for="teacherName">선생님 이름:</label>
+                <input type="text" id="teacherName" placeholder="이름을 입력하세요">
+                
+                <label for="teacherPassword">비밀번호:</label>
+                <input type="password" id="teacherPassword" placeholder="비밀번호">
+                
+                <button id="loginBtn" class="login-btn">로그인</button>
+            </div>
+        </div>
+
+        <!-- 선생님 작업 영역 -->
+        <div class="teacher-area" id="teacherArea" style="display:none;">
+            <div class="header">
+                <h1>📝 학생 원고 관리</h1>
+                <div class="teacher-info">
+                    <span id="currentTeacher"></span>
+                    <button onclick="logout()" class="logout-btn">로그아웃</button>
+                </div>
+            </div>
+
+            <!-- 필터 및 검색 -->
+            <div class="filter-section">
+                <label for="classFilter">반 선택:</label>
+                <select id="classFilter">
+                    <option value="all">전체</option>
+                    <option value="3A">3A</option>
+                    <option value="3B">3B</option>
+                    <option value="4A">4A</option>
+                    <option value="4B">4B</option>
+                </select>
+
+                <label for="studentSearch">학생 검색:</label>
+                <input type="text" id="studentSearch" placeholder="학생 이름">
+
+                <button onclick="loadManuscripts()" class="search-btn">검색</button>
+                <button onclick="loadManuscripts()" class="refresh-btn">새로고침</button>
+            </div>
+
+            <!-- 원고 목록 -->
+            <div class="manuscripts-section">
+                <h2>학생 원고 목록</h2>
+                <div id="manuscriptsList" class="manuscripts-list"></div>
+            </div>
+
+            <!-- 원고 수정 모달 -->
+            <div id="editModal" class="modal">
+                <div class="modal-content-large">
+                    <div class="modal-header">
+                        <h2 id="editTitle">원고 수정</h2>
+                        <button onclick="closeEditModal()" class="close-btn">✕</button>
+                    </div>
+                    
+                    <!-- 원고지 컨테이너 -->
+                    <div class="manuscript-wrapper">
+                        <div class="error-line-container">
+                            <svg id="errorLineSvg" class="error-line-svg"></svg>
+                        </div>
+                        <div id="manuscriptPaper" class="manuscript-paper cols-20"></div>
+                    </div>
+
+                    <!-- 안내 정보 -->
+                    <div class="edit-info">
+                        <p>💡 학생 줄: 읽기 전용 (수정 불가)</p>
+                        <p>💡 선생님 줄: 첨삭 내용 입력 (빨간 글씨)</p>
+                        <p>💡 빨간선: Ctrl + 클릭으로 학생 줄에 표시</p>
+                    </div>
+
+                    <!-- 수정 컨트롤 -->
+                    <div class="edit-controls">
+                        <button onclick="saveModifiedText()" class="save-btn">수정 내용 저장</button>
+                        <button onclick="copyStudentToTeacher()" class="copy-btn">학생 원본 복사</button>
+                        <button onclick="clearTeacherPaper()" class="clear-btn">수정본 지우기</button>
+                        <button onclick="clearErrorMarks()" class="clear-error-btn">빨간선 모두 지우기</button>
+                        <button onclick="closeEditModal()" class="cancel-btn">닫기</button>
+                    </div>
+
+                    <!-- 입력창 -->
+                    <div class="input-box">
+                        <span id="prevContent" class="prev-content"></span>
+                        <input type="text" id="inputBox" placeholder="">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- WASM 및 스크립트 로드 -->
+    <script type="module">
+        import { initWongoApp } from './wongo-bridge.js';
+        
+        // 전역으로 노출
+        window.initWongoApp = initWongoApp;
+        
+        // teacher-app.js 로드 후 초기화
+        import('./teacher-app.js');
+    </script>
+</body>
+</html>
