@@ -215,10 +215,6 @@ function makeMutClosure(arg0, arg1, dtor, f) {
     CLOSURE_DTORS.register(real, state, state);
     return real;
 }
-
-function _assertChar(c) {
-    if (typeof(c) === 'number' && (c >= 0x110000 || (c >= 0xD800 && c < 0xE000))) throw new Error(`expected a valid Unicode scalar value, found ${c}`);
-}
 /**
  * @param {string} name
  * @param {string} password
@@ -298,11 +294,11 @@ export function load_manuscript_by_id(id) {
     return ret;
 }
 
-function __wbg_adapter_10(arg0, arg1, arg2) {
+function __wbg_adapter_12(arg0, arg1, arg2) {
     wasm.closure78_externref_shim(arg0, arg1, arg2);
 }
 
-function __wbg_adapter_112(arg0, arg1, arg2, arg3) {
+function __wbg_adapter_113(arg0, arg1, arg2, arg3) {
     wasm.closure95_externref_shim(arg0, arg1, arg2, arg3);
 }
 
@@ -336,6 +332,12 @@ export class ManuscriptEngine {
         return this;
     }
     /**
+     * @param {boolean} is_teacher
+     */
+    set_teacher_mode(is_teacher) {
+        wasm.manuscriptengine_set_teacher_mode(this.__wbg_ptr, is_teacher);
+    }
+    /**
      * @returns {any}
      */
     get_state() {
@@ -343,13 +345,13 @@ export class ManuscriptEngine {
         return ret;
     }
     /**
-     * @param {string} ch
+     * @param {string} input
      * @returns {any}
      */
-    process_char(ch) {
-        const char0 = ch.codePointAt(0);
-        _assertChar(char0);
-        const ret = wasm.manuscriptengine_process_char(this.__wbg_ptr, char0);
+    process_char(input) {
+        const ptr0 = passStringToWasm0(input, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.manuscriptengine_process_char(this.__wbg_ptr, ptr0, len0);
         return ret;
     }
     /**
@@ -639,7 +641,7 @@ function __wbg_get_imports() {
                 const a = state0.a;
                 state0.a = 0;
                 try {
-                    return __wbg_adapter_112(a, state0.b, arg0, arg1);
+                    return __wbg_adapter_113(a, state0.b, arg0, arg1);
                 } finally {
                     state0.a = a;
                 }
@@ -832,7 +834,7 @@ function __wbg_get_imports() {
     };
     imports.wbg.__wbindgen_cast_dcdf18981bb2dbbf = function(arg0, arg1) {
         // Cast intrinsic for `Closure(Closure { dtor_idx: 77, function: Function { arguments: [Externref], shim_idx: 78, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
-        const ret = makeMutClosure(arg0, arg1, 77, __wbg_adapter_10);
+        const ret = makeMutClosure(arg0, arg1, 77, __wbg_adapter_12);
         return ret;
     };
     imports.wbg.__wbindgen_init_externref_table = function() {

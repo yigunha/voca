@@ -27,7 +27,6 @@ const elements = {
 // 초기화
 async function initTeacherApp() {
     try {
-        // WASM 앱 초기화 (window.initWongoApp은 HTML에서 로드됨)
         if (typeof window.initWongoApp !== 'function') {
             throw new Error('initWongoApp이 로드되지 않았습니다');
         }
@@ -39,6 +38,7 @@ async function initTeacherApp() {
         alert('앱 초기화에 실패했습니다. 페이지를 새로고침해주세요.');
         return;
     }
+
     // DOM 요소
     elements.loginArea = document.getElementById('loginArea');
     elements.teacherArea = document.getElementById('teacherArea');
@@ -54,9 +54,6 @@ async function initTeacherApp() {
     elements.inputBox = document.getElementById('inputBox');
     elements.prevContent = document.getElementById('prevContent');
     elements.errorLineSvg = document.getElementById('errorLineSvg');
-
-    // WASM 앱 초기화
-    app = await initWongoApp();
 
     // 이벤트 리스너
     elements.loginBtn.addEventListener('click', handleLogin);
@@ -234,7 +231,6 @@ function initializePaper(state) {
         }
     });
     
-    // 첫 선생님 셀로 이동
     currentPos = state.current_pos;
     updateActiveCell();
     updateErrorDisplay(state);
@@ -606,7 +602,7 @@ if (document.readyState === 'loading') {
     initTeacherApp();
 }
 
-// 전역 함수 노출 (HTML onclick에서 사용)
+// 전역 함수 노출
 window.logout = logout;
 window.loadManuscripts = loadManuscripts;
 window.openEditModal = openEditModal;

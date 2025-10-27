@@ -23,7 +23,6 @@ const elements = {
 // 초기화
 async function initStudentApp() {
     try {
-        // WASM 앱 초기화 (window.initWongoApp은 HTML에서 로드됨)
         if (typeof window.initWongoApp !== 'function') {
             throw new Error('initWongoApp이 로드되지 않았습니다');
         }
@@ -35,6 +34,7 @@ async function initStudentApp() {
         alert('앱 초기화에 실패했습니다. 페이지를 새로고침해주세요.');
         return;
     }
+
     // DOM 요소 가져오기
     elements.studentNameInput = document.getElementById('studentName');
     elements.studentPasswordInput = document.getElementById('studentPassword');
@@ -47,9 +47,6 @@ async function initStudentApp() {
     elements.inputBox = document.getElementById('inputBox');
     elements.prevContent = document.getElementById('prevContent');
     elements.charCount = document.getElementById('charCount');
-
-    // WASM 앱 초기화
-    app = await initWongoApp();
 
     // 쿠키에서 정보 불러오기
     loadFromCookies();
@@ -103,7 +100,6 @@ async function handleStart() {
     }
 
     try {
-        // 인증 (비밀번호는 문자열로 전달)
         await app.authenticateStudent(name, password);
         
         console.log('인증 성공:', name);
@@ -148,13 +144,12 @@ async function handleStart() {
 
 // 원고지 초기화
 function initializePaper(cols, rows) {
-    const state = app.initEngine(cols, rows);
+    // 학생 모드(false)로 엔진 초기화
+    const state = app.initEngine(cols, rows, false);
     
     elements.manuscriptPaper.className = `manuscript-paper cols-${cols}`;
     elements.manuscriptPaper.innerHTML = '';
     allCells = [];
-    
-    const totalCells = cols * rows * 2; // 학생 + 선생님
     
     for (let i = 0; i < state.cells.length; i++) {
         const cell = state.cells[i];
@@ -169,7 +164,8 @@ function initializePaper(cols, rows) {
         // 학생 셀만 클릭 가능
         if (cell.cell_type === 'student') {
             cellDiv.addEventListener('click', (e) => {
-                currentPos = parseInt(e.currentTarget.dataset.index);
+                const clickedIndex = parseInt(e.currentTarget.dataset.index);
+                currentPos = clickedIndex;
                 updateActiveCell();
                 elements.inputBox.focus();
             });
@@ -186,7 +182,7 @@ function initializePaper(cols, rows) {
         }
     });
     
-    currentPos = 0;
+    currentPos = state.current_pos;
     updateActiveCell();
     updateCharCount();
 }
@@ -197,14 +193,17 @@ function updateActiveCell() {
     clearPreview();
     
     if (currentPos >= 0 && currentPos < allCells.length) {
-        allCells[currentPos].classList.add('active');
-        allCells[currentPos].scrollIntoView({
-            behavior: 'smooth',
-            block: 'center',
-            inline: 'center'
-        });
-        setTimeout(updateInputBoxPosition, 300);
-        updatePrevContent();
+        const cellType = allCells[currentPos].dataset.type;
+        if (cellType === 'student') {
+            allCells[currentPos].classList.add('active');
+            allCells[currentPos].scrollIntoView({
+                behavior: 'smooth',
+                block: 'center',
+                inline: 'center'
+            });
+            setTimeout(updateInputBoxPosition, 300);
+            updatePrevContent();
+        }
     }
 }
 
@@ -254,11 +253,14 @@ function showPreview(text) {
 // 이전 내용 표시
 function updatePrevContent() {
     elements.prevContent.innerHTML = '';
-    if (currentPos > 0) {
-        const state = app.getState();
-        const prevCell = state.cells[currentPos - 1];
-        if (prevCell && prevCell.text) {
-            renderCellContent(elements.prevContent, prevCell.text);
+    
+    const state = app.getState();
+    // 이전 학생 셀 찾기
+    for (let i = currentPos - 1; i >= 0; i--) {
+        const cell = state.cells[i];
+        if (cell && cell.cell_type === 'student' && cell.text) {
+            renderCellContent(elements.prevContent, cell.text);
+            break;
         }
     }
 }
@@ -373,7 +375,7 @@ function updateUI(state) {
     currentPos = state.current_pos;
     elements.inputBox.value = state.waiting_char || '';
     
-    // 모든 셀 재렌더링
+    // 모든 학생 셀 재렌더링
     state.cells.forEach((cell, i) => {
         if (cell.cell_type === 'student') {
             renderCell(i);
@@ -480,8 +482,21 @@ async function loadSelectedManuscript(id) {
         const record = await app.loadManuscriptById(id);
         const state = app.getState();
         
+        // 원고지 다시 초기화
+        const cols = record.cols || 20;
+        const rows = cols === 20 ? 20 : (record.content.split('\n').length <= 12 ? 12 : 28);
+        initializePaper(cols, rows);
+        
+        // 컨텐츠 로드
+        app.engine.load_content(
+            record.content,
+            record.modified_text,
+            record.error_text
+        );
+        
         // UI 업데이트
-        updateUI(state);
+        const newState = app.getState();
+        updateUI(newState);
         
         closeLoadModal();
         
@@ -527,7 +542,7 @@ if (document.readyState === 'loading') {
     initStudentApp();
 }
 
-// 전역 함수 노출 (HTML onclick에서 사용)
+// 전역 함수 노출
 window.saveToSupabase = saveToSupabase;
 window.confirmSave = confirmSave;
 window.closeSaveModal = closeSaveModal;

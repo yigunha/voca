@@ -3,8 +3,9 @@
 export const memory: WebAssembly.Memory;
 export const __wbg_manuscriptengine_free: (a: number, b: number) => void;
 export const manuscriptengine_new: (a: number, b: number) => number;
+export const manuscriptengine_set_teacher_mode: (a: number, b: number) => void;
 export const manuscriptengine_get_state: (a: number) => any;
-export const manuscriptengine_process_char: (a: number, b: number) => any;
+export const manuscriptengine_process_char: (a: number, b: number, c: number) => any;
 export const manuscriptengine_backspace: (a: number) => any;
 export const manuscriptengine_move_left: (a: number) => any;
 export const manuscriptengine_move_right: (a: number) => any;
