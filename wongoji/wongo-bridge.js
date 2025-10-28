@@ -45,10 +45,11 @@ class WongoApp {
     }
 
     // ========== 원고지 엔진 초기화 ==========
-    initEngine(cols, rows) {
+    initEngine(cols, rows, isTeacher = false) {
         this.cols = cols;
         this.rows = rows;
         this.engine = new this.wasm.ManuscriptEngine(cols, rows);
+        this.engine.set_teacher_mode(isTeacher);
         return this.engine.get_state();
     }
 
@@ -73,9 +74,9 @@ class WongoApp {
         return this.engine.move_right();
     }
 
-    setPosition(targetPos) {
+    flushWaitingChar() {
         if (!this.engine) return null;
-        return this.engine.setPosition(targetPos);
+        return this.engine.flush_waiting_char();
     }
 
     getState() {
@@ -162,11 +163,12 @@ class WongoApp {
             const record = await this.wasm.load_manuscript_by_id(id);
             this.currentManuscript = record;
             
-            // 엔진 초기화
+            // 엔진 초기화 (선생님 모드 여부는 currentTeacher로 판단)
             const cols = record.cols || 20;
             const rows = cols === 20 ? 20 : (record.content.split('\n').length <= 12 ? 12 : 28);
+            const isTeacher = this.currentTeacher !== null;
             
-            this.initEngine(cols, rows);
+            this.initEngine(cols, rows, isTeacher);
             
             // 컨텐츠 로드
             this.engine.load_content(
@@ -196,7 +198,6 @@ let wongoApp = null;
 // WASM 초기화 함수
 async function initWongoApp() {
     try {
-        // WASM 모듈 로드 (wasm-pack으로 빌드한 결과)
         const wasm = await import('./pkg/wongo_manuscript.js');
         await wasm.default();
         
@@ -208,7 +209,7 @@ async function initWongoApp() {
     } catch (error) {
         console.error('Failed to initialize WASM:', error);
         console.error('Make sure you have built the WASM module:');
-        console.error('  wasm-pack build --target web --out-dir wongoji/pkg --release');
+        console.error('  wasm-pack build --target web --out-dir wongoji/pkg');
         throw error;
     }
 }

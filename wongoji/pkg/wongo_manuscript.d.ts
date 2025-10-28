@@ -12,6 +12,7 @@ export class ManuscriptEngine {
   set_teacher_mode(is_teacher: boolean): void;
   get_state(): any;
   process_char(input: string): any;
+  flush_waiting_char(): any;
   backspace(): any;
   move_left(): any;
   move_right(): any;
@@ -34,6 +35,7 @@ export interface InitOutput {
   readonly manuscriptengine_set_teacher_mode: (a: number, b: number) => void;
   readonly manuscriptengine_get_state: (a: number) => any;
   readonly manuscriptengine_process_char: (a: number, b: number, c: number) => any;
+  readonly manuscriptengine_flush_waiting_char: (a: number) => any;
   readonly manuscriptengine_backspace: (a: number) => any;
   readonly manuscriptengine_move_left: (a: number) => any;
   readonly manuscriptengine_move_right: (a: number) => any;

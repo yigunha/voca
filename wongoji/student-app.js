@@ -4,6 +4,7 @@ let app = null;
 let currentPos = 0;
 let allCells = [];
 let isComposing = false;
+let showTeacherMode = false; // 선생님 수정본 보기 모드
 
 // DOM 요소
 const elements = {
@@ -18,6 +19,7 @@ const elements = {
     inputBox: null,
     prevContent: null,
     charCount: null,
+    teacherToggle: null,
 };
 
 // 초기화
@@ -47,6 +49,7 @@ async function initStudentApp() {
     elements.inputBox = document.getElementById('inputBox');
     elements.prevContent = document.getElementById('prevContent');
     elements.charCount = document.getElementById('charCount');
+    elements.teacherToggle = document.getElementById('teacherToggle');
 
     // 쿠키에서 정보 불러오기
     loadFromCookies();
@@ -58,6 +61,11 @@ async function initStudentApp() {
     elements.inputBox.addEventListener('compositionend', handleCompositionEnd);
     elements.inputBox.addEventListener('input', handleInput);
     elements.inputBox.addEventListener('keydown', handleKeyDown);
+    
+    if (elements.teacherToggle) {
+        elements.teacherToggle.addEventListener('change', handleTeacherToggle);
+    }
+    
     window.addEventListener('resize', updateInputBoxPosition);
     window.addEventListener('scroll', updateInputBoxPosition);
 }
@@ -145,20 +153,19 @@ async function handleStart() {
 // 원고지 초기화
 function initializePaper(cols, rows) {
     // 학생 모드(false)로 엔진 초기화
-    const state = app.initEngine(cols, rows);
-    
-    // 학생 모드 명시적 설정
-    app.engine.set_teacher_mode(false);
+    const state = app.initEngine(cols, rows, false);
     
     elements.manuscriptPaper.className = `manuscript-paper cols-${cols}`;
     elements.manuscriptPaper.innerHTML = '';
     allCells = [];
+    showTeacherMode = false;
     
     for (let i = 0; i < state.cells.length; i++) {
         const cell = state.cells[i];
         const cellDiv = document.createElement('div');
         cellDiv.className = cell.cell_type === 'student' ? 'cell student-cell' : 'cell teacher-cell';
         cellDiv.dataset.index = i;
+        cellDiv.dataset.type = cell.cell_type;
         
         const content = document.createElement('div');
         content.className = 'cell-content';
@@ -166,14 +173,23 @@ function initializePaper(cols, rows) {
         
         // 학생 셀만 클릭 가능
         if (cell.cell_type === 'student') {
-            cellDiv.addEventListener('click', (e) => {
-                const clickedIndex = parseInt(e.currentTarget.dataset.index);
-                
-                // 엔진의 위치를 직접 설정
-                const newState = app.setPosition(clickedIndex);
-                currentPos = newState.current_pos;
-                updateActiveCell();
-                elements.inputBox.focus();
+            cellDiv.addEventListener('click', function() {
+                if (!showTeacherMode) {
+                    const clickedIndex = parseInt(this.dataset.index);
+                    
+                    // UI 위치 업데이트
+                    currentPos = clickedIndex;
+                    
+                    // 엔진 위치를 강제로 동기화
+                    syncEnginePosition(clickedIndex);
+                    
+                    // 대기 문자 초기화
+                    const state = app.getState();
+                    elements.inputBox.value = '';
+                    
+                    updateActiveCell();
+                    elements.inputBox.focus();
+                }
             });
         }
         
@@ -193,16 +209,45 @@ function initializePaper(cols, rows) {
     updateCharCount();
 }
 
+// 선생님 수정본 토글
+function handleTeacherToggle() {
+    showTeacherMode = elements.teacherToggle.checked;
+    
+    const state = app.getState();
+    
+    state.cells.forEach((cell, i) => {
+        if (showTeacherMode) {
+            // 선생님 셀 보이기, 학생 셀 숨기기
+            if (cell.cell_type === 'teacher') {
+                allCells[i].style.display = 'block';
+            } else {
+                allCells[i].style.display = 'none';
+            }
+        } else {
+            // 학생 셀 보이기, 선생님 셀 숨기기
+            if (cell.cell_type === 'student') {
+                allCells[i].style.display = 'block';
+            } else {
+                allCells[i].style.display = 'none';
+            }
+        }
+    });
+    
+    // 에러 마크 표시/숨김
+    updateErrorDisplay(state);
+    
+    // active 클래스 제거
+    allCells.forEach(cell => cell.classList.remove('active'));
+}
+
 // 활성 셀 업데이트
 function updateActiveCell() {
     allCells.forEach(cell => cell.classList.remove('active'));
     clearPreview();
     
     if (currentPos >= 0 && currentPos < allCells.length) {
-        const state = app.getState();
-        const cell = state.cells[currentPos];
-        
-        if (cell.cell_type === 'student') {
+        const cellType = allCells[currentPos].dataset.type;
+        if (cellType === 'student' && !showTeacherMode) {
             allCells[currentPos].classList.add('active');
             allCells[currentPos].scrollIntoView({
                 behavior: 'smooth',
@@ -218,8 +263,11 @@ function updateActiveCell() {
 // 입력창 위치 업데이트
 function updateInputBoxPosition() {
     if (currentPos < 0 || currentPos >= allCells.length) return;
+    if (showTeacherMode) return; // 선생님 모드에서는 입력창 숨김
     
     const activeCell = allCells[currentPos];
+    if (!activeCell || activeCell.style.display === 'none') return;
+    
     const rect = activeCell.getBoundingClientRect();
     const inputBoxElement = document.querySelector('.input-box');
     const inputBoxHeight = inputBoxElement.offsetHeight;
@@ -312,6 +360,30 @@ function updateCharCount() {
     elements.charCount.textContent = count;
 }
 
+// 에러 표시 업데이트
+function updateErrorDisplay(state) {
+    if (!state.error_marks) return;
+    
+    // 모든 학생 셀의 에러 표시 제거
+    allCells.forEach((cell, i) => {
+        if (cell.dataset.type === 'student') {
+            cell.classList.remove('has-error');
+        }
+    });
+    
+    // 에러가 있고 선생님 모드가 아닐 때만 표시
+    if (!showTeacherMode) {
+        state.error_marks.forEach(mark => {
+            for (let col = mark.start_col; col <= mark.end_col; col++) {
+                const cellIndex = mark.row * state.cols * 2 + col;
+                if (cellIndex < allCells.length && allCells[cellIndex].dataset.type === 'student') {
+                    allCells[cellIndex].classList.add('has-error');
+                }
+            }
+        });
+    }
+}
+
 // 입력 이벤트
 function handleCompositionStart() {
     isComposing = true;
@@ -330,6 +402,12 @@ function handleCompositionEnd(e) {
     isComposing = false;
     clearPreview();
     if (e.data) {
+        // 엔진과 UI 위치 동기화 확인
+        const beforeState = app.getState();
+        if (beforeState.current_pos !== currentPos) {
+            syncEnginePosition(currentPos);
+        }
+        
         const state = app.processChar(e.data);
         updateUI(state);
     }
@@ -337,20 +415,37 @@ function handleCompositionEnd(e) {
 
 function handleInput(e) {
     if (isComposing) return;
+    if (showTeacherMode) return;
     
     const value = e.target.value;
     if (value.length > 0) {
-        const state = app.getState();
         const newChar = value.charAt(value.length - 1);
+        
+        // 디버깅 로그
+        console.log('Input char:', newChar, 'Code:', newChar.charCodeAt(0));
+        
+        // 엔진과 UI 위치 동기화 확인
+        const beforeState = app.getState();
+        console.log('Before - Engine pos:', beforeState.current_pos, 'UI pos:', currentPos, 'Waiting:', beforeState.waiting_char);
+        
+        if (beforeState.current_pos !== currentPos) {
+            syncEnginePosition(currentPos);
+        }
+        
+        const state = app.getState();
         const combined = state.waiting_char ? state.waiting_char + newChar : newChar;
         showPreview(combined);
         
         const newState = app.processChar(newChar);
+        console.log('After - Engine pos:', newState.current_pos, 'Waiting:', newState.waiting_char);
+        
         updateUI(newState);
     }
 }
 
 function handleKeyDown(e) {
+    if (showTeacherMode) return; // 선생님 모드에서는 키 입력 불가
+    
     if (e.key === 'Backspace') {
         if (elements.inputBox.value === '') {
             e.preventDefault();
@@ -369,10 +464,91 @@ function handleKeyDown(e) {
         e.preventDefault();
         const state = app.moveRight();
         updateUI(state);
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        moveUp();
+    } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        moveDown();
     } else if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
-        const state = app.moveRight();
-        updateUI(state);
+        
+        // 대기 중인 문자가 있으면 먼저 입력하고 다음 칸으로
+        const beforeState = app.getState();
+        if (beforeState.waiting_char) {
+            console.log('Flushing waiting char:', beforeState.waiting_char);
+            const state = app.flushWaitingChar();
+            updateUI(state);
+        } else {
+            // 대기 문자가 없으면 그냥 다음 칸으로
+            const state = app.moveRight();
+            updateUI(state);
+        }
+    }
+}
+
+// 위로 이동
+function moveUp() {
+    const state = app.getState();
+    const cols = state.cols * 2; // 학생 + 선생님 셀
+    
+    // 현재 위치에서 한 줄 위로
+    const newPos = currentPos - cols;
+    
+    if (newPos >= 0 && state.cells[newPos] && state.cells[newPos].cell_type === 'student') {
+        currentPos = newPos;
+        syncEnginePosition(newPos);
+        updateActiveCell();
+    }
+}
+
+// 아래로 이동
+function moveDown() {
+    const state = app.getState();
+    const cols = state.cols * 2; // 학생 + 선생님 셀
+    
+    // 현재 위치에서 한 줄 아래로
+    const newPos = currentPos + cols;
+    
+    if (newPos < state.cells.length && state.cells[newPos] && state.cells[newPos].cell_type === 'student') {
+        currentPos = newPos;
+        syncEnginePosition(newPos);
+        updateActiveCell();
+    }
+}
+
+// 엔진 위치를 UI 위치로 강제 동기화
+function syncEnginePosition(targetPos) {
+    const state = app.getState();
+    
+    // 대기 문자가 있으면 초기화
+    if (state.waiting_char) {
+        state.waiting_char = '';
+        elements.inputBox.value = '';
+    }
+    
+    // 현재 엔진 위치
+    let enginePos = state.current_pos;
+    
+    // 목표 위치까지 이동
+    let attempts = 0;
+    const maxAttempts = 1000; // 무한 루프 방지
+    
+    while (enginePos !== targetPos && attempts < maxAttempts) {
+        if (enginePos < targetPos) {
+            const newState = app.moveRight();
+            enginePos = newState.current_pos;
+        } else {
+            const newState = app.moveLeft();
+            enginePos = newState.current_pos;
+        }
+        attempts++;
+    }
+    
+    // 최종 상태 확인
+    const finalState = app.getState();
+    if (finalState.current_pos !== targetPos) {
+        console.warn('Position sync failed:', finalState.current_pos, 'vs', targetPos);
     }
 }
 
@@ -381,7 +557,12 @@ function updateUI(state) {
     if (!state) return;
     
     currentPos = state.current_pos;
-    elements.inputBox.value = state.waiting_char || '';
+    
+    // 입력창의 값은 대기 문자만 표시
+    const waitingChar = state.waiting_char || '';
+    if (elements.inputBox.value !== waitingChar) {
+        elements.inputBox.value = waitingChar;
+    }
     
     // 모든 학생 셀 재렌더링
     state.cells.forEach((cell, i) => {
@@ -392,6 +573,7 @@ function updateUI(state) {
     
     updateActiveCell();
     updateCharCount();
+    updateErrorDisplay(state);
 }
 
 // 저장
@@ -505,6 +687,16 @@ async function loadSelectedManuscript(id) {
         // UI 업데이트
         const newState = app.getState();
         updateUI(newState);
+        
+        // 체크박스 활성화 (수정본이나 에러가 있을 때)
+        if (elements.teacherToggle) {
+            if (record.modified_text || record.error_text) {
+                elements.teacherToggle.disabled = false;
+            } else {
+                elements.teacherToggle.disabled = true;
+                elements.teacherToggle.checked = false;
+            }
+        }
         
         closeLoadModal();
         

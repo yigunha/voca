@@ -199,9 +199,6 @@ function initializePaper(state) {
     const cols = state.cols;
     const rows = state.rows;
     
-    // 선생님 모드 명시적 설정
-    app.engine.set_teacher_mode(true);
-    
     elements.manuscriptPaper.className = `manuscript-paper cols-${cols}`;
     elements.manuscriptPaper.innerHTML = '';
     allCells = [];
@@ -230,15 +227,13 @@ function initializePaper(state) {
         
         // 셀 렌더링
         if (cell.text) {
-            renderCell(i, cell.text, cell.cell_type);
+            renderCell(i, cell.text);
         }
     });
     
-    // 엔진 상태 다시 가져오기 (선생님 모드 적용 후)
-    const updatedState = app.getState();
-    currentPos = updatedState.current_pos;
+    currentPos = state.current_pos;
     updateActiveCell();
-    updateErrorDisplay(updatedState);
+    updateErrorDisplay(state);
 }
 
 // 학생 셀 클릭 (Ctrl+클릭으로 빨간선)
@@ -259,8 +254,7 @@ function handleStudentCellClick(e) {
 // 선생님 셀 클릭
 function handleTeacherCellClick(e) {
     const cellIndex = parseInt(this.dataset.index);
-    const newState = app.setPosition(cellIndex);
-    currentPos = newState.current_pos;
+    currentPos = cellIndex;
     updateActiveCell();
     elements.inputBox.focus();
 }
@@ -350,10 +344,11 @@ function updatePrevContent() {
 }
 
 // 셀 렌더링
-function renderCell(index, text, cellType) {
+function renderCell(index, text) {
     if (index < 0 || index >= allCells.length) return;
     
     const content = allCells[index].querySelector('.cell-content');
+    const cellType = allCells[index].dataset.type;
     const isTeacher = cellType === 'teacher';
     
     renderCellContent(content, text, isTeacher);
@@ -453,7 +448,7 @@ function updateUI(state) {
     // 변경된 셀만 재렌더링
     state.cells.forEach((cell, i) => {
         if (cell.text) {
-            renderCell(i, cell.text, cell.cell_type);
+            renderCell(i, cell.text);
         } else {
             const content = allCells[i].querySelector('.cell-content');
             content.innerHTML = '';
