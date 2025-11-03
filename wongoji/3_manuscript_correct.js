@@ -68,6 +68,10 @@ function initializePaper() {
     setupInputEvents();
     
     currentPos = 0;
+    currentLayer = 'student';
+    
+    // 초기 레이어 설정
+    switchLayer('student');
 }
 
 // 셀 렌더링
@@ -201,11 +205,19 @@ function loadManuscriptText(text, savedCols, modifiedText, errorText, memo) {
         loadErrorText(errorText);
     }
     
-    // 메모 표시
+    // 메모 표시 및 레이어 자동 전환
     if (memo && memo.trim()) {
         showTeacherMemo(memo);
+        currentLayer = 'teacher';
+        switchLayer('teacher');
+    } else if (modifiedText || errorText) {
+        hideTeacherMemo();
+        currentLayer = 'teacher';
+        switchLayer('teacher');
     } else {
         hideTeacherMemo();
+        currentLayer = 'student';
+        switchLayer('student');
     }
     
     currentPos = 0;
@@ -309,6 +321,107 @@ function hideTeacherMemo() {
     }
 }
 
+// ============================================
+// 레이어 전환 및 메모 패널 관련 함수
+// ============================================
+
+// 레이어 전환 함수
+function switchLayer(layer) {
+    currentLayer = layer;
+    
+    if (layer === 'student') {
+        // 학생 레이어만 표시
+        for (var i = 0; i < studentCells.length; i++) {
+            studentCells[i].style.display = '';
+        }
+        for (var i = 0; i < teacherCells.length; i++) {
+            teacherCells[i].style.display = 'none';
+        }
+        
+        var memoPanel = document.getElementById('memoSidePanel');
+        if (memoPanel) {
+            memoPanel.style.display = 'none';
+        }
+    } else if (layer === 'teacher') {
+        // 학생 + 선생님 레이어 모두 표시
+        for (var i = 0; i < studentCells.length; i++) {
+            studentCells[i].style.display = '';
+        }
+        for (var i = 0; i < teacherCells.length; i++) {
+            teacherCells[i].style.display = '';
+        }
+        
+        var memoPanel = document.getElementById('memoSidePanel');
+        if (memoPanel) {
+            memoPanel.style.display = 'block';
+            setTimeout(function() {
+                adjustMemoPanelPosition();
+            }, 100);
+        }
+    }
+    
+    if (inputHandler) {
+        updateActiveCell();
+    }
+    drawErrorLines();
+}
+
+// 메모 패널 위치 및 높이 조정
+function adjustMemoPanelPosition() {
+    var memoPanel = document.getElementById('memoSidePanel');
+    var manuscriptPaper = document.getElementById('manuscriptPaper');
+    var manuscriptWrapper = document.querySelector('.manuscript-wrapper');
+    
+    if (!memoPanel || !manuscriptPaper || !manuscriptWrapper) return;
+    if (memoPanel.style.display === 'none') return;
+    
+    // 원고지의 실제 위치 계산
+    var wrapperRect = manuscriptWrapper.getBoundingClientRect();
+    var containerRect = document.querySelector('.manuscript-memo-container').getBoundingClientRect();
+    
+    // 메모 패널을 원고지 바로 오른쪽에 배치
+    var leftPosition = wrapperRect.right - containerRect.left + 20; // 20px gap
+    memoPanel.style.left = leftPosition + 'px';
+    
+    // 높이를 원고지와 동일하게
+    var manuscriptHeight = manuscriptPaper.offsetHeight + 20; // padding 포함
+    memoPanel.style.height = manuscriptHeight + 'px';
+    
+    // 메모 컨텐츠 높이 조정 (헤더 48px 제외)
+    var memoContent = document.getElementById('memoSideContent');
+    if (memoContent) {
+        memoContent.style.height = (manuscriptHeight - 52) + 'px';
+    }
+}
+
+// Tab 키 이벤트 리스너
+document.addEventListener('keydown', function(e) {
+    if (!workArea.classList.contains('show')) return;
+    
+    if (e.key === 'Tab') {
+        e.preventDefault();
+        if (currentLayer === 'student') {
+            switchLayer('teacher');
+        } else {
+            switchLayer('student');
+        }
+    }
+});
+
+// 윈도우 리사이즈 시 메모 패널 재조정
+window.addEventListener('resize', function() {
+    if (currentLayer === 'teacher') {
+        adjustMemoPanelPosition();
+        drawErrorLines();
+    }
+});
+
+window.addEventListener('scroll', function() {
+    if (currentLayer === 'teacher') {
+        drawErrorLines();
+    }
+});
+
 // 전역으로 노출
 window.initializePaper = initializePaper;
 window.renderCell = renderCell;
@@ -316,3 +429,5 @@ window.handleCellClick = handleCellClick;
 window.clearSelection = clearSelection;
 window.getManuscriptText = getManuscriptText;
 window.loadManuscriptText = loadManuscriptText;
+window.switchLayer = switchLayer;
+window.adjustMemoPanelPosition = adjustMemoPanelPosition;
