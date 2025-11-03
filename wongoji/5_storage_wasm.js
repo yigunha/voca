@@ -1,27 +1,43 @@
 let wasmModule = null;
 
-// WASM 초기화
+// WASM 초기화 - GitHub Pages 경로 수정
 async function initWasm() {
     if (wasmModule) return;
     
-    const { default: init, authenticate_student, save_manuscript, 
-            load_manuscript_list, load_existing_files, update_manuscript, 
-            check_manuscript_exists, InputHandler } = await import('./wongoji_wasm.js');
-    
-    await init();
-    
-    wasmModule = {
-        authenticate_student,
-        save_manuscript,
-        load_manuscript_list,
-        load_existing_files,
-        update_manuscript,
-        check_manuscript_exists,
-        InputHandler
-    };
-    
-    // 전역으로 노출
-    window.wasmModule = wasmModule;
+    try {
+        // GitHub Pages 경로 확인
+        const basePath = window.location.pathname.includes('/voca/') 
+            ? '/voca/wongoji/' 
+            : './wongoji/';
+        
+        // 동적 import 사용
+        const wasmModulePath = `${basePath}wongoji_wasm.js`;
+        console.log('Loading WASM from:', wasmModulePath);
+        
+        const { default: init, authenticate_student, save_manuscript, 
+                load_manuscript_list, load_existing_files, update_manuscript, 
+                check_manuscript_exists, InputHandler } = await import(wasmModulePath);
+        
+        // WASM 초기화 (wasm 파일 경로 명시)
+        await init(`${basePath}wongoji_wasm_bg.wasm`);
+        
+        wasmModule = {
+            authenticate_student,
+            save_manuscript,
+            load_manuscript_list,
+            load_existing_files,
+            update_manuscript,
+            check_manuscript_exists,
+            InputHandler
+        };
+        
+        // 전역으로 노출
+        window.wasmModule = wasmModule;
+        console.log('WASM module initialized successfully');
+    } catch (e) {
+        console.error('WASM initialization error details:', e);
+        throw e;
+    }
 }
 
 // 페이지 로드 시 WASM 초기화
@@ -31,7 +47,7 @@ window.addEventListener('load', async function() {
         console.log('WASM module initialized');
     } catch (e) {
         console.error('WASM initialization failed:', e);
-        alert('시스템 초기화 실패. 페이지를 새로고침해주세요.');
+        alert('시스템 초기화 실패. 페이지를 새로고침해주세요.\n에러: ' + e.message);
     }
 });
 
