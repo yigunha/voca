@@ -1,8 +1,8 @@
-// WASM 입력 핸들러 사용
+// WASM ìž…ë ¥ í•¸ë"¤ëŸ¬ ì‚¬ìš©
 let inputHandler = null;
 let compositionInput = null;
 
-// 입력 핸들러 초기화
+// ìž…ë ¥ í•¸ë"¤ëŸ¬ ì´ˆê¸°í™"
 async function initInputHandler() {
     if (!window.wasmModule || !window.wasmModule.InputHandler) {
         console.error('WASM module not loaded');
@@ -19,7 +19,7 @@ async function initInputHandler() {
     }
 }
 
-// 활성 셀 업데이트
+// í™œì„± ì…€ ì—…ë°ì´íŠ¸
 function updateActiveCell() {
     if (!inputHandler) return;
     
@@ -36,7 +36,7 @@ function updateActiveCell() {
             compositionInput.style.top = activeCell.offsetTop + 'px';
             compositionInput.style.left = activeCell.offsetLeft + 'px';
             
-            // 포커스 강제 복구
+            // í¬ì»¤ìŠ¤ ê°•ì œ ë³µêµ¬
             setTimeout(function() {
                 if (document.activeElement !== compositionInput) {
                     compositionInput.focus();
@@ -64,7 +64,7 @@ function updateActiveCell() {
     currentPos = pos;
 }
 
-// 입력 결과 처리
+// ìž…ë ¥ ê²°ê³¼ ì²˜ë¦¬
 function handleInputResults(results) {
     if (!results || !Array.isArray(results)) {
         if (results && typeof results === 'object') {
@@ -97,7 +97,7 @@ function handleInputResults(results) {
                 break;
                 
             case 'buffer':
-                // ✅ 버퍼1만 현재 칸에 임시 표시
+                // âœ… ë²„í¼1ë§Œ í˜„ìž¬ ì¹¸ì— ìž„ì‹œ í'œì‹œ
                 studentData[result.pos] = result.buffer1;
                 var cell = studentCells[result.pos];
                 var content = cell.querySelector('.cell-content');
@@ -119,7 +119,7 @@ function handleInputResults(results) {
                 break;
                 
             case 'clear_and_move':
-                // ✅ 현재 칸 비우기
+                // âœ… í˜„ìž¬ ì¹¸ ë¹„ìš°ê¸°
                 studentData[result.pos] = '';
                 var cell = studentCells[result.pos];
                 var content = cell.querySelector('.cell-content');
@@ -146,7 +146,7 @@ function handleInputResults(results) {
     updateActiveCell();
 }
 
-// 이벤트 설정
+// ì´ë²¤íŠ¸ ì„¤ì •
 function setupInputEvents() {
     compositionInput = document.getElementById('compositionInput');
     if (!compositionInput) {
@@ -154,7 +154,7 @@ function setupInputEvents() {
         return;
     }
     
-    // 한글 조합 시작
+    // í•œê¸€ ì¡°í•© ì‹œìž'
     compositionInput.addEventListener('compositionstart', function() {
         if (!inputHandler) return;
         
@@ -168,32 +168,32 @@ function setupInputEvents() {
         }
     });
     
-    // ✅ 한글 조합 업데이트 - 두 번째 글자 감지!
+    // âœ… í•œê¸€ ì¡°í•© ì—…ë°ì´íŠ¸ - ë' ë²ˆì§¸ ê¸€ìž ê°ì§€!
     compositionInput.addEventListener('compositionupdate', function(e) {
         if (!inputHandler) return;
         
         var text = e.data || '';
         
-        // ✅ 길이가 2 이상 = 첫 글자 확정, 두 번째 글자 시작
+        // âœ… ê¸¸ì´ê°€ 2 ì´ìƒ = ì²« ê¸€ìž í™•ì •, ë' ë²ˆì§¸ ê¸€ìž ì‹œìž'
         if (text.length >= 2) {
             var firstChar = text[0];
             var remaining = text.slice(1);
             
-            // 첫 글자 확정
+            // ì²« ê¸€ìž í™•ì •
             var result1 = inputHandler.finalize_first_char(firstChar);
             handleInputResults(result1);
             
-            // 두 번째 글자 임시 표시
+            // ë' ë²ˆì§¸ ê¸€ìž ìž„ì‹œ í'œì‹œ
             var result2 = inputHandler.update_composition(remaining);
             handleInputResults(result2);
         } else {
-            // 한 글자 조합 중
+            // í•œ ê¸€ìž ì¡°í•© ì¤'
             var result = inputHandler.update_composition(text);
             handleInputResults(result);
         }
     });
     
-    // 한글 조합 완료
+    // í•œê¸€ ì¡°í•© ì™„ë£Œ
     compositionInput.addEventListener('compositionend', function(e) {
         if (!inputHandler) return;
         
@@ -207,13 +207,13 @@ function setupInputEvents() {
         if (text) {
             compositionInput.value = '';
             
-            // ✅ 길이 체크: 이미 처리된 경우와 마지막 글자만 처리
+            // âœ… ê¸¸ì´ ì²´í¬: ì´ë¯¸ ì²˜ë¦¬ëœ ê²½ìš°ì™€ ë§ˆì§€ë§‰ ê¸€ìžë§Œ ì²˜ë¦¬
             if (text.length === 1) {
-                // 단일 글자만 입력된 경우
+                // ë‹¨ì¼ ê¸€ìžë§Œ ìž…ë ¥ëœ ê²½ìš°
                 var result = inputHandler.finalize_composition(text);
                 handleInputResults(result);
             } else {
-                // 여러 글자: 마지막 글자만 확정 (나머지는 update에서 처리됨)
+                // ì—¬ëŸ¬ ê¸€ìž: ë§ˆì§€ë§‰ ê¸€ìžë§Œ í™•ì • (ë‚˜ë¨¸ì§€ëŠ" updateì—ì„œ ì²˜ë¦¬ë¨)
                 var lastChar = text[text.length - 1];
                 var result = inputHandler.finalize_composition(lastChar);
                 handleInputResults(result);
@@ -221,7 +221,7 @@ function setupInputEvents() {
         }
     });
     
-    // 일반 입력
+    // ì¼ë°˜ ìž…ë ¥
     compositionInput.addEventListener('input', function(e) {
         if (!inputHandler || inputHandler.is_composing()) return;
         
@@ -233,7 +233,7 @@ function setupInputEvents() {
         }
     });
     
-    // 키보드 이벤트
+    // í‚¤ë³´ë"œ ì´ë²¤íŠ¸
     compositionInput.addEventListener('keydown', function(e) {
         if (!inputHandler) return;
         if (e.isComposing) return;
@@ -350,7 +350,7 @@ function setupInputEvents() {
         }
     });
     
-    // 포커스 유지 (Alt 키 등으로 인한 포커스 손실 방지)
+    // í¬ì»¤ìŠ¤ ìœ ì§€ (Alt í‚¤ ë"±ìœ¼ë¡œ ì¸í•œ í¬ì»¤ìŠ¤ ì†ì‹¤ ë°©ì§€)
     compositionInput.addEventListener('blur', function() {
         setTimeout(function() {
             if (workArea && workArea.classList.contains('show')) {
@@ -359,7 +359,7 @@ function setupInputEvents() {
         }, 10);
     });
     
-    // 전역 클릭 시 포커스 복구
+    // ì „ì—­ í´ë¦­ ì‹œ í¬ì»¤ìŠ¤ ë³µêµ¬
     document.addEventListener('click', function(e) {
         if (workArea && workArea.classList.contains('show')) {
             if (!e.target.closest('.modal') && !e.target.closest('button')) {
@@ -371,7 +371,7 @@ function setupInputEvents() {
     });
 }
 
-// 원고지 초기화 시 입력 핸들러도 초기화
+// ì›ê³ ì§€ ì´ˆê¸°í™" ì‹œ ìž…ë ¥ í•¸ë"¤ëŸ¬ë„ ì´ˆê¸°í™"
 async function initializePaperWithInput() {
     await initInputHandler();
     if (inputHandler) {
@@ -380,7 +380,7 @@ async function initializePaperWithInput() {
     }
 }
 
-// 전역으로 노출
+// ì „ì—­ìœ¼ë¡œ ë…¸ì¶œ
 window.setupInputEvents = setupInputEvents;
 window.updateActiveCell = updateActiveCell;
 window.initializePaperWithInput = initializePaperWithInput;
