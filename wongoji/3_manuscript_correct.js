@@ -193,26 +193,31 @@ function handleCellClick(idx, e) {
     if (window.inputHandler && window.inputHandler.is_composing()) {
         var compositionInput = document.getElementById('compositionInput');
         
-        // 플래그 설정하여 compositionend 이벤트 중복 방지
-        if (window.isManualFinalize !== undefined) {
-            window.isManualFinalize = true;
-        }
+        // ★★★ 핵심: 현재 위치 저장 ★★★
+        var savedPos = window.inputHandler.get_position();
         
+        // 플래그 설정하여 compositionend 이벤트 중복 방지
+        window.isManualFinalize = true;
+        
+        // 조합 종료 신호만 보내고 입력기 완전 초기화
         window.inputHandler.end_composition();
         
         if (compositionInput && compositionInput.value) {
+            // ★★★ 위치를 다시 원래대로 되돌림 ★★★
+            window.inputHandler.set_position(savedPos);
+            
+            // 이제 finalize (여기서는 위치 이동 안 함)
             var result = window.inputHandler.finalize_composition(compositionInput.value);
             handleInputResults(result);
+            
             compositionInput.value = '';
             compositionInput.blur();  // 포커스 제거로 조합 완전 종료
-            
-            // 다음 틱에서 포커스 복구 (브라우저가 이벤트 처리 완료할 시간)
-            setTimeout(function() {
-                if (window.isManualFinalize !== undefined) {
-                    window.isManualFinalize = false;
-                }
-            }, 50);
         }
+        
+        // 브라우저 이벤트 처리 시간 대기
+        setTimeout(function() {
+            window.isManualFinalize = false;
+        }, 50);
     }
     
     // 이전 위치의 다음 칸 temp 제거
