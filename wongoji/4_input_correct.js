@@ -1,6 +1,7 @@
-// WASM ìž…ë ¥ í•¸ë"¤ëŸ¬ ì‚¬ìš©
+// WASM 입력 핸들러 사용
 let inputHandler = null;
 let compositionInput = null;
+let lastCompositionLength = 0;
 
 // ìž…ë ¥ í•¸ë"¤ëŸ¬ ì´ˆê¸°í™"
 async function initInputHandler() {
@@ -154,10 +155,12 @@ function setupInputEvents() {
         return;
     }
     
-    // í•œê¸€ ì¡°í•© ì‹œìž'
+    // 한글 조합 시작
     compositionInput.addEventListener('compositionstart', function() {
         if (!inputHandler) return;
         
+        lastCompositionLength = 0;
+
         inputHandler.start_composition();
         isComposing = true;
         compositionInput.classList.add('is-composing');
@@ -168,16 +171,36 @@ function setupInputEvents() {
         }
     });
     
-    // í•œê¸€ ì¡°í•© ì—…ë°ì´íŠ¸ - ìž„ì‹œ í'œì‹œë§Œ
+    // 한글 조합 업데이트
     compositionInput.addEventListener('compositionupdate', function(e) {
         if (!inputHandler) return;
         
         var text = e.data || '';
-        var result = inputHandler.update_composition(text);
-        handleInputResults(result);
+        var currentLength = text.length;
+        
+        // 길이가 증가했으면 = 이전 글자들 완성
+        if (currentLength > lastCompositionLength && lastCompositionLength > 0) {
+            // 완성된 글자들 처리
+            var completedChars = text.substring(0, currentLength - 1);
+            for (var i = 0; i < completedChars.length; i++) {
+                var result = inputHandler.process_input(completedChars[i]);
+                handleInputResults(result);
+            }
+            
+            // 마지막 글자만 조합중 표시
+            var lastChar = text[currentLength - 1];
+            var result = inputHandler.update_composition(lastChar);
+            handleInputResults(result);
+        } else {
+            // 길이 변화 없으면 그냥 조합중 표시
+            var result = inputHandler.update_composition(text);
+            handleInputResults(result);
+        }
+        
+        lastCompositionLength = currentLength;
     });
     
-    // í•œê¸€ ì¡°í•© ì™„ë£Œ
+    // 한글 조합 완료
     compositionInput.addEventListener('compositionend', function(e) {
         if (!inputHandler) return;
         
@@ -187,12 +210,7 @@ function setupInputEvents() {
             studentCells[i].classList.remove('is-composing');
         }
         
-        var text = e.data || '';
-        if (text) {
-            compositionInput.value = '';
-            var result = inputHandler.finalize_composition(text);
-            handleInputResults(result);
-        }
+        lastCompositionLength = 0;
     });
     
     // ì¼ë°˜ ìž…ë ¥
