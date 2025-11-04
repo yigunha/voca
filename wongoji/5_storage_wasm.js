@@ -346,7 +346,11 @@ async function saveToSupabase() {
 
 function selectExistingFile(title) {
     document.getElementById('saveTitle').value = title;
-    document.getElementById('saveTitle').focus();
+    // 스크롤 방지
+    const titleInput = document.getElementById('saveTitle');
+    if (titleInput) {
+        titleInput.focus({ preventScroll: true });
+    }
 }
 
 function closeSaveModal() {
