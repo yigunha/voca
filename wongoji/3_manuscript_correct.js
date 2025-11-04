@@ -188,20 +188,23 @@ function clearSelection() {
 }
 
 
-// 셀 클릭 핸들러
+// 셀 클릭 핸들러  
 function handleCellClick(idx, e) {
+    var compositionInput = document.getElementById('compositionInput');
+    var wasComposing = false;
+    
     // 한글 조합 중이면 먼저 종료
     if (window.inputHandler && window.inputHandler.is_composing()) {
+        wasComposing = true;
         window.inputHandler.end_composition();
-        var compositionInput = document.getElementById('compositionInput');
         if (compositionInput && compositionInput.value) {
             var result = window.inputHandler.finalize_composition(compositionInput.value);
             handleInputResults(result);
             compositionInput.value = '';
+            // finalize_composition이 이미 다음 칸으로 이동시킴
+            // 따라서 강제로 idx로 이동하지 말고, 현재 위치를 가져와야 함
         }
     } else if (window.inputHandler) {
-        // 한글 조합 중이 아닐 때만 버퍼 처리
-        // 이전 위치의 다음 칸 temp 제거
         var oldPos = window.inputHandler.get_position();
         if (oldPos + 1 < studentCells.length) {
             var nextCell = studentCells[oldPos + 1];
@@ -223,11 +226,8 @@ function handleCellClick(idx, e) {
     // Shift 클릭: 범위 선택
     if (e.shiftKey) {
         e.preventDefault();
-        
-        // 현재 커서 위치부터 클릭한 위치까지 선택
         var start = Math.min(currentPos, idx);
         var end = Math.max(currentPos, idx);
-        
         clearSelection();
         for (var i = start; i <= end; i++) {
             addToSelection(i);
@@ -235,26 +235,30 @@ function handleCellClick(idx, e) {
         return;
     }
     
-    // 일반 클릭 - 선택 해제하고 커서 이동
     clearSelection();
     
-    currentPos = idx;
-    
-    if (window.inputHandler) {
-        window.inputHandler.set_position(idx);
+    // ⭐ 한글 조합이 아닐 때만 클릭한 위치로 이동
+    if (!wasComposing) {
+        currentPos = idx;
+        if (window.inputHandler) {
+            window.inputHandler.set_position(idx);
+        }
+    } else {
+        // 한글 조합이었다면 finalize_composition이 이동시킨 위치 사용
+        if (window.inputHandler) {
+            currentPos = window.inputHandler.get_position();
+        }
     }
     
     updateActiveCell();
     
     setTimeout(function() {
-        var compositionInput = document.getElementById('compositionInput');
         if (compositionInput) {
             compositionInput.value = '';
             compositionInput.focus();
         }
     }, 10);
 }
-
 
 
 // 원고 텍스트 가져오기
