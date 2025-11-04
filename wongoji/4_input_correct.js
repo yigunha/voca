@@ -1,6 +1,7 @@
 // WASM ìž…ë ¥ í•¸ë"¤ëŸ¬ ì‚¬ìš©
 let inputHandler = null;
 let compositionInput = null;
+let lastCompositionText = '';
 
 // ìž…ë ¥ í•¸ë"¤ëŸ¬ ì´ˆê¸°í™"
 async function initInputHandler() {
@@ -161,6 +162,7 @@ function setupInputEvents() {
         inputHandler.start_composition();
         isComposing = true;
         compositionInput.classList.add('is-composing');
+        lastCompositionText = '';
         
         var pos = inputHandler.get_position();
         if (pos >= 0 && pos < studentCells.length) {
@@ -174,8 +176,8 @@ function setupInputEvents() {
         
         var text = e.data || '';
         
-        // âœ… ê¸¸ì´ê°€ 2 ì´ìƒ = ì²« ê¸€ìž í™•ì •, ë' ë²ˆì§¸ ê¸€ìž ì‹œìž'
-        if (text.length >= 2) {
+        // âœ… ì²˜ìŒìœ¼ë¡œ 2ê¸€ìžê°€ ëœ ë•Œë§Œ ì²˜ë¦¬ (1ê¸€ìž â†' 2ê¸€ìž)
+        if (lastCompositionText.length === 1 && text.length >= 2) {
             var firstChar = text[0];
             var remaining = text.slice(1);
             
@@ -186,11 +188,18 @@ function setupInputEvents() {
             // ë' ë²ˆì§¸ ê¸€ìž ìž„ì‹œ í'œì‹œ
             var result2 = inputHandler.update_composition(remaining);
             handleInputResults(result2);
+        } else if (text.length >= 2) {
+            // ì´ë¯¸ 2ê¸€ìž ì´ìƒì¸ ê²½ìš° (ë' ë²ˆì§¸ ê¸€ìž ì—…ë°ì´íŠ¸ë§Œ)
+            var remaining = text.slice(1);
+            var result = inputHandler.update_composition(remaining);
+            handleInputResults(result);
         } else {
-            // í•œ ê¸€ìž ì¡°í•© ì¤'
+            // 1ê¸€ìž ì¡°í•© ì¤'
             var result = inputHandler.update_composition(text);
             handleInputResults(result);
         }
+        
+        lastCompositionText = text;
     });
     
     // í•œê¸€ ì¡°í•© ì™„ë£Œ
@@ -202,6 +211,8 @@ function setupInputEvents() {
         for (var i = 0; i < studentCells.length; i++) {
             studentCells[i].classList.remove('is-composing');
         }
+        
+        lastCompositionText = '';
         
         var text = e.data || '';
         if (text) {
