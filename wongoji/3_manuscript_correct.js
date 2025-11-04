@@ -365,6 +365,59 @@ function adjustMemoPanelPosition() {
     }
 }
 
+// 레이어 전환 함수 (원래 코드)
+function switchLayer(layer) {
+    currentLayer = layer;
+    
+    if (layer === 'student') {
+        // 학생 레이어만 표시
+        for (var i = 0; i < studentCells.length; i++) {
+            studentCells[i].style.display = '';
+        }
+        for (var i = 0; i < teacherCells.length; i++) {
+            teacherCells[i].style.display = 'none';
+        }
+        
+        var memoPanel = document.getElementById('memoSidePanel');
+        if (memoPanel) {
+            memoPanel.style.display = 'none';
+        }
+    } else if (layer === 'teacher') {
+        // 학생 + 선생님 레이어 모두 표시
+        for (var i = 0; i < studentCells.length; i++) {
+            studentCells[i].style.display = '';
+        }
+        for (var i = 0; i < teacherCells.length; i++) {
+            teacherCells[i].style.display = '';
+        }
+        
+        var memoPanel = document.getElementById('memoSidePanel');
+        if (memoPanel) {
+            memoPanel.style.display = 'block';
+            setTimeout(function() {
+                adjustMemoPanelPosition();
+            }, 100);
+        }
+    }
+    
+    updateActiveCell();
+    drawErrorLines();
+}
+
+// Tab 키 이벤트 리스너 (원래 코드)
+document.addEventListener('keydown', function(e) {
+    if (!workArea || !workArea.classList.contains('show')) return;
+    
+    if (e.key === 'Tab') {
+        e.preventDefault();
+        if (currentLayer === 'student') {
+            switchLayer('teacher');
+        } else {
+            switchLayer('student');
+        }
+    }
+});
+
 // 윈도우 리사이즈 시 메모 패널 재조정
 window.addEventListener('resize', function() {
     adjustMemoPanelPosition();
@@ -383,4 +436,5 @@ window.handleCellClick = handleCellClick;
 window.clearSelection = clearSelection;
 window.getManuscriptText = getManuscriptText;
 window.loadManuscriptText = loadManuscriptText;
+window.switchLayer = switchLayer;
 window.adjustMemoPanelPosition = adjustMemoPanelPosition;
