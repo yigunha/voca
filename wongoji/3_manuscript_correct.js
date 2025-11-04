@@ -15,10 +15,11 @@ function initializePaper() {
         manuscriptPaper.classList.add('cols-25');
     }
     
-    var totalCells = cols * rows;
+    // ★★★ rows는 학생용 행 수를 의미함 (선생용 행은 자동으로 추가됨) ★★★
+    var totalRows = rows * 2; // 학생 행 + 선생 행
     
     // ★★★ 행 단위로 학생/선생 교대 배치 ★★★
-    for (var i = 0; i < rows; i++) {
+    for (var i = 0; i < totalRows; i++) {
         var isStudentRow = (i % 2 === 0); // 짝수 행 = 학생용, 홀수 행 = 선생용
         
         for (var j = 0; j < cols; j++) {
@@ -117,6 +118,9 @@ function initializePaper() {
     
     currentPos = 0;
     currentLayer = 'student';
+    
+    // ★★★ 시작 시 학생 모드로 명시적 전환 ★★★
+    switchLayer('student');
     
     updateActiveCell();
 }
@@ -369,6 +373,26 @@ function loadErrorText(errorText) {
     if (!errorText || !errorLineSvg) return;
     
     errorMarks = [];
+    
+    // ★★★ JSON 형식 지원 (이전 버전 호환성) ★★★
+    if (errorText.trim().startsWith('[')) {
+        try {
+            var jsonMarks = JSON.parse(errorText);
+            // JSON 형식: [{row, startCol, endCol}, ...]
+            for (var i = 0; i < jsonMarks.length; i++) {
+                var mark = jsonMarks[i];
+                for (var col = mark.startCol; col <= mark.endCol; col++) {
+                    errorMarks.push(mark.row * cols + col);
+                }
+            }
+            drawErrorLines();
+            return;
+        } catch (e) {
+            console.error('JSON 파싱 실패, 텍스트 형식으로 시도:', e);
+        }
+    }
+    
+    // ★★★ 텍스트 형식 지원 (현재 형식) ★★★
     var lines = errorText.split('\n');
     
     for (var i = 0; i < lines.length; i++) {
@@ -385,7 +409,20 @@ function loadErrorText(errorText) {
 
 // 에러 라인 그리기
 function drawErrorLines() {
-    if (!errorLineSvg) return;
+    if (!errorLineSvg || !manuscriptPaper) return;
+    
+    // SVG 크기와 위치를 원고지와 정확히 일치시킴
+    var paperRect = manuscriptPaper.getBoundingClientRect();
+    var containerRect = manuscriptPaper.parentElement.getBoundingClientRect();
+    
+    errorLineSvg.style.width = paperRect.width + 'px';
+    errorLineSvg.style.height = paperRect.height + 'px';
+    errorLineSvg.style.left = (paperRect.left - containerRect.left) + 'px';
+    errorLineSvg.style.top = (paperRect.top - containerRect.top) + 'px';
+    
+    errorLineSvg.setAttribute('width', paperRect.width);
+    errorLineSvg.setAttribute('height', paperRect.height);
+    errorLineSvg.setAttribute('viewBox', '0 0 ' + paperRect.width + ' ' + paperRect.height);
     
     errorLineSvg.innerHTML = '';
     
@@ -394,12 +431,12 @@ function drawErrorLines() {
         if (idx >= studentCells.length || !studentCells[idx]) continue;
         
         var cell = studentCells[idx];
-        var rect = cell.getBoundingClientRect();
-        var containerRect = manuscriptPaper.getBoundingClientRect();
+        var cellRect = cell.getBoundingClientRect();
         
-        var x1 = rect.left - containerRect.left;
-        var y = rect.bottom - containerRect.top - 2;
-        var x2 = rect.right - containerRect.left;
+        // 원고지 기준 상대 좌표
+        var x1 = cellRect.left - paperRect.left;
+        var y = cellRect.bottom - paperRect.top - 2;
+        var x2 = cellRect.right - paperRect.left;
         
         var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         line.setAttribute('x1', x1);

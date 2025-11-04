@@ -86,6 +86,7 @@ startBtn.addEventListener('click', async function() {
         setCookie('studentPassword', studentPassword, 30);
         
         classSelect.disabled = true;
+        colsSelect.disabled = true; // ★★★ 칸수 선택도 비활성화 ★★★
         studentNameInput.disabled = true;
         studentPasswordInput.style.display = 'none';
         document.querySelector('label[for="studentPassword"]').style.display = 'none';
@@ -509,6 +510,7 @@ function logout() {
         isLoggedIn = false;
         
         classSelect.disabled = false;
+        colsSelect.disabled = false; // ★★★ 칸수 선택도 다시 활성화 ★★★
         studentNameInput.disabled = false;
         studentPasswordInput.style.display = '';
         studentPasswordInput.value = '';
