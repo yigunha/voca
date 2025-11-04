@@ -39,31 +39,6 @@ function initializePaper() {
                     handleCellClick(parseInt(this.dataset.index), e);
                 });
                 
-                // 드래그 선택 이벤트
-                cell.addEventListener('mousedown', function(e) {
-                    if (e.button !== 0) return;
-                    isDragging = true;
-                    var idx = parseInt(this.dataset.index);
-                    selectionStart = idx;
-                    clearSelection();
-                    selectedCells.push(idx);
-                    this.classList.add('selected');
-                });
-                
-                cell.addEventListener('mouseenter', function(e) {
-                    if (!isDragging) return;
-                    var idx = parseInt(this.dataset.index);
-                    clearSelection();
-                    var start = Math.min(selectionStart, idx);
-                    var end = Math.max(selectionStart, idx);
-                    for (var k = start; k <= end; k++) {
-                        if (studentCells[k]) {
-                            selectedCells.push(k);
-                            studentCells[k].classList.add('selected');
-                        }
-                    }
-                });
-                
                 manuscriptPaper.appendChild(cell);
                 studentCells.push(cell);
                 studentData.push('');
@@ -99,13 +74,6 @@ function initializePaper() {
     input.className = 'composition-input';
     input.autocomplete = 'off';
     manuscriptPaper.appendChild(input);
-    
-    // 마우스 업 이벤트 (드래그 종료)
-    document.addEventListener('mouseup', function() {
-        if (isDragging) {
-            isDragging = false;
-        }
-    });
     
     // 이벤트 설정
     setupInputEvents();
@@ -151,29 +119,13 @@ function handleCellClick(idx, e) {
         finalizeBuffer();
     }
     
-    // Shift 클릭: 범위 선택
-    if (e.shiftKey && selectionStart >= 0) {
-        clearSelection();
-        var start = Math.min(selectionStart, idx);
-        var end = Math.max(selectionStart, idx);
-        for (var i = start; i <= end; i++) {
-            if (studentCells[i]) {
-                selectedCells.push(i);
-                studentCells[i].classList.add('selected');
-            }
-        }
-        return;
-    }
-    
     // 일반 클릭 - 커서 이동 및 입력 준비
     clearSelection();
     
     // 덮어쓰기: 클릭한 셀의 기존 내용 완전히 제거
     studentData[idx] = '';
-    if (studentCells[idx]) {
-        delete studentCells[idx].dataset.special;
-        delete studentCells[idx].dataset.temp;
-    }
+    delete studentCells[idx].dataset.special;
+    delete studentCells[idx].dataset.temp;
     renderCell(idx);
     
     currentPos = idx;
@@ -187,6 +139,7 @@ function handleCellClick(idx, e) {
         }
     }, 10);
     
+    isDragging = false;
     selectionStart = idx;
     isSelecting = true;
 }

@@ -1,249 +1,35 @@
-// input.js - 입력 처리
+// WASM 입력 핸들러 사용
+let inputHandler = null;
+let compositionInput = null;
 
-var alphaNumericBuffer = '';
-var compositionInput = null;
-
-// 문자 타입 판별
-function getCharType(char) {
-    if (/[0-9]/.test(char)) return 'number';
-    if (/[a-z]/.test(char)) return 'lower';
-    if (/[A-Z]/.test(char)) return 'upper';
-    if (/[.,]/.test(char)) return 'punct1';
-    if (/['"]/.test(char)) return 'punct2';
-    if (char === '-') return 'punct3';
-    if (/[가-힣]/.test(char)) return 'korean';
-    return 'other';
-}
-
-// 조합 가능 여부 판단
-function canCombine(bufferChar, inputChar, isLastCol) {
-    if (!bufferChar) return false;
-    
-    var bufferType = getCharType(bufferChar);
-    var inputType = getCharType(inputChar);
-    
-    if (bufferType === 'number' && inputType === 'number') return true;
-    if (bufferType === 'lower' && inputType === 'lower') return true;
-    if (bufferType === 'number' && inputType === 'punct1') return true;
-    if (bufferType === 'punct1' && inputType === 'number') return true;
-    if (bufferType === 'punct1' && inputType === 'punct2') return true;
-    if (bufferType === 'punct2' && inputType === 'punct2') return true;
-    if (isLastCol && bufferType === 'lower' && inputType === 'punct1') return true;
-    if (isLastCol && bufferType === 'lower' && inputType === 'punct3') return true;
-    
-    return false;
-}
-
-// 버퍼 확정
-function finalizeBuffer() {
-    if (!alphaNumericBuffer) return;
-    
-    var cell = studentCells[currentPos];
-    studentData[currentPos] = alphaNumericBuffer;
-    var content = cell.querySelector('.cell-content');
-    if (content) content.textContent = alphaNumericBuffer;
-    delete cell.dataset.temp;
-    alphaNumericBuffer = '';
-    
-    if (currentPos < studentCells.length - 1) {
-        currentPos++;
-        updateActiveCell();
-    }
-}
-
-// 한 글자 바로 쓰기
-function placeChar(char) {
-    if (currentPos >= studentCells.length) return;
-    
-    studentData[currentPos] = char;
-    var content = studentCells[currentPos].querySelector('.cell-content');
-    if (content) {
-        content.textContent = char;
+// 입력 핸들러 초기화
+async function initInputHandler() {
+    if (!window.wasmModule || !window.wasmModule.InputHandler) {
+        console.error('WASM module not loaded');
+        return false;
     }
     
-    delete studentCells[currentPos].dataset.special;
-    alphaNumericBuffer = '';
-    
-    if (currentPos < studentCells.length - 1) {
-        currentPos++;
-        updateActiveCell();
-    }
-}
-
-// 입력 처리 메인 함수
-function processInput(char) {
-    var charType = getCharType(char);
-    var col = currentPos % cols;
-    var isLastCol = (col === cols - 1);
-    
-    // 대문자는 항상 버퍼 확정 후 바로 배치
-    if (charType === 'upper') {
-        finalizeBuffer();
-        placeChar(char);
-        return;
-    }
-    
-    // 한글은 항상 버퍼 확정 후 바로 배치
-    if (charType === 'korean') {
-        finalizeBuffer();
-        placeChar(char);
-        return;
-    }
-    
-    // 마침표/쉼표 처리
-    if (charType === 'punct1') {
-        if (alphaNumericBuffer) {
-            if (canCombine(alphaNumericBuffer, char, isLastCol)) {
-                var cell = studentCells[currentPos];
-                studentData[currentPos] = alphaNumericBuffer + char;
-                var content = cell.querySelector('.cell-content');
-                if (content) content.textContent = alphaNumericBuffer + char;
-                cell.dataset.special = 'true';
-                delete cell.dataset.temp;
-                alphaNumericBuffer = '';
-                if (compositionInput) compositionInput.value = '';
-                
-                if (currentPos < studentCells.length - 1) {
-                    currentPos++;
-                    updateActiveCell();
-                }
-                return;
-            } else {
-                finalizeBuffer();
-                processInput(char);
-                return;
-            }
-        }
-        
-        var currentContent = studentData[currentPos];
-        
-        if (currentContent && currentContent.length === 1) {
-            var contentType = getCharType(currentContent);
-            
-            if (contentType === 'number') {
-                studentData[currentPos] = currentContent + char;
-                var content = studentCells[currentPos].querySelector('.cell-content');
-                if (content) content.textContent = currentContent + char;
-                studentCells[currentPos].dataset.special = 'true';
-                
-                if (currentPos < studentCells.length - 1) {
-                    currentPos++;
-                    updateActiveCell();
-                }
-                return;
-            }
-            
-            if (isLastCol && /[가-힣a-zA-Z]/.test(currentContent)) {
-                studentData[currentPos] = currentContent + char;
-                var content = studentCells[currentPos].querySelector('.cell-content');
-                if (content) content.textContent = currentContent + char;
-                studentCells[currentPos].dataset.special = 'true';
-                
-                if (currentPos < studentCells.length - 1) {
-                    currentPos++;
-                    updateActiveCell();
-                }
-                return;
-            }
-        }
-        
-        if (col === 0 && currentPos > 0 && !currentContent) {
-            var prevIdx = currentPos - 1;
-            var prevContent = studentData[prevIdx];
-            
-            if (prevContent && prevContent.length === 1 && /[가-힣a-zA-Z0-9]/.test(prevContent)) {
-                studentData[prevIdx] = prevContent + char;
-                var prevContentEl = studentCells[prevIdx].querySelector('.cell-content');
-                if (prevContentEl) prevContentEl.textContent = prevContent + char;
-                studentCells[prevIdx].dataset.special = 'true';
-                return;
-            }
-        }
-        
-        placeChar(char);
-        return;
-    }
-    
-    // 버퍼가 비어있는 경우
-    if (!alphaNumericBuffer) {
-        var currentContent = studentData[currentPos];
-        
-        if (currentContent && currentContent.length === 2) {
-            if (currentPos < studentCells.length - 1) {
-                currentPos++;
-                updateActiveCell();
-            }
-            processInput(char);
-            return;
-        }
-        
-        if (currentContent && currentContent.length === 1) {
-            var contentType = getCharType(currentContent);
-            
-            if (isLastCol && /[a-z]/.test(currentContent) && charType === 'punct3') {
-                studentData[currentPos] = currentContent + char;
-                var content = studentCells[currentPos].querySelector('.cell-content');
-                if (content) content.textContent = currentContent + char;
-                studentCells[currentPos].dataset.special = 'true';
-                
-                if (currentPos < studentCells.length - 1) {
-                    currentPos++;
-                    updateActiveCell();
-                }
-                return;
-            }
-        }
-        
-        if (/[a-z0-9'"]/i.test(char) && charType !== 'upper') {
-            alphaNumericBuffer = char;
-            studentData[currentPos] = char;
-            var content = studentCells[currentPos].querySelector('.cell-content');
-            if (content) content.textContent = char;
-            studentCells[currentPos].dataset.temp = 'true';
-            if (compositionInput) compositionInput.value = char;
-            return;
-        }
-        
-        placeChar(char);
-        return;
-    }
-    
-    // 버퍼가 있는 경우
-    if (canCombine(alphaNumericBuffer, char, isLastCol)) {
-        var cell = studentCells[currentPos];
-        studentData[currentPos] = alphaNumericBuffer + char;
-        var content = cell.querySelector('.cell-content');
-        if (content) content.textContent = alphaNumericBuffer + char;
-        cell.dataset.special = 'true';
-        delete cell.dataset.temp;
-        alphaNumericBuffer = '';
-        if (compositionInput) compositionInput.value = '';
-        
-        if (currentPos < studentCells.length - 1) {
-            currentPos++;
-            updateActiveCell();
-        }
-    } else {
-        finalizeBuffer();
-        processInput(char);
+    try {
+        inputHandler = new window.wasmModule.InputHandler(cols, rows);
+        window.inputHandler = inputHandler; // 전역으로 노출
+        return true;
+    } catch (e) {
+        console.error('Failed to initialize input handler:', e);
+        return false;
     }
 }
 
 // 활성 셀 업데이트
 function updateActiveCell() {
+    if (!inputHandler) return;
+    
     for (var i = 0; i < studentCells.length; i++) {
         studentCells[i].classList.remove('active');
     }
     
-    if (alphaNumericBuffer && currentPos > 0) {
-        var prevCell = studentCells[currentPos - 1];
-        if (prevCell && prevCell.dataset.temp) {
-            delete prevCell.dataset.temp;
-        }
-    }
-    
-    if (currentPos >= 0 && currentPos < studentCells.length) {
-        var activeCell = studentCells[currentPos];
+    var pos = inputHandler.get_position();
+    if (pos >= 0 && pos < studentCells.length) {
+        var activeCell = studentCells[pos];
         activeCell.classList.add('active');
         
         if (compositionInput) {
@@ -252,7 +38,7 @@ function updateActiveCell() {
             compositionInput.focus();
         }
         
-        // 셀이 화면에 보이는지 확인
+        // 화면에 보이도록 스크롤
         var rect = activeCell.getBoundingClientRect();
         var isVisible = (
             rect.top >= 0 &&
@@ -261,7 +47,6 @@ function updateActiveCell() {
             rect.right <= (window.innerWidth || document.documentElement.clientWidth)
         );
         
-        // 화면에 보이지 않을 때만 스크롤
         if (!isVisible) {
             activeCell.scrollIntoView({
                 behavior: 'smooth',
@@ -271,10 +56,91 @@ function updateActiveCell() {
         }
     }
     
-    alphaNumericBuffer = '';
-    if (compositionInput) {
-        compositionInput.value = '';
+    currentPos = pos;
+}
+
+// 입력 결과 처리
+function handleInputResults(results) {
+    if (!results || !Array.isArray(results)) {
+        if (results && typeof results === 'object') {
+            results = [results];
+        } else {
+            return;
+        }
     }
+    
+    for (var i = 0; i < results.length; i++) {
+        var result = results[i];
+        
+        switch (result.action) {
+            case 'place':
+                // 셀에 내용 배치
+                if (result.clear_current) {
+                    studentData[result.pos] = result.content;
+                    var cell = studentCells[result.pos];
+                    var content = cell.querySelector('.cell-content');
+                    if (content) {
+                        content.textContent = result.content;
+                    }
+                    
+                    // 2글자 이상이면 special 표시
+                    if (result.content.length > 1) {
+                        cell.dataset.special = 'true';
+                    } else {
+                        delete cell.dataset.special;
+                    }
+                    delete cell.dataset.temp;
+                }
+                break;
+                
+            case 'buffer':
+                // 버퍼 상태 표시 (임시)
+                studentData[result.pos] = result.content;
+                var cell = studentCells[result.pos];
+                var content = cell.querySelector('.cell-content');
+                if (content) {
+                    content.textContent = result.content;
+                }
+                cell.dataset.temp = 'true';
+                delete cell.dataset.special;
+                break;
+                
+            case 'composing':
+                // 한글 조합 중
+                var cell = studentCells[result.pos];
+                var content = cell.querySelector('.cell-content');
+                if (content) {
+                    content.textContent = result.content;
+                }
+                break;
+                
+            case 'clear_and_move':
+                // 스페이스바: 현재 셀 비우고 이동
+                studentData[result.pos] = '';
+                var cell = studentCells[result.pos];
+                var content = cell.querySelector('.cell-content');
+                if (content) {
+                    content.textContent = '';
+                }
+                delete cell.dataset.special;
+                delete cell.dataset.temp;
+                break;
+                
+            case 'delete':
+                // 삭제
+                studentData[result.pos] = '';
+                var cell = studentCells[result.pos];
+                var content = cell.querySelector('.cell-content');
+                if (content) {
+                    content.textContent = '';
+                }
+                delete cell.dataset.special;
+                delete cell.dataset.temp;
+                break;
+        }
+    }
+    
+    updateActiveCell();
 }
 
 // 이벤트 설정
@@ -285,52 +151,62 @@ function setupInputEvents() {
         return;
     }
     
+    // 한글 조합 시작
     compositionInput.addEventListener('compositionstart', function() {
+        if (!inputHandler) return;
+        
+        inputHandler.start_composition();
         isComposing = true;
         compositionInput.classList.add('is-composing');
-        if (currentPos >= 0 && currentPos < studentCells.length) {
-            studentCells[currentPos].classList.add('is-composing');
+        
+        var pos = inputHandler.get_position();
+        if (pos >= 0 && pos < studentCells.length) {
+            studentCells[pos].classList.add('is-composing');
         }
     });
     
+    // 한글 조합 업데이트
+    compositionInput.addEventListener('compositionupdate', function(e) {
+        if (!inputHandler) return;
+        
+        var text = e.data || '';
+        var result = inputHandler.update_composition(text);
+        handleInputResults(result);
+    });
+    
+    // 한글 조합 완료
     compositionInput.addEventListener('compositionend', function(e) {
+        if (!inputHandler) return;
+        
         isComposing = false;
         compositionInput.classList.remove('is-composing');
         for (var i = 0; i < studentCells.length; i++) {
             studentCells[i].classList.remove('is-composing');
         }
         
-        var text = e.data;
+        var text = e.data || '';
         if (text) {
             compositionInput.value = '';
-            for (var i = 0; i < text.length; i++) {
-                processInput(text[i]);
-            }
+            var result = inputHandler.finalize_composition(text);
+            handleInputResults(result);
         }
     });
     
+    // 일반 입력
     compositionInput.addEventListener('input', function(e) {
-        if (isComposing) return;
+        if (!inputHandler || inputHandler.is_composing()) return;
         
         var text = e.target.value;
-        
         if (text) {
-            if (alphaNumericBuffer && text.length > 1) {
-                var lastChar = text[text.length - 1];
-                processInput(lastChar);
-            } else {
-                for (var i = 0; i < text.length; i++) {
-                    processInput(text[i]);
-                }
-            }
-            
-            if (!alphaNumericBuffer) {
-                compositionInput.value = '';
-            }
+            compositionInput.value = '';
+            var result = inputHandler.process_input(text);
+            handleInputResults(result);
         }
     });
     
+    // 키보드 이벤트
     compositionInput.addEventListener('keydown', function(e) {
+        if (!inputHandler) return;
         if (e.isComposing) return;
         
         // Backspace
@@ -338,6 +214,7 @@ function setupInputEvents() {
             e.preventDefault();
             
             if (selectedCells.length > 0) {
+                // 선택된 셀들 삭제
                 for (var i = 0; i < selectedCells.length; i++) {
                     var idx = selectedCells[i];
                     studentData[idx] = '';
@@ -347,40 +224,33 @@ function setupInputEvents() {
                     delete studentCells[idx].dataset.temp;
                 }
                 
-                currentPos = selectedCells[0];
+                inputHandler.set_position(selectedCells[0]);
                 clearSelection();
                 updateActiveCell();
             } else {
-                var targetIdx = (studentData[currentPos] === '' && currentPos > 0) ? currentPos - 1 : currentPos;
+                // 현재 셀이 비어있으면 이전 셀로 이동 후 삭제
+                var pos = inputHandler.get_position();
+                if (studentData[pos] === '' && pos > 0) {
+                    inputHandler.move_left();
+                    pos = inputHandler.get_position();
+                }
                 
-                studentData[targetIdx] = '';
-                var content = studentCells[targetIdx].querySelector('.cell-content');
-                if (content) content.textContent = '';
-                delete studentCells[targetIdx].dataset.special;
-                delete studentCells[targetIdx].dataset.temp;
-                
-                currentPos = targetIdx;
-                updateActiveCell();
+                var result = inputHandler.handle_backspace();
+                handleInputResults(result);
             }
             
-            alphaNumericBuffer = '';
             compositionInput.value = '';
             return;
         }
         
         // Space
-        if (e.key === ' ') {
+        if (e.key === ' ' || e.key === 'Spacebar') {
             e.preventDefault();
             if (e.shiftKey) return;
             
-            if (alphaNumericBuffer) {
-                finalizeBuffer();
-            }
-            
-            if (currentPos < studentCells.length - 1) {
-                currentPos++;
-                updateActiveCell();
-            }
+            var result = inputHandler.handle_space();
+            handleInputResults(result);
+            compositionInput.value = '';
             return;
         }
         
@@ -398,60 +268,73 @@ function setupInputEvents() {
                     delete studentCells[idx].dataset.temp;
                 }
                 
-                currentPos = selectedCells[0];
+                inputHandler.set_position(selectedCells[0]);
                 clearSelection();
                 updateActiveCell();
             } else {
-                studentData[currentPos] = '';
-                var content = studentCells[currentPos].querySelector('.cell-content');
-                if (content) content.textContent = '';
-                delete studentCells[currentPos].dataset.special;
-                delete studentCells[currentPos].dataset.temp;
+                var result = inputHandler.handle_delete();
+                handleInputResults(result);
             }
             
-            alphaNumericBuffer = '';
             compositionInput.value = '';
             return;
         }
         
-        // Arrow keys - ★★★ cols 변수 사용 ★★★
-        if (e.key === 'ArrowLeft' && currentPos > 0) {
+        // Arrow keys
+        if (e.key === 'ArrowLeft') {
             e.preventDefault();
-            currentPos--;
-            updateActiveCell();
+            if (inputHandler.move_left()) {
+                updateActiveCell();
+            }
             return;
         }
         
-        if (e.key === 'ArrowRight' && currentPos < studentCells.length - 1) {
+        if (e.key === 'ArrowRight') {
             e.preventDefault();
-            currentPos++;
-            updateActiveCell();
+            if (inputHandler.move_right()) {
+                updateActiveCell();
+            }
             return;
         }
         
-        if (e.key === 'ArrowUp' && currentPos >= cols) {
+        if (e.key === 'ArrowUp') {
             e.preventDefault();
-            currentPos -= cols;
-            updateActiveCell();
+            if (inputHandler.move_up()) {
+                updateActiveCell();
+            }
             return;
         }
         
-        if (e.key === 'ArrowDown' && currentPos < studentCells.length - cols) {
+        if (e.key === 'ArrowDown') {
             e.preventDefault();
-            currentPos += cols;
-            updateActiveCell();
+            if (inputHandler.move_down()) {
+                updateActiveCell();
+            }
             return;
         }
         
         // Enter
         if (e.key === 'Enter') {
             e.preventDefault();
-            var nextRow = Math.floor(currentPos / cols) + 1;
-            if (nextRow < rows) {
-                currentPos = nextRow * cols;
+            if (inputHandler.move_next_row()) {
                 updateActiveCell();
             }
             return;
         }
     });
 }
+
+// 원고지 초기화 시 입력 핸들러도 초기화
+async function initializePaperWithInput() {
+    await initInputHandler();
+    if (inputHandler) {
+        inputHandler.set_position(0);
+        updateActiveCell();
+    }
+}
+
+// 전역으로 노출
+window.setupInputEvents = setupInputEvents;
+window.updateActiveCell = updateActiveCell;
+window.initializePaperWithInput = initializePaperWithInput;
+window.handleInputResults = handleInputResults;
