@@ -97,7 +97,7 @@ function handleInputResults(results) {
                 break;
                 
             case 'buffer':
-                // ✅ 버퍼1은 현재 칸에, 버퍼2가 있으면 다음 칸에 표시
+                // ✅ 버퍼1만 현재 칸에 임시 표시
                 studentData[result.pos] = result.buffer1;
                 var cell = studentCells[result.pos];
                 var content = cell.querySelector('.cell-content');
@@ -106,27 +106,6 @@ function handleInputResults(results) {
                 }
                 cell.dataset.temp = 'true';
                 delete cell.dataset.special;
-                
-                // 버퍼2가 있으면 다음 칸에 임시 표시
-                if (result.buffer2 && result.pos + 1 < studentCells.length) {
-                    var nextCell = studentCells[result.pos + 1];
-                    var nextContent = nextCell.querySelector('.cell-content');
-                    if (nextContent) {
-                        nextContent.textContent = result.buffer2;
-                    }
-                    nextCell.dataset.temp = 'true';
-                    delete nextCell.dataset.special;
-                } else if (result.pos + 1 < studentCells.length) {
-                    // 버퍼2가 없으면 다음 칸의 temp 표시 제거
-                    var nextCell = studentCells[result.pos + 1];
-                    if (nextCell.dataset.temp) {
-                        var nextContent = nextCell.querySelector('.cell-content');
-                        if (nextContent && studentData[result.pos + 1] === '') {
-                            nextContent.textContent = '';
-                        }
-                        delete nextCell.dataset.temp;
-                    }
-                }
                 break;
                 
             case 'composing':
@@ -138,6 +117,7 @@ function handleInputResults(results) {
                 break;
                 
             case 'clear_and_move':
+                // ✅ 현재 칸 비우기
                 studentData[result.pos] = '';
                 var cell = studentCells[result.pos];
                 var content = cell.querySelector('.cell-content');
@@ -157,18 +137,6 @@ function handleInputResults(results) {
                 }
                 delete cell.dataset.special;
                 delete cell.dataset.temp;
-                
-                // ✅ 다음 칸의 temp도 제거
-                if (result.pos + 1 < studentCells.length) {
-                    var nextCell = studentCells[result.pos + 1];
-                    if (nextCell.dataset.temp && studentData[result.pos + 1] === '') {
-                        var nextContent = nextCell.querySelector('.cell-content');
-                        if (nextContent) {
-                            nextContent.textContent = '';
-                        }
-                        delete nextCell.dataset.temp;
-                    }
-                }
                 break;
         }
     }
@@ -354,8 +322,8 @@ function setupInputEvents() {
             return;
         }
     });
-
-// 포커스 유지 (Alt 키 등으로 인한 포커스 손실 방지)
+    
+    // 포커스 유지 (Alt 키 등으로 인한 포커스 손실 방지)
     compositionInput.addEventListener('blur', function() {
         setTimeout(function() {
             if (workArea && workArea.classList.contains('show')) {
