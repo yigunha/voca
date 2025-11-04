@@ -47,7 +47,6 @@ export interface InitOutput {
   readonly inputhandler_process_input: (a: number, b: number, c: number) => any;
   readonly inputhandler_handle_space: (a: number) => any;
   readonly inputhandler_handle_backspace: (a: number) => any;
-  readonly inputhandler_handle_delete: (a: number) => any;
   readonly inputhandler_finalize_buffer: (a: number) => any;
   readonly inputhandler_move_left: (a: number) => number;
   readonly inputhandler_move_right: (a: number) => number;
@@ -55,6 +54,7 @@ export interface InitOutput {
   readonly inputhandler_move_down: (a: number) => number;
   readonly inputhandler_move_next_row: (a: number) => number;
   readonly inputhandler_get_buffer_state: (a: number) => any;
+  readonly inputhandler_handle_delete: (a: number) => any;
   readonly init: () => void;
   readonly authenticate_student: (a: number, b: number, c: number, d: number, e: number, f: number) => any;
   readonly save_manuscript: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number) => any;

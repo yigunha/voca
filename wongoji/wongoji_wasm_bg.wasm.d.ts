@@ -13,7 +13,6 @@ export const inputhandler_finalize_composition: (a: number, b: number, c: number
 export const inputhandler_process_input: (a: number, b: number, c: number) => any;
 export const inputhandler_handle_space: (a: number) => any;
 export const inputhandler_handle_backspace: (a: number) => any;
-export const inputhandler_handle_delete: (a: number) => any;
 export const inputhandler_finalize_buffer: (a: number) => any;
 export const inputhandler_move_left: (a: number) => number;
 export const inputhandler_move_right: (a: number) => number;
@@ -21,6 +20,7 @@ export const inputhandler_move_up: (a: number) => number;
 export const inputhandler_move_down: (a: number) => number;
 export const inputhandler_move_next_row: (a: number) => number;
 export const inputhandler_get_buffer_state: (a: number) => any;
+export const inputhandler_handle_delete: (a: number) => any;
 export const init: () => void;
 export const authenticate_student: (a: number, b: number, c: number, d: number, e: number, f: number) => any;
 export const save_manuscript: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: number) => any;
