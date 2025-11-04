@@ -40,7 +40,7 @@ function updateActiveCell() {
             // 포커스 강제 복구
             setTimeout(function() {
                 if (document.activeElement !== compositionInput) {
-                    compositionInput.focus();
+                    compositionInput.focus({ preventScroll: true });
                 }
             }, 0);
         }
@@ -353,21 +353,21 @@ function setupInputEvents() {
         }
     });
     
-    // 포커스 유지 (Alt 탭 등으로 인한 포커스 손실 방지)
+    // 포커스 유지 (Alt 탭 등으로 인한 포커스 손실 방지) - 스크롤 방지 추가
     compositionInput.addEventListener('blur', function() {
         setTimeout(function() {
             if (workArea && workArea.classList.contains('show')) {
-                compositionInput.focus();
+                compositionInput.focus({ preventScroll: true });
             }
         }, 10);
     });
     
-    // 작업 패널 시 포커스 복구
+    // 작업 패널 시 포커스 복구 - 스크롤 방지 추가
     document.addEventListener('click', function(e) {
         if (workArea && workArea.classList.contains('show')) {
             if (!e.target.closest('.modal') && !e.target.closest('button')) {
                 setTimeout(function() {
-                    compositionInput.focus();
+                    compositionInput.focus({ preventScroll: true });
                 }, 10);
             }
         }
