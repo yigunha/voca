@@ -64,8 +64,10 @@ function initializePaper() {
     input.autocomplete = 'off';
     manuscriptPaper.appendChild(input);
     
-    // 이벤트 설정
-    setupInputEvents();
+    // 이벤트 설정 (4_input_correct.js에서 정의)
+    if (typeof setupInputEvents === 'function') {
+        setupInputEvents();
+    }
     
     currentPos = 0;
     currentLayer = 'student';
@@ -92,7 +94,9 @@ function handleCellClick(idx, e) {
     if (window.inputHandler) {
         var bufferResult = window.inputHandler.finalize_buffer();
         if (bufferResult && bufferResult !== null) {
-            handleInputResults(bufferResult);
+            if (typeof window.handleInputResults === 'function') {
+                window.handleInputResults(bufferResult);
+            }
         }
     }
     
@@ -111,7 +115,11 @@ function handleCellClick(idx, e) {
     }
     
     currentPos = idx;
-    updateActiveCell();
+    
+    // updateActiveCell이 아직 정의되지 않았을 수 있으므로 체크
+    if (typeof window.updateActiveCell === 'function') {
+        window.updateActiveCell();
+    }
     
     setTimeout(function() {
         var compositionInput = document.getElementById('compositionInput');
@@ -147,7 +155,6 @@ function getManuscriptText() {
             var char = studentData[idx] || '';
             line += char;
         }
-        // 빈 줄이어도 탭으로 표시
         text += line + '\n';
     }
     return text;
@@ -224,7 +231,11 @@ function loadManuscriptText(text, savedCols, modifiedText, errorText, memo) {
     if (window.inputHandler) {
         window.inputHandler.set_position(0);
     }
-    updateActiveCell();
+    
+    // updateActiveCell 안전하게 호출
+    if (typeof window.updateActiveCell === 'function') {
+        window.updateActiveCell();
+    }
 }
 
 // 수정본 로드
@@ -360,8 +371,9 @@ function switchLayer(layer) {
         }
     }
     
-    if (inputHandler) {
-        updateActiveCell();
+    // updateActiveCell 안전하게 호출
+    if (typeof window.updateActiveCell === 'function') {
+        window.updateActiveCell();
     }
     drawErrorLines();
 }
