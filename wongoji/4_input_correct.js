@@ -1,7 +1,6 @@
 // WASM ìž…ë ¥ í•¸ë"¤ëŸ¬ ì‚¬ìš©
 let inputHandler = null;
 let compositionInput = null;
-let lastCompositionText = '';
 
 // ìž…ë ¥ í•¸ë"¤ëŸ¬ ì´ˆê¸°í™"
 async function initInputHandler() {
@@ -162,7 +161,6 @@ function setupInputEvents() {
         inputHandler.start_composition();
         isComposing = true;
         compositionInput.classList.add('is-composing');
-        lastCompositionText = '';
         
         var pos = inputHandler.get_position();
         if (pos >= 0 && pos < studentCells.length) {
@@ -170,36 +168,13 @@ function setupInputEvents() {
         }
     });
     
-    // âœ… í•œê¸€ ì¡°í•© ì—…ë°ì´íŠ¸ - ë' ë²ˆì§¸ ê¸€ìž ê°ì§€!
+    // í•œê¸€ ì¡°í•© ì—…ë°ì´íŠ¸ - ìž„ì‹œ í'œì‹œë§Œ
     compositionInput.addEventListener('compositionupdate', function(e) {
         if (!inputHandler) return;
         
         var text = e.data || '';
-        
-        // âœ… ì²˜ìŒìœ¼ë¡œ 2ê¸€ìžê°€ ëœ ë•Œë§Œ ì²˜ë¦¬ (1ê¸€ìž â†' 2ê¸€ìž)
-        if (lastCompositionText.length === 1 && text.length >= 2) {
-            var firstChar = text[0];
-            var remaining = text.slice(1);
-            
-            // ì²« ê¸€ìž í™•ì •
-            var result1 = inputHandler.finalize_first_char(firstChar);
-            handleInputResults(result1);
-            
-            // ë' ë²ˆì§¸ ê¸€ìž ìž„ì‹œ í'œì‹œ
-            var result2 = inputHandler.update_composition(remaining);
-            handleInputResults(result2);
-        } else if (text.length >= 2) {
-            // ì´ë¯¸ 2ê¸€ìž ì´ìƒì¸ ê²½ìš° (ë' ë²ˆì§¸ ê¸€ìž ì—…ë°ì´íŠ¸ë§Œ)
-            var remaining = text.slice(1);
-            var result = inputHandler.update_composition(remaining);
-            handleInputResults(result);
-        } else {
-            // 1ê¸€ìž ì¡°í•© ì¤'
-            var result = inputHandler.update_composition(text);
-            handleInputResults(result);
-        }
-        
-        lastCompositionText = text;
+        var result = inputHandler.update_composition(text);
+        handleInputResults(result);
     });
     
     // í•œê¸€ ì¡°í•© ì™„ë£Œ
@@ -212,23 +187,11 @@ function setupInputEvents() {
             studentCells[i].classList.remove('is-composing');
         }
         
-        lastCompositionText = '';
-        
         var text = e.data || '';
         if (text) {
             compositionInput.value = '';
-            
-            // âœ… ê¸¸ì´ ì²´í¬: ì´ë¯¸ ì²˜ë¦¬ëœ ê²½ìš°ì™€ ë§ˆì§€ë§‰ ê¸€ìžë§Œ ì²˜ë¦¬
-            if (text.length === 1) {
-                // ë‹¨ì¼ ê¸€ìžë§Œ ìž…ë ¥ëœ ê²½ìš°
-                var result = inputHandler.finalize_composition(text);
-                handleInputResults(result);
-            } else {
-                // ì—¬ëŸ¬ ê¸€ìž: ë§ˆì§€ë§‰ ê¸€ìžë§Œ í™•ì • (ë‚˜ë¨¸ì§€ëŠ" updateì—ì„œ ì²˜ë¦¬ë¨)
-                var lastChar = text[text.length - 1];
-                var result = inputHandler.finalize_composition(lastChar);
-                handleInputResults(result);
-            }
+            var result = inputHandler.finalize_composition(text);
+            handleInputResults(result);
         }
     });
     
