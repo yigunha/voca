@@ -193,31 +193,31 @@ function handleCellClick(idx, e) {
     if (window.inputHandler && window.inputHandler.is_composing()) {
         var compositionInput = document.getElementById('compositionInput');
         
-        // ★★★ 핵심: 현재 위치 저장 ★★★
-        var savedPos = window.inputHandler.get_position();
-        
         // 플래그 설정하여 compositionend 이벤트 중복 방지
         window.isManualFinalize = true;
         
-        // 조합 종료 신호만 보내고 입력기 완전 초기화
+        // 조합 종료
         window.inputHandler.end_composition();
         
         if (compositionInput && compositionInput.value) {
-            // ★★★ 위치를 다시 원래대로 되돌림 ★★★
-            window.inputHandler.set_position(savedPos);
-            
-            // 이제 finalize (여기서는 위치 이동 안 함)
+            // ★★★ finalize_composition 호출 (위치가 이동됨)
             var result = window.inputHandler.finalize_composition(compositionInput.value);
             handleInputResults(result);
             
             compositionInput.value = '';
-            compositionInput.blur();  // 포커스 제거로 조합 완전 종료
+            compositionInput.blur();
         }
         
         // 브라우저 이벤트 처리 시간 대기
         setTimeout(function() {
             window.isManualFinalize = false;
         }, 50);
+    } else if (window.inputHandler) {
+        // ★★★ 조합 중이 아니면 일반 버퍼 처리 ★★★
+        var result = window.inputHandler.finalize_buffer();
+        if (result) {
+            handleInputResults(result);
+        }
     }
     
     // 이전 위치의 다음 칸 temp 제거
@@ -232,11 +232,6 @@ function handleCellClick(idx, e) {
                 }
                 delete nextCell.dataset.temp;
             }
-        }
-        
-        var result = window.inputHandler.finalize_buffer();
-        if (result) {
-            handleInputResults(result);
         }
     }
     
@@ -255,9 +250,10 @@ function handleCellClick(idx, e) {
         return;
     }
     
-    // 일반 클릭 - 선택 해제하고 커서 이동
+    // ★★★ 일반 클릭 - 선택 해제하고 커서 이동 ★★★
     clearSelection();
     
+    // ★★★ 클릭한 위치로 즉시 이동 (finalize에서 이동된 위치 무시) ★★★
     currentPos = idx;
     
     if (window.inputHandler) {
