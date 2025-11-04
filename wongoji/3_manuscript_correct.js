@@ -187,27 +187,34 @@ function clearSelection() {
     isSelecting = false;
 }
 
-// 셀 클릭 핸들러
 function handleCellClick(idx, e) {
-    // ★★★ 한글 조합 중이면 먼저 종료 ★★★
+    // 한글 조합 종료
     if (window.inputHandler && window.inputHandler.is_composing()) {
+        var originalPos = window.inputHandler.get_position();  // 5 저장
+        
         window.inputHandler.end_composition();
         var compositionInput = document.getElementById('compositionInput');
         if (compositionInput && compositionInput.value) {
             var result = window.inputHandler.finalize_composition(compositionInput.value);
-            handleInputResults(result);
+            // 여기서 current_pos = 6이 됨
+            
+            handleInputResults(result);  
+            // 여기서 6번이 active가 됨!
+            
             compositionInput.value = '';
+            
+            // ★★★ 즉시 원래 위치로 복원 ★★★
+            window.inputHandler.set_position(originalPos);  // 5로 복원
         }
     }
     
-    // ★★★ 버퍼 처리 (위치 이동 없이) ★★★
+    // 버퍼 처리
     if (window.inputHandler) {
-        var oldPos = window.inputHandler.get_position();
+        var currentPos = window.inputHandler.get_position();  // 이제 5
         
-        // 다음 칸 temp 제거
-        if (oldPos + 1 < studentCells.length) {
-            var nextCell = studentCells[oldPos + 1];
-            if (nextCell.dataset.temp && studentData[oldPos + 1] === '') {
+        if (currentPos + 1 < studentCells.length) {
+            var nextCell = studentCells[currentPos + 1];  // 6번 체크
+            if (nextCell.dataset.temp && studentData[currentPos + 1] === '') {
                 var nextContent = nextCell.querySelector('.cell-content');
                 if (nextContent) {
                     nextContent.textContent = '';
@@ -216,11 +223,10 @@ function handleCellClick(idx, e) {
             }
         }
         
-        // 버퍼에 내용이 있으면 현재 위치에 확정
         var bufferState = window.inputHandler.get_buffer_state();
         if (bufferState && bufferState.buffer1) {
-            studentData[oldPos] = bufferState.buffer1;
-            var cell = studentCells[oldPos];
+            studentData[currentPos] = bufferState.buffer1;
+            var cell = studentCells[currentPos];
             var content = cell.querySelector('.cell-content');
             if (content) {
                 content.textContent = bufferState.buffer1;
@@ -231,18 +237,14 @@ function handleCellClick(idx, e) {
             }
         }
         
-        // 버퍼만 클리어 (위치 이동 없음)
         window.inputHandler.clear_buffers();
     }
     
-    // Shift 클릭: 범위 선택
+    // Shift 클릭
     if (e.shiftKey) {
         e.preventDefault();
-        
-        // 현재 커서 위치부터 클릭한 위치까지 선택
         var start = Math.min(currentPos, idx);
         var end = Math.max(currentPos, idx);
-        
         clearSelection();
         for (var i = start; i <= end; i++) {
             addToSelection(i);
@@ -250,25 +252,17 @@ function handleCellClick(idx, e) {
         return;
     }
     
-    // 일반 클릭 - 선택 해제하고 커서 이동
     clearSelection();
-    
     currentPos = idx;
     
     if (window.inputHandler) {
-        window.inputHandler.set_position(idx);
+        window.inputHandler.set_position(idx);  // 10으로 이동
     }
     
-    updateActiveCell();
-    
-    setTimeout(function() {
-        var compositionInput = document.getElementById('compositionInput');
-        if (compositionInput) {
-            compositionInput.value = '';
-            compositionInput.focus();
-        }
-    }, 10);
+    updateActiveCell();  // 10번이 active
 }
+
+
 
 // 원고 텍스트 가져오기
 function getManuscriptText() {
