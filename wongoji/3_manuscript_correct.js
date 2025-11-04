@@ -167,8 +167,20 @@ function renderTeacherCell(idx) {
 
 // 셀 클릭 핸들러 (학생용만)
 function handleCellClick(idx, e) {
-    // ✅ 버퍼 확정 - 이전 위치에 배치
+    // ✅ 이전 위치의 다음 칸 temp 제거
     if (window.inputHandler) {
+        var oldPos = window.inputHandler.get_position();
+        if (oldPos + 1 < studentCells.length) {
+            var nextCell = studentCells[oldPos + 1];
+            if (nextCell.dataset.temp && studentData[oldPos + 1] === '') {
+                var nextContent = nextCell.querySelector('.cell-content');
+                if (nextContent) {
+                    nextContent.textContent = '';
+                }
+                delete nextCell.dataset.temp;
+            }
+        }
+        
         var result = window.inputHandler.finalize_buffer();
         if (result) {
             handleInputResults(result);
@@ -192,7 +204,7 @@ function handleCellClick(idx, e) {
     // 일반 클릭 - 커서 이동
     clearSelection();
     
-    // ✅ 클릭한 셀의 내용은 유지 (덮어쓰지 않음)
+    // ✅ 클릭한 셀로 이동 (내용 유지)
     currentPos = idx;
     
     // WASM InputHandler에 위치 설정

@@ -97,14 +97,36 @@ function handleInputResults(results) {
                 break;
                 
             case 'buffer':
-                studentData[result.pos] = result.content;
+                // ✅ 버퍼1은 현재 칸에, 버퍼2가 있으면 다음 칸에 표시
+                studentData[result.pos] = result.buffer1;
                 var cell = studentCells[result.pos];
                 var content = cell.querySelector('.cell-content');
                 if (content) {
-                    content.textContent = result.content;
+                    content.textContent = result.buffer1;
                 }
                 cell.dataset.temp = 'true';
                 delete cell.dataset.special;
+                
+                // 버퍼2가 있으면 다음 칸에 임시 표시
+                if (result.buffer2 && result.pos + 1 < studentCells.length) {
+                    var nextCell = studentCells[result.pos + 1];
+                    var nextContent = nextCell.querySelector('.cell-content');
+                    if (nextContent) {
+                        nextContent.textContent = result.buffer2;
+                    }
+                    nextCell.dataset.temp = 'true';
+                    delete nextCell.dataset.special;
+                } else if (result.pos + 1 < studentCells.length) {
+                    // 버퍼2가 없으면 다음 칸의 temp 표시 제거
+                    var nextCell = studentCells[result.pos + 1];
+                    if (nextCell.dataset.temp) {
+                        var nextContent = nextCell.querySelector('.cell-content');
+                        if (nextContent && studentData[result.pos + 1] === '') {
+                            nextContent.textContent = '';
+                        }
+                        delete nextCell.dataset.temp;
+                    }
+                }
                 break;
                 
             case 'composing':
@@ -135,6 +157,18 @@ function handleInputResults(results) {
                 }
                 delete cell.dataset.special;
                 delete cell.dataset.temp;
+                
+                // ✅ 다음 칸의 temp도 제거
+                if (result.pos + 1 < studentCells.length) {
+                    var nextCell = studentCells[result.pos + 1];
+                    if (nextCell.dataset.temp && studentData[result.pos + 1] === '') {
+                        var nextContent = nextCell.querySelector('.cell-content');
+                        if (nextContent) {
+                            nextContent.textContent = '';
+                        }
+                        delete nextCell.dataset.temp;
+                    }
+                }
                 break;
         }
     }
@@ -164,13 +198,14 @@ function setupInputEvents() {
         }
     });
     
-    // 한글 조합 업데이트
+    // 한글 조합 업데이트 - ✅ 중간 글자 표시 안 함
     compositionInput.addEventListener('compositionupdate', function(e) {
         if (!inputHandler) return;
         
-        var text = e.data || '';
-        var result = inputHandler.update_composition(text);
-        handleInputResults(result);
+        // 조합 중인 글자는 표시하지 않음 (IME에만 표시됨)
+        // var text = e.data || '';
+        // var result = inputHandler.update_composition(text);
+        // handleInputResults(result);
     });
     
     // 한글 조합 완료
@@ -319,8 +354,8 @@ function setupInputEvents() {
             return;
         }
     });
-    
-    // 포커스 유지 (Alt 키 등으로 인한 포커스 손실 방지)
+
+// 포커스 유지 (Alt 키 등으로 인한 포커스 손실 방지)
     compositionInput.addEventListener('blur', function() {
         setTimeout(function() {
             if (workArea && workArea.classList.contains('show')) {
