@@ -17,74 +17,61 @@ function initializePaper() {
     
     var totalCells = cols * rows;
     
-    // ★★★ 행 단위로 학생/선생 교대 배치 ★★★
+    // 학생용 셀만 생성 (선생용 행 제거)
     for (var i = 0; i < rows; i++) {
-        var isStudentRow = (i % 2 === 0); // 짝수 행 = 학생용, 홀수 행 = 선생용
-        
         for (var j = 0; j < cols; j++) {
             var idx = i * cols + j;
             var cell = document.createElement('div');
             
-            if (isStudentRow) {
-                // 학생용 행
-                cell.className = 'cell student-cell';
-                cell.dataset.index = idx;
-                cell.dataset.layer = 'student';
-                
-                var content = document.createElement('div');
-                content.className = 'cell-content';
-                cell.appendChild(content);
-                
-                cell.addEventListener('click', function(e) {
-                    handleCellClick(parseInt(this.dataset.index), e);
-                });
-                
-                // 드래그 선택 이벤트
-                cell.addEventListener('mousedown', function(e) {
-                    if (e.button !== 0) return;
-                    isDragging = true;
-                    var idx = parseInt(this.dataset.index);
-                    selectionStart = idx;
-                    clearSelection();
-                    selectedCells.push(idx);
-                    this.classList.add('selected');
-                });
-                
-                cell.addEventListener('mouseenter', function(e) {
-                    if (!isDragging) return;
-                    var idx = parseInt(this.dataset.index);
-                    clearSelection();
-                    var start = Math.min(selectionStart, idx);
-                    var end = Math.max(selectionStart, idx);
-                    for (var k = start; k <= end; k++) {
-                        if (studentCells[k]) {
-                            selectedCells.push(k);
-                            studentCells[k].classList.add('selected');
-                        }
+            // 학생용 셀
+            cell.className = 'cell student-cell';
+            cell.dataset.index = idx;
+            cell.dataset.layer = 'student';
+            
+            var content = document.createElement('div');
+            content.className = 'cell-content';
+            cell.appendChild(content);
+            
+            // 클릭 이벤트
+            cell.addEventListener('click', function(e) {
+                var idx = parseInt(this.dataset.index);
+                handleCellClick(idx, e);
+            });
+            
+            // 드래그 선택 이벤트
+            cell.addEventListener('mousedown', function(e) {
+                if (e.button !== 0) return;
+                isDragging = true;
+                var idx = parseInt(this.dataset.index);
+                selectionStart = idx;
+                clearSelection();
+                selectedCells.push(idx);
+                this.classList.add('selected');
+            });
+            
+            cell.addEventListener('mouseenter', function(e) {
+                if (!isDragging) return;
+                var idx = parseInt(this.dataset.index);
+                clearSelection();
+                var start = Math.min(selectionStart, idx);
+                var end = Math.max(selectionStart, idx);
+                for (var k = start; k <= end; k++) {
+                    if (studentCells[k]) {
+                        selectedCells.push(k);
+                        studentCells[k].classList.add('selected');
                     }
-                });
-                
-                manuscriptPaper.appendChild(cell);
-                studentCells.push(cell);
-                studentData.push('');
-            } else {
-                // 선생용 행 (선생님 수정 표시용)
-                cell.className = 'cell teacher-cell';
-                cell.dataset.index = idx;
-                cell.dataset.layer = 'teacher';
-                
-                var content = document.createElement('div');
-                content.className = 'cell-content';
-                cell.appendChild(content);
-                
-                // 선생용 행은 클릭 비활성화 (읽기 전용)
-                cell.style.cursor = 'default';
-                
-                manuscriptPaper.appendChild(cell);
-                teacherCells.push(cell);
-                teacherData.push('');
-            }
+                }
+            });
+            
+            manuscriptPaper.appendChild(cell);
+            studentCells.push(cell);
+            studentData.push('');
         }
+    }
+    
+    // 선생용 셀 생성 (별도 배열, DOM에는 추가 안 함)
+    for (var i = 0; i < totalCells; i++) {
+        teacherData.push('');
     }
     
     // 조합용 숨김 input 생성
@@ -134,21 +121,15 @@ function renderCell(idx) {
 function renderTeacherCell(idx) {
     if (idx < 0 || idx >= teacherData.length) return;
     
-    var cell = teacherCells[idx];
-    if (!cell) return;
-    
-    var content = cell.querySelector('.cell-content');
-    
-    if (content) {
-        content.textContent = teacherData[idx] || '';
-    }
+    // 선생님 셀은 DOM에 없으므로 데이터만 업데이트
+    // Tab 키로 전환 시 동적 생성
 }
 
 // 셀 클릭 핸들러 (학생용만)
 function handleCellClick(idx, e) {
     // 버퍼 확정
-    if (alphaNumericBuffer) {
-        finalizeBuffer();
+    if (window.inputHandler && window.inputHandler.finalize_buffer) {
+        window.inputHandler.finalize_buffer();
     }
     
     // Shift 클릭: 범위 선택
@@ -177,6 +158,12 @@ function handleCellClick(idx, e) {
     renderCell(idx);
     
     currentPos = idx;
+    
+    // WASM InputHandler에 위치 설정
+    if (window.inputHandler) {
+        window.inputHandler.set_position(idx);
+    }
+    
     updateActiveCell();
     
     setTimeout(function() {
@@ -201,27 +188,22 @@ function clearSelection() {
     }
     isSelecting = false;
     isDragging = false;
-    selectionStart = -1;
 }
 
 // 원고 텍스트 가져오기 (학생 데이터만)
 function getManuscriptText() {
     var text = '';
-    var studentRowCount = 0;
     
     for (var i = 0; i < rows; i++) {
-        if (i % 2 === 0) { // 학생용 행만
-            var line = '';
-            for (var j = 0; j < cols; j++) {
-                var idx = studentRowCount * cols + j;
-                if (idx < studentData.length) {
-                    var char = studentData[idx] || '';
-                    line += char;
-                }
+        var line = '';
+        for (var j = 0; j < cols; j++) {
+            var idx = i * cols + j;
+            if (idx < studentData.length) {
+                var char = studentData[idx] || '';
+                line += char;
             }
-            text += line + '\n';
-            studentRowCount++;
         }
+        text += line + '\n';
     }
     return text;
 }
@@ -286,10 +268,16 @@ function loadManuscriptText(text, savedCols, modifiedText, errorText, memo) {
     }
     
     currentPos = 0;
+    
+    // WASM InputHandler에 위치 설정
+    if (window.inputHandler) {
+        window.inputHandler.set_position(0);
+    }
+    
     updateActiveCell();
 }
 
-// 수정본 로드 (선생님 행에 표시)
+// 수정본 로드 (선생님 데이터에만 저장)
 function loadModifiedText(modifiedText) {
     if (!modifiedText) return;
     
@@ -304,7 +292,6 @@ function loadModifiedText(modifiedText) {
             } else {
                 teacherData[idx] = '';
             }
-            renderTeacherCell(idx);
             idx++;
         }
     }
@@ -412,7 +399,7 @@ function adjustMemoPanelPosition() {
     }
 }
 
-// 레이어 전환 함수 (원래 코드)
+// 레이어 전환 함수
 function switchLayer(layer) {
     currentLayer = layer;
     
@@ -421,22 +408,20 @@ function switchLayer(layer) {
         for (var i = 0; i < studentCells.length; i++) {
             studentCells[i].style.display = '';
         }
-        for (var i = 0; i < teacherCells.length; i++) {
-            teacherCells[i].style.display = 'none';
-        }
+        
+        // 선생님 셀 숨기기 (있다면)
+        var teacherCells = document.querySelectorAll('.teacher-cell');
+        teacherCells.forEach(function(cell) {
+            cell.style.display = 'none';
+        });
         
         var memoPanel = document.getElementById('memoSidePanel');
         if (memoPanel) {
             memoPanel.style.display = 'none';
         }
     } else if (layer === 'teacher') {
-        // 학생 + 선생님 레이어 모두 표시
-        for (var i = 0; i < studentCells.length; i++) {
-            studentCells[i].style.display = '';
-        }
-        for (var i = 0; i < teacherCells.length; i++) {
-            teacherCells[i].style.display = '';
-        }
+        // 선생님 레이어 생성 및 표시
+        createTeacherLayer();
         
         var memoPanel = document.getElementById('memoSidePanel');
         if (memoPanel) {
@@ -451,7 +436,36 @@ function switchLayer(layer) {
     drawErrorLines();
 }
 
-// Tab 키 이벤트 리스너 (원래 코드)
+// 선생님 레이어 동적 생성
+function createTeacherLayer() {
+    // 기존 선생님 셀 제거
+    var existingTeacherCells = document.querySelectorAll('.teacher-cell');
+    existingTeacherCells.forEach(function(cell) {
+        cell.remove();
+    });
+    
+    // 선생님 셀 재생성
+    for (var i = 0; i < studentCells.length; i++) {
+        var studentCell = studentCells[i];
+        var teacherCell = document.createElement('div');
+        
+        teacherCell.className = 'cell teacher-cell';
+        teacherCell.dataset.index = i;
+        teacherCell.dataset.layer = 'teacher';
+        
+        var content = document.createElement('div');
+        content.className = 'cell-content';
+        content.textContent = teacherData[i] || '';
+        teacherCell.appendChild(content);
+        
+        teacherCell.style.cursor = 'default';
+        
+        // 학생 셀 바로 다음에 삽입
+        studentCell.parentNode.insertBefore(teacherCell, studentCell.nextSibling);
+    }
+}
+
+// Tab 키 이벤트 리스너
 document.addEventListener('keydown', function(e) {
     if (!workArea || !workArea.classList.contains('show')) return;
     
