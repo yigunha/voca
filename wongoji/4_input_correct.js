@@ -11,7 +11,7 @@ async function initInputHandler() {
     
     try {
         inputHandler = new window.wasmModule.InputHandler(cols, rows);
-        window.inputHandler = inputHandler; // 전역으로 노출
+        window.inputHandler = inputHandler;
         return true;
     } catch (e) {
         console.error('Failed to initialize input handler:', e);
@@ -35,10 +35,15 @@ function updateActiveCell() {
         if (compositionInput) {
             compositionInput.style.top = activeCell.offsetTop + 'px';
             compositionInput.style.left = activeCell.offsetLeft + 'px';
-            compositionInput.focus();
+            
+            // 포커스 강제 복구
+            setTimeout(function() {
+                if (document.activeElement !== compositionInput) {
+                    compositionInput.focus();
+                }
+            }, 0);
         }
         
-        // 화면에 보이도록 스크롤
         var rect = activeCell.getBoundingClientRect();
         var isVisible = (
             rect.top >= 0 &&
@@ -74,7 +79,6 @@ function handleInputResults(results) {
         
         switch (result.action) {
             case 'place':
-                // 셀에 내용 배치
                 if (result.clear_current) {
                     studentData[result.pos] = result.content;
                     var cell = studentCells[result.pos];
@@ -83,7 +87,6 @@ function handleInputResults(results) {
                         content.textContent = result.content;
                     }
                     
-                    // 2글자 이상이면 special 표시
                     if (result.content.length > 1) {
                         cell.dataset.special = 'true';
                     } else {
@@ -94,7 +97,6 @@ function handleInputResults(results) {
                 break;
                 
             case 'buffer':
-                // 버퍼 상태 표시 (임시)
                 studentData[result.pos] = result.content;
                 var cell = studentCells[result.pos];
                 var content = cell.querySelector('.cell-content');
@@ -106,7 +108,6 @@ function handleInputResults(results) {
                 break;
                 
             case 'composing':
-                // 한글 조합 중
                 var cell = studentCells[result.pos];
                 var content = cell.querySelector('.cell-content');
                 if (content) {
@@ -115,7 +116,6 @@ function handleInputResults(results) {
                 break;
                 
             case 'clear_and_move':
-                // 스페이스바: 현재 셀 비우고 이동
                 studentData[result.pos] = '';
                 var cell = studentCells[result.pos];
                 var content = cell.querySelector('.cell-content');
@@ -127,7 +127,6 @@ function handleInputResults(results) {
                 break;
                 
             case 'delete':
-                // 삭제
                 studentData[result.pos] = '';
                 var cell = studentCells[result.pos];
                 var content = cell.querySelector('.cell-content');
@@ -214,7 +213,6 @@ function setupInputEvents() {
             e.preventDefault();
             
             if (selectedCells.length > 0) {
-                // 선택된 셀들 삭제
                 for (var i = 0; i < selectedCells.length; i++) {
                     var idx = selectedCells[i];
                     studentData[idx] = '';
@@ -228,7 +226,6 @@ function setupInputEvents() {
                 clearSelection();
                 updateActiveCell();
             } else {
-                // 현재 셀이 비어있으면 이전 셀로 이동 후 삭제
                 var pos = inputHandler.get_position();
                 if (studentData[pos] === '' && pos > 0) {
                     inputHandler.move_left();
@@ -320,6 +317,26 @@ function setupInputEvents() {
                 updateActiveCell();
             }
             return;
+        }
+    });
+    
+    // 포커스 유지 (Alt 키 등으로 인한 포커스 손실 방지)
+    compositionInput.addEventListener('blur', function() {
+        setTimeout(function() {
+            if (workArea && workArea.classList.contains('show')) {
+                compositionInput.focus();
+            }
+        }, 10);
+    });
+    
+    // 전역 클릭 시 포커스 복구
+    document.addEventListener('click', function(e) {
+        if (workArea && workArea.classList.contains('show')) {
+            if (!e.target.closest('.modal') && !e.target.closest('button')) {
+                setTimeout(function() {
+                    compositionInput.focus();
+                }, 10);
+            }
         }
     });
 }
