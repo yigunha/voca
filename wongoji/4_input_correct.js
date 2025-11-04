@@ -1,9 +1,9 @@
 // WASM 입력 핸들러 사용
 let inputHandler = null;
 let compositionInput = null;
-let lastCompositionLength = 0;
+let lastCompositionData = '';
 
-// ìž…ë ¥ í•¸ë"¤ëŸ¬ ì´ˆê¸°í™"
+// 입력 핸들러 초기화
 async function initInputHandler() {
     if (!window.wasmModule || !window.wasmModule.InputHandler) {
         console.error('WASM module not loaded');
@@ -20,7 +20,7 @@ async function initInputHandler() {
     }
 }
 
-// í™œì„± ì…€ ì—…ë°ì´íŠ¸
+// 활성 셀 업데이트
 function updateActiveCell() {
     if (!inputHandler) return;
     
@@ -37,7 +37,7 @@ function updateActiveCell() {
             compositionInput.style.top = activeCell.offsetTop + 'px';
             compositionInput.style.left = activeCell.offsetLeft + 'px';
             
-            // í¬ì»¤ìŠ¤ ê°•ì œ ë³µêµ¬
+            // 포커스 강제 복구
             setTimeout(function() {
                 if (document.activeElement !== compositionInput) {
                     compositionInput.focus();
@@ -65,7 +65,7 @@ function updateActiveCell() {
     currentPos = pos;
 }
 
-// ìž…ë ¥ ê²°ê³¼ ì²˜ë¦¬
+// 입력 결과 처리
 function handleInputResults(results) {
     if (!results || !Array.isArray(results)) {
         if (results && typeof results === 'object') {
@@ -98,7 +98,7 @@ function handleInputResults(results) {
                 break;
                 
             case 'buffer':
-                // âœ… ë²„í¼1ë§Œ í˜„ìž¬ ì¹¸ì— ìž„ì‹œ í'œì‹œ
+                // 버퍼1만 현재 칸에 임시 표시
                 studentData[result.pos] = result.buffer1;
                 var cell = studentCells[result.pos];
                 var content = cell.querySelector('.cell-content');
@@ -110,6 +110,7 @@ function handleInputResults(results) {
                 break;
                 
             case 'composing':
+                // 조합 중인 한글 표시
                 var cell = studentCells[result.pos];
                 var content = cell.querySelector('.cell-content');
                 if (content) {
@@ -120,7 +121,7 @@ function handleInputResults(results) {
                 break;
                 
             case 'clear_and_move':
-                // âœ… í˜„ìž¬ ì¹¸ ë¹„ìš°ê¸°
+                // 현재 칸 비우기
                 studentData[result.pos] = '';
                 var cell = studentCells[result.pos];
                 var content = cell.querySelector('.cell-content');
@@ -147,7 +148,7 @@ function handleInputResults(results) {
     updateActiveCell();
 }
 
-// ì´ë²¤íŠ¸ ì„¤ì •
+// 이벤트 설정
 function setupInputEvents() {
     compositionInput = document.getElementById('compositionInput');
     if (!compositionInput) {
@@ -156,11 +157,10 @@ function setupInputEvents() {
     }
     
     // 한글 조합 시작
-    compositionInput.addEventListener('compositionstart', function() {
+    compositionInput.addEventListener('compositionstart', function(e) {
         if (!inputHandler) return;
         
-        lastCompositionLength = 0;
-
+        lastCompositionData = '';
         inputHandler.start_composition();
         isComposing = true;
         compositionInput.classList.add('is-composing');
@@ -177,12 +177,13 @@ function setupInputEvents() {
         
         var text = e.data || '';
         var currentLength = text.length;
+        var lastLength = lastCompositionData.length;
         
-        // 길이가 증가했으면 = 이전 글자들 완성
-        if (currentLength > lastCompositionLength && lastCompositionLength > 0) {
-            // 완성된 글자들 즉시 확정하고 이동
+        // 길이가 증가했고, 이전에 글자가 있었으면 = 완성된 글자 생성
+        if (currentLength > lastLength && lastLength > 0) {
+            // 완성된 글자들 배치 (마지막 글자 제외)
             var completedChars = text.substring(0, currentLength - 1);
-            for (var i = 0; i < completedChars.length; i++) {
+            for (var i = lastLength - 1; i < completedChars.length; i++) {
                 var result = inputHandler.place_char_and_move(completedChars[i]);
                 handleInputResults(result);
             }
@@ -192,12 +193,12 @@ function setupInputEvents() {
             var result = inputHandler.update_composition(lastChar);
             handleInputResults(result);
         } else {
-            // 길이 변화 없으면 그냥 조합중 표시
+            // 조합중인 글자 표시
             var result = inputHandler.update_composition(text);
             handleInputResults(result);
         }
         
-        lastCompositionLength = currentLength;
+        lastCompositionData = text;
     });
     
     // 한글 조합 완료
@@ -205,24 +206,25 @@ function setupInputEvents() {
         if (!inputHandler) return;
         
         isComposing = false;
+        inputHandler.end_composition();
         compositionInput.classList.remove('is-composing');
+        
         for (var i = 0; i < studentCells.length; i++) {
             studentCells[i].classList.remove('is-composing');
         }
         
-        // 마지막 남은 글자 확정
+        // 마지막 완성된 글자 배치
         var text = e.data || '';
         if (text) {
             compositionInput.value = '';
-            var lastChar = text[text.length - 1];
-            var result = inputHandler.process_input(lastChar);
+            var result = inputHandler.finalize_composition(text);
             handleInputResults(result);
         }
         
-        lastCompositionLength = 0;
+        lastCompositionData = '';
     });
     
-    // ì¼ë°˜ ìž…ë ¥
+    // 일반 입력
     compositionInput.addEventListener('input', function(e) {
         if (!inputHandler || inputHandler.is_composing()) return;
         
@@ -234,7 +236,7 @@ function setupInputEvents() {
         }
     });
     
-    // í‚¤ë³´ë"œ ì´ë²¤íŠ¸
+    // 키보드 이벤트
     compositionInput.addEventListener('keydown', function(e) {
         if (!inputHandler) return;
         if (e.isComposing) return;
@@ -351,7 +353,7 @@ function setupInputEvents() {
         }
     });
     
-    // í¬ì»¤ìŠ¤ ìœ ì§€ (Alt í‚¤ ë"±ìœ¼ë¡œ ì¸í•œ í¬ì»¤ìŠ¤ ì†ì‹¤ ë°©ì§€)
+    // 포커스 유지 (Alt 탭 등으로 인한 포커스 손실 방지)
     compositionInput.addEventListener('blur', function() {
         setTimeout(function() {
             if (workArea && workArea.classList.contains('show')) {
@@ -360,7 +362,7 @@ function setupInputEvents() {
         }, 10);
     });
     
-    // ì „ì—­ í´ë¦­ ì‹œ í¬ì»¤ìŠ¤ ë³µêµ¬
+    // 작업 패널 시 포커스 복구
     document.addEventListener('click', function(e) {
         if (workArea && workArea.classList.contains('show')) {
             if (!e.target.closest('.modal') && !e.target.closest('button')) {
@@ -372,7 +374,7 @@ function setupInputEvents() {
     });
 }
 
-// ì›ê³ ì§€ ì´ˆê¸°í™" ì‹œ ìž…ë ¥ í•¸ë"¤ëŸ¬ë„ ì´ˆê¸°í™"
+// 워크지 초기화 시 입력 핸들러도 초기화
 async function initializePaperWithInput() {
     await initInputHandler();
     if (inputHandler) {
@@ -381,7 +383,7 @@ async function initializePaperWithInput() {
     }
 }
 
-// ì „ì—­ìœ¼ë¡œ ë…¸ì¶œ
+// 전역으로 내보내기
 window.setupInputEvents = setupInputEvents;
 window.updateActiveCell = updateActiveCell;
 window.initializePaperWithInput = initializePaperWithInput;
