@@ -37,7 +37,6 @@ function updateActiveCell() {
             compositionInput.style.top = activeCell.offsetTop + 'px';
             compositionInput.style.left = activeCell.offsetLeft + 'px';
             
-            // 포커스 강제 복구
             setTimeout(function() {
                 if (document.activeElement !== compositionInput) {
                     compositionInput.focus({ preventScroll: true });
@@ -98,7 +97,6 @@ function handleInputResults(results) {
                 break;
                 
             case 'buffer':
-                // 버퍼1만 현재 칸에 임시 표시
                 studentData[result.pos] = result.buffer1;
                 var cell = studentCells[result.pos];
                 var content = cell.querySelector('.cell-content');
@@ -110,7 +108,6 @@ function handleInputResults(results) {
                 break;
                 
             case 'composing':
-                // 조합 중인 한글 표시
                 var cell = studentCells[result.pos];
                 var content = cell.querySelector('.cell-content');
                 if (content) {
@@ -121,7 +118,6 @@ function handleInputResults(results) {
                 break;
                 
             case 'clear_and_move':
-                // 현재 칸 비우기
                 studentData[result.pos] = '';
                 var cell = studentCells[result.pos];
                 var content = cell.querySelector('.cell-content');
@@ -146,6 +142,66 @@ function handleInputResults(results) {
     }
     
     updateActiveCell();
+}
+
+// 클립보드에 복사
+function copySelectedCells() {
+    if (selectedCells.length === 0) return false;
+    
+    // 선택된 셀들을 정렬
+    var sortedCells = selectedCells.slice().sort(function(a, b) { return a - b; });
+    
+    clipboard = [];
+    for (var i = 0; i < sortedCells.length; i++) {
+        var idx = sortedCells[i];
+        clipboard.push({
+            index: idx,
+            content: studentData[idx] || '',
+            relativePos: idx - sortedCells[0]
+        });
+    }
+    
+    return true;
+}
+
+// 클립보드에서 붙여넣기
+function pasteClipboard() {
+    if (clipboard.length === 0) return false;
+    if (!inputHandler) return false;
+    
+    var startPos = inputHandler.get_position();
+    
+    for (var i = 0; i < clipboard.length; i++) {
+        var item = clipboard[i];
+        var targetPos = startPos + item.relativePos;
+        
+        if (targetPos >= 0 && targetPos < studentData.length) {
+            studentData[targetPos] = item.content;
+            renderCell(targetPos);
+        }
+    }
+    
+    updateActiveCell();
+    return true;
+}
+
+// 선택된 셀 잘라내기
+function cutSelectedCells() {
+    if (!copySelectedCells()) return false;
+    
+    // 선택된 셀들 삭제
+    for (var i = 0; i < selectedCells.length; i++) {
+        var idx = selectedCells[i];
+        studentData[idx] = '';
+        var content = studentCells[idx].querySelector('.cell-content');
+        if (content) content.textContent = '';
+        delete studentCells[idx].dataset.special;
+        delete studentCells[idx].dataset.temp;
+    }
+    
+    clearSelection();
+    updateActiveCell();
+    return true;
 }
 
 // 이벤트 설정
@@ -179,21 +235,17 @@ function setupInputEvents() {
         var currentLength = text.length;
         var lastLength = lastCompositionData.length;
         
-        // 길이가 증가했고, 이전에 글자가 있었으면 = 완성된 글자 생성
         if (currentLength > lastLength && lastLength > 0) {
-            // 완성된 글자들 배치 (마지막 글자 제외)
             var completedChars = text.substring(0, currentLength - 1);
             for (var i = lastLength - 1; i < completedChars.length; i++) {
                 var result = inputHandler.place_char_and_move(completedChars[i]);
                 handleInputResults(result);
             }
             
-            // 마지막 글자만 조합중 표시
             var lastChar = text[currentLength - 1];
             var result = inputHandler.update_composition(lastChar);
             handleInputResults(result);
         } else {
-            // 조합중인 글자 표시
             var result = inputHandler.update_composition(text);
             handleInputResults(result);
         }
@@ -213,7 +265,6 @@ function setupInputEvents() {
             studentCells[i].classList.remove('is-composing');
         }
         
-        // 마지막 완성된 글자 배치
         var text = e.data || '';
         if (text) {
             compositionInput.value = '';
@@ -240,6 +291,38 @@ function setupInputEvents() {
     compositionInput.addEventListener('keydown', function(e) {
         if (!inputHandler) return;
         if (e.isComposing) return;
+        
+        // Ctrl/Cmd + C (복사)
+        if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+            e.preventDefault();
+            if (selectedCells.length > 0) {
+                copySelectedCells();
+                console.log('복사됨:', selectedCells.length + '개 셀');
+            }
+            return;
+        }
+        
+        // Ctrl/Cmd + X (잘라내기)
+        if ((e.ctrlKey || e.metaKey) && e.key === 'x') {
+            e.preventDefault();
+            if (selectedCells.length > 0) {
+                if (cutSelectedCells()) {
+                    console.log('잘라내기 완료');
+                }
+            }
+            return;
+        }
+        
+        // Ctrl/Cmd + V (붙여넣기)
+        if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+            e.preventDefault();
+            if (clipboard.length > 0) {
+                if (pasteClipboard()) {
+                    console.log('붙여넣기 완료');
+                }
+            }
+            return;
+        }
         
         // Backspace
         if (e.key === 'Backspace') {
@@ -310,9 +393,10 @@ function setupInputEvents() {
             return;
         }
         
-        // Arrow keys
+        // Arrow keys - 선택 해제
         if (e.key === 'ArrowLeft') {
             e.preventDefault();
+            clearSelection();
             if (inputHandler.move_left()) {
                 updateActiveCell();
             }
@@ -321,6 +405,7 @@ function setupInputEvents() {
         
         if (e.key === 'ArrowRight') {
             e.preventDefault();
+            clearSelection();
             if (inputHandler.move_right()) {
                 updateActiveCell();
             }
@@ -329,6 +414,7 @@ function setupInputEvents() {
         
         if (e.key === 'ArrowUp') {
             e.preventDefault();
+            clearSelection();
             if (inputHandler.move_up()) {
                 updateActiveCell();
             }
@@ -337,6 +423,7 @@ function setupInputEvents() {
         
         if (e.key === 'ArrowDown') {
             e.preventDefault();
+            clearSelection();
             if (inputHandler.move_down()) {
                 updateActiveCell();
             }
@@ -346,6 +433,7 @@ function setupInputEvents() {
         // Enter
         if (e.key === 'Enter') {
             e.preventDefault();
+            clearSelection();
             if (inputHandler.move_next_row()) {
                 updateActiveCell();
             }
@@ -353,7 +441,7 @@ function setupInputEvents() {
         }
     });
     
-    // 포커스 유지 (Alt 탭 등으로 인한 포커스 손실 방지) - 스크롤 방지 추가
+    // 포커스 유지
     compositionInput.addEventListener('blur', function() {
         setTimeout(function() {
             if (workArea && workArea.classList.contains('show')) {
@@ -362,7 +450,7 @@ function setupInputEvents() {
         }, 10);
     });
     
-    // 작업 패널 시 포커스 복구 - 스크롤 방지 추가
+    // 작업 패널 시 포커스 복구
     document.addEventListener('click', function(e) {
         if (workArea && workArea.classList.contains('show')) {
             if (!e.target.closest('.modal') && !e.target.closest('button')) {
@@ -389,3 +477,6 @@ window.updateActiveCell = updateActiveCell;
 window.initializePaperWithInput = initializePaperWithInput;
 window.handleInputResults = handleInputResults;
 window.initInputHandler = initInputHandler;
+window.copySelectedCells = copySelectedCells;
+window.pasteClipboard = pasteClipboard;
+window.cutSelectedCells = cutSelectedCells;

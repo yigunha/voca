@@ -15,19 +15,16 @@ function initializePaper() {
         manuscriptPaper.classList.add('cols-25');
     }
     
-    // ★★★ rows는 학생용 행 수를 의미함 (선생용 행은 자동으로 추가됨) ★★★
-    var totalRows = rows * 2; // 학생 행 + 선생 행
+    var totalRows = rows * 2;
     
-    // ★★★ 행 단위로 학생/선생 교대 배치 ★★★
     for (var i = 0; i < totalRows; i++) {
-        var isStudentRow = (i % 2 === 0); // 짝수 행 = 학생용, 홀수 행 = 선생용
+        var isStudentRow = (i % 2 === 0);
         
         for (var j = 0; j < cols; j++) {
             var idx = i * cols + j;
             var cell = document.createElement('div');
             
             if (isStudentRow) {
-                // 학생용 행
                 cell.className = 'cell student-cell';
                 cell.dataset.index = idx;
                 cell.dataset.layer = 'student';
@@ -43,30 +40,36 @@ function initializePaper() {
                     handleCellClick(studentIdx, e);
                 });
                 
-                // 드래그 선택 이벤트
+                // 드래그 선택 시작
                 cell.addEventListener('mousedown', function(e) {
                     if (e.button !== 0) return;
-                    isDragging = true;
+                    e.preventDefault();
+                    
                     var domIdx = parseInt(this.dataset.index);
                     var studentIdx = domIndexToStudentIndex(domIdx);
-                    selectionStart = studentIdx;
-                    clearSelection();
-                    selectedCells.push(studentIdx);
-                    studentCells[studentIdx].classList.add('selected');
+                    
+                    // Shift 클릭이 아닐 때만 드래그 모드 시작
+                    if (!e.shiftKey) {
+                        isDragging = true;
+                        selectionStart = studentIdx;
+                        clearSelection();
+                        addToSelection(studentIdx);
+                    }
                 });
                 
+                // 드래그 중 선택 확장
                 cell.addEventListener('mouseenter', function(e) {
                     if (!isDragging) return;
+                    
                     var domIdx = parseInt(this.dataset.index);
                     var studentIdx = domIndexToStudentIndex(domIdx);
+                    
+                    // 시작점부터 현재 위치까지 선택
                     clearSelection();
                     var start = Math.min(selectionStart, studentIdx);
                     var end = Math.max(selectionStart, studentIdx);
                     for (var k = start; k <= end; k++) {
-                        if (studentCells[k]) {
-                            selectedCells.push(k);
-                            studentCells[k].classList.add('selected');
-                        }
+                        addToSelection(k);
                     }
                 });
                 
@@ -74,7 +77,6 @@ function initializePaper() {
                 studentCells.push(cell);
                 studentData.push('');
             } else {
-                // 선생용 행 (선생님 수정 표시용)
                 cell.className = 'cell teacher-cell';
                 cell.dataset.index = idx;
                 cell.dataset.layer = 'teacher';
@@ -83,7 +85,6 @@ function initializePaper() {
                 content.className = 'cell-content';
                 cell.appendChild(content);
                 
-                // 선생용 행은 클릭 비활성화 (읽기 전용)
                 cell.style.cursor = 'default';
                 
                 manuscriptPaper.appendChild(cell);
@@ -93,7 +94,6 @@ function initializePaper() {
         }
     }
     
-    // 조합용 숨김 input 생성
     var existingInput = document.getElementById('compositionInput');
     if (existingInput) {
         existingInput.remove();
@@ -113,13 +113,11 @@ function initializePaper() {
         }
     });
     
-    // 이벤트 설정
     setupInputEvents();
     
     currentPos = 0;
     currentLayer = 'student';
     
-    // ★★★ 시작 시 학생 모드로 명시적 전환 ★★★
     switchLayer('student');
     
     updateActiveCell();
@@ -140,7 +138,7 @@ function studentIndexToDomIndex(studentIdx) {
     return (row * 2) * cols + col;
 }
 
-// 셀 렌더링 (학생용만)
+// 셀 렌더링
 function renderCell(idx) {
     if (idx < 0 || idx >= studentData.length) return;
     
@@ -168,10 +166,30 @@ function renderTeacherCell(idx) {
     }
 }
 
+// 선택에 셀 추가
+function addToSelection(idx) {
+    if (idx < 0 || idx >= studentCells.length) return;
+    if (selectedCells.indexOf(idx) === -1) {
+        selectedCells.push(idx);
+    }
+    studentCells[idx].classList.add('selected');
+}
 
-// 셀 클릭 핸들러 (학생용만)
+// 선택 해제
+function clearSelection() {
+    for (var i = 0; i < selectedCells.length; i++) {
+        var idx = selectedCells[i];
+        if (studentCells[idx]) {
+            studentCells[idx].classList.remove('selected');
+        }
+    }
+    selectedCells = [];
+    isSelecting = false;
+}
+
+// 셀 클릭 핸들러
 function handleCellClick(idx, e) {
-    // ✅ 한글 조합 중이면 먼저 종료
+    // 한글 조합 중이면 먼저 종료
     if (window.inputHandler && window.inputHandler.is_composing()) {
         window.inputHandler.end_composition();
         var compositionInput = document.getElementById('compositionInput');
@@ -182,7 +200,7 @@ function handleCellClick(idx, e) {
         }
     }
     
-    // ✅ 이전 위치의 다음 칸 temp 제거
+    // 이전 위치의 다음 칸 temp 제거
     if (window.inputHandler) {
         var oldPos = window.inputHandler.get_position();
         if (oldPos + 1 < studentCells.length) {
@@ -203,26 +221,25 @@ function handleCellClick(idx, e) {
     }
     
     // Shift 클릭: 범위 선택
-    if (e.shiftKey && selectionStart >= 0) {
+    if (e.shiftKey) {
+        e.preventDefault();
+        
+        // 현재 커서 위치부터 클릭한 위치까지 선택
+        var start = Math.min(currentPos, idx);
+        var end = Math.max(currentPos, idx);
+        
         clearSelection();
-        var start = Math.min(selectionStart, idx);
-        var end = Math.max(selectionStart, idx);
         for (var i = start; i <= end; i++) {
-            if (studentCells[i]) {
-                selectedCells.push(i);
-                studentCells[i].classList.add('selected');
-            }
+            addToSelection(i);
         }
         return;
     }
     
-    // 일반 클릭 - 커서 이동
+    // 일반 클릭 - 선택 해제하고 커서 이동
     clearSelection();
     
-    // ✅ 클릭한 셀로 이동 (내용 유지)
     currentPos = idx;
     
-    // WASM InputHandler에 위치 설정
     if (window.inputHandler) {
         window.inputHandler.set_position(idx);
     }
@@ -236,31 +253,15 @@ function handleCellClick(idx, e) {
             compositionInput.focus();
         }
     }, 10);
-    
-    selectionStart = idx;
-    isSelecting = true;
 }
 
-
-// 선택 해제
-function clearSelection() {
-    selectedCells = [];
-    for (var i = 0; i < studentCells.length; i++) {
-        if (studentCells[i]) {
-            studentCells[i].classList.remove('selected');
-        }
-    }
-    isSelecting = false;
-    isDragging = false;
-}
-
-// 원고 텍스트 가져오기 (학생 데이터만) - 탭으로 구분
+// 원고 텍스트 가져오기
 function getManuscriptText() {
     var lines = [];
     var studentRowCount = 0;
     
     for (var i = 0; i < rows; i++) {
-        if (i % 2 === 0) { // 학생용 행만
+        if (i % 2 === 0) {
             var cells = [];
             for (var j = 0; j < cols; j++) {
                 var idx = studentRowCount * cols + j;
@@ -279,7 +280,6 @@ function getManuscriptText() {
 
 // 원고 텍스트 로드
 function loadManuscriptText(text, savedCols, modifiedText, errorText, memo) {
-    // 칸 수가 다르면 재초기화
     if (savedCols !== cols) {
         cols = savedCols;
         
@@ -296,7 +296,6 @@ function loadManuscriptText(text, savedCols, modifiedText, errorText, memo) {
         initializePaper();
     }
     
-    // 학생 데이터 파싱 - 탭으로 구분된 데이터
     var lines = text.split('\n');
     var idx = 0;
     
@@ -313,14 +312,12 @@ function loadManuscriptText(text, savedCols, modifiedText, errorText, memo) {
         }
     }
     
-    // 나머지 셀 비우기
     while (idx < studentData.length) {
         studentData[idx] = '';
         renderCell(idx);
         idx++;
     }
     
-    // 수정본 및 에러 라인 처리
     if (modifiedText) {
         loadModifiedText(modifiedText);
     }
@@ -329,7 +326,6 @@ function loadManuscriptText(text, savedCols, modifiedText, errorText, memo) {
         loadErrorText(errorText);
     }
     
-    // 메모 표시
     if (memo && memo.trim()) {
         showTeacherMemo(memo);
     } else {
@@ -338,7 +334,6 @@ function loadManuscriptText(text, savedCols, modifiedText, errorText, memo) {
     
     currentPos = 0;
     
-    // WASM InputHandler에 위치 설정
     if (window.inputHandler) {
         window.inputHandler.set_position(0);
     }
@@ -346,7 +341,7 @@ function loadManuscriptText(text, savedCols, modifiedText, errorText, memo) {
     updateActiveCell();
 }
 
-// 수정본 로드 (선생님 행에 표시) - 탭으로 구분된 데이터
+// 수정본 로드
 function loadModifiedText(modifiedText) {
     if (!modifiedText) return;
     
@@ -369,21 +364,18 @@ function loadModifiedText(modifiedText) {
     hasModifiedText = true;
 }
 
-// 에러 라인 로드 - 선생님이 저장한 JSON 형식을 읽음
+// 에러 라인 로드
 function loadErrorText(errorText) {
     if (!errorText || !errorLineSvg) return;
     
     errorMarks = [];
     
     try {
-        // ★★★ 선생님 형식: JSON [{row, startCol, endCol}, ...] ★★★
         var jsonMarks = JSON.parse(errorText);
         
-        // JSON 형식인 경우
         if (Array.isArray(jsonMarks) && jsonMarks.length > 0) {
             for (var i = 0; i < jsonMarks.length; i++) {
                 var mark = jsonMarks[i];
-                // startCol부터 endCol까지의 모든 셀을 errorMarks에 추가
                 for (var col = mark.startCol; col <= mark.endCol; col++) {
                     var cellIndex = mark.row * cols + col;
                     errorMarks.push(cellIndex);
@@ -393,11 +385,9 @@ function loadErrorText(errorText) {
             return;
         }
     } catch (e) {
-        // JSON 파싱 실패 시 텍스트 형식으로 시도 (하위 호환성)
         console.log('JSON 파싱 실패, 텍스트 형식으로 시도:', e);
     }
     
-    // ★★★ 텍스트 형식 지원 (하위 호환성) ★★★
     var lines = errorText.split('\n');
     
     for (var i = 0; i < lines.length; i++) {
@@ -416,7 +406,6 @@ function loadErrorText(errorText) {
 function drawErrorLines() {
     if (!errorLineSvg || !manuscriptPaper) return;
     
-    // SVG 크기와 위치를 원고지와 정확히 일치시킴
     var paperRect = manuscriptPaper.getBoundingClientRect();
     var containerRect = manuscriptPaper.parentElement.getBoundingClientRect();
     
@@ -438,7 +427,6 @@ function drawErrorLines() {
         var cell = studentCells[idx];
         var cellRect = cell.getBoundingClientRect();
         
-        // 원고지 기준 상대 좌표
         var x1 = cellRect.left - paperRect.left;
         var y = cellRect.bottom - paperRect.top - 2;
         var x2 = cellRect.right - paperRect.left;
@@ -478,7 +466,7 @@ function hideTeacherMemo() {
     }
 }
 
-// 메모 패널 위치 및 높이 조정
+// 메모 패널 위치 조정
 function adjustMemoPanelPosition() {
     var memoPanel = document.getElementById('memoSidePanel');
     var manuscriptPaper = document.getElementById('manuscriptPaper');
@@ -487,31 +475,26 @@ function adjustMemoPanelPosition() {
     if (!memoPanel || !manuscriptPaper || !manuscriptWrapper) return;
     if (memoPanel.style.display === 'none') return;
     
-    // 원고지의 실제 위치 계산
     var wrapperRect = manuscriptWrapper.getBoundingClientRect();
     var containerRect = document.querySelector('.manuscript-memo-container').getBoundingClientRect();
     
-    // 메모 패널을 원고지 바로 오른쪽에 배치
-    var leftPosition = wrapperRect.right - containerRect.left + 20; // 20px gap
+    var leftPosition = wrapperRect.right - containerRect.left + 20;
     memoPanel.style.left = leftPosition + 'px';
     
-    // 높이를 원고지와 동일하게
-    var manuscriptHeight = manuscriptPaper.offsetHeight + 20; // padding 포함
+    var manuscriptHeight = manuscriptPaper.offsetHeight + 20;
     memoPanel.style.height = manuscriptHeight + 'px';
     
-    // 메모 컨텐츠 높이 조정 (헤더 48px 제외)
     var memoContent = document.getElementById('memoSideContent');
     if (memoContent) {
         memoContent.style.height = (manuscriptHeight - 52) + 'px';
     }
 }
 
-// 레이어 전환 함수 (원래 코드)
+// 레이어 전환
 function switchLayer(layer) {
     currentLayer = layer;
     
     if (layer === 'student') {
-        // 학생 레이어만 표시
         for (var i = 0; i < studentCells.length; i++) {
             studentCells[i].style.display = '';
         }
@@ -524,7 +507,6 @@ function switchLayer(layer) {
             memoPanel.style.display = 'none';
         }
     } else if (layer === 'teacher') {
-        // 학생 + 선생님 레이어 모두 표시
         for (var i = 0; i < studentCells.length; i++) {
             studentCells[i].style.display = '';
         }
@@ -545,7 +527,7 @@ function switchLayer(layer) {
     drawErrorLines();
 }
 
-// Tab 키 이벤트 리스너 (원래 코드)
+// Tab 키 이벤트
 document.addEventListener('keydown', function(e) {
     if (!workArea || !workArea.classList.contains('show')) return;
     
@@ -559,7 +541,7 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-// 윈도우 리사이즈 시 메모 패널 재조정
+// 윈도우 리사이즈
 window.addEventListener('resize', function() {
     adjustMemoPanelPosition();
     drawErrorLines();
@@ -575,6 +557,7 @@ window.renderCell = renderCell;
 window.renderTeacherCell = renderTeacherCell;
 window.handleCellClick = handleCellClick;
 window.clearSelection = clearSelection;
+window.addToSelection = addToSelection;
 window.getManuscriptText = getManuscriptText;
 window.loadManuscriptText = loadManuscriptText;
 window.switchLayer = switchLayer;
