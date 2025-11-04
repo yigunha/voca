@@ -191,70 +191,63 @@ function clearSelection() {
 
 // 셀 클릭 핸들러
 function handleCellClick(idx, e) {
-    if (isDragging) return;  // 드래그 중이면 click 무시 (새 추가: 충돌 방지)
+    if (isDragging || e.button !== 0) return;  // 드래그나 우클릭 무시 (충돌 방지 강화)
 
     var compositionInput = document.getElementById('compositionInput');
     
     if (compositionInput) {
-        // 1. IME 강제 종료: blur() + compositionend dispatch
-        compositionInput.blur();
+        compositionInput.blur();  // IME 포커스 해제
         
-        // compositionend 강제 트리거 (빈 data로 IME 캐시 클리어)
+        // compositionend 강제 dispatch (IME 캐시 클리어)
         var endEvent = new CompositionEvent('compositionend', { bubbles: true, data: '' });
         compositionInput.dispatchEvent(endEvent);
         
         compositionInput.value = '';  // 값 초기화
     }
     
-    // 2. WASM 버퍼 확정 및 composing 종료 (타임아웃 0ms로 최소 지연)
-    setTimeout(function() {
-        if (window.inputHandler) {
-            window.inputHandler.end_composition();  // composing false
-            
-            // composing 여부에 따라 finalize
-            var result;
-            if (window.inputHandler.is_composing()) {
-                result = window.inputHandler.finalize_composition('');  // 빈 문자열로 강제 완료
-            } else {
-                result = window.inputHandler.finalize_buffer();
+    // WASM 버퍼 확정 (동기 처리: 타임아웃 제거)
+    if (window.inputHandler) {
+        window.inputHandler.end_composition();
+        
+        var result;
+        if (window.inputHandler.is_composing()) {
+            result = window.inputHandler.finalize_composition('');  // 빈 finalize로 중복 방지
+        } else {
+            result = window.inputHandler.finalize_buffer();
+        }
+        if (result) handleInputResults(result);
+        
+        // 다음 칸 temp 강제 제거 (중복 방지)
+        var oldPos = window.inputHandler.get_position();
+        if (oldPos + 1 < studentCells.length) {
+            var nextCell = studentCells[oldPos + 1];
+            if (nextCell.dataset.temp || nextCell.textContent) {  // temp나 잔여 텍스트 확인
+                studentData[oldPos + 1] = '';
+                nextCell.querySelector('.cell-content').textContent = '';
+                delete nextCell.dataset.temp;
+                delete nextCell.dataset.special;
+                nextCell.classList.remove('active');  // next active 제거
             }
-            if (result) handleInputResults(result);
-            
-            // 이전 위치 +1의 temp 제거 (중복 방지)
-            var oldPos = window.inputHandler.get_position();
-            if (oldPos + 1 < studentCells.length) {
-                var nextCell = studentCells[oldPos + 1];
-                if (nextCell.dataset.temp) {
-                    studentData[oldPos + 1] = '';
-                    nextCell.querySelector('.cell-content').textContent = '';
-                    delete nextCell.dataset.temp;
-                    delete nextCell.dataset.special;
-                }
-            }
-            
-            // 위치 이동 및 업데이트
-            window.inputHandler.set_position(idx);
-            updateActiveCell();
         }
         
-        // 3. 입력 요소 재생성 (IME 캐시 리셋)
-        if (compositionInput) {
-            compositionInput.remove();
-            var newInput = document.createElement('input');
-            newInput.type = 'text';
-            newInput.id = 'compositionInput';
-            newInput.className = 'composition-input';
-            newInput.autocomplete = 'off';
-            manuscriptPaper.appendChild(newInput);
-            setupInputEvents();  // 이벤트 재설정
-            compositionInput = newInput;
-        }
-        
-        // 포커스 복귀
-        if (compositionInput) {
-            compositionInput.focus({ preventScroll: true });
-        }
-    }, 0);  // 0ms: 비동기지만 즉시 실행 (타이밍 이슈 최소화)
+        // 위치 이동
+        window.inputHandler.set_position(idx);
+        updateActiveCell();
+    }
+    
+    // 입력 요소 재생성 (IME 완전 리셋)
+    if (compositionInput) {
+        compositionInput.remove();
+        var newInput = document.createElement('input');
+        newInput.type = 'text';
+        newInput.id = 'compositionInput';
+        newInput.className = 'composition-input';
+        newInput.autocomplete = 'off';
+        manuscriptPaper.appendChild(newInput);
+        setupInputEvents();
+        compositionInput = newInput;
+        compositionInput.focus({ preventScroll: true });
+    }
     
     // 선택 로직 (기존)
     clearSelection();
