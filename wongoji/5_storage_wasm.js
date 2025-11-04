@@ -1,55 +1,84 @@
 let wasmModule = null;
+let wasmInitialized = false;
+let wasmInitPromise = null;
 
-// WASM 초기화 - 경고 해결
+// WASM 초기화 - 개선된 버전
 async function initWasm() {
-    if (wasmModule) return;
-    
-    try {
-        // GitHub Pages 경로 확인
-        const basePath = window.location.pathname.includes('/voca/') 
-            ? '/voca/wongoji/' 
-            : './wongoji/';
-        
-        // 동적 import 사용
-        const wasmModulePath = `${basePath}wongoji_wasm.js`;
-        console.log('Loading WASM from:', wasmModulePath);
-        
-        const { default: init, authenticate_student, save_manuscript, 
-                load_manuscript_list, load_existing_files, update_manuscript, 
-                check_manuscript_exists, InputHandler } = await import(wasmModulePath);
-        
-        // WASM 초기화 - 새로운 방식 (경고 해결)
-        await init({
-            module_or_path: `${basePath}wongoji_wasm_bg.wasm`
-        });
-        
-        wasmModule = {
-            authenticate_student,
-            save_manuscript,
-            load_manuscript_list,
-            load_existing_files,
-            update_manuscript,
-            check_manuscript_exists,
-            InputHandler
-        };
-        
-        // 전역으로 노출
-        window.wasmModule = wasmModule;
-        console.log('WASM module initialized successfully');
-    } catch (e) {
-        console.error('WASM initialization error details:', e);
-        throw e;
+    // 이미 초기화 중이면 같은 Promise 반환
+    if (wasmInitPromise) {
+        return wasmInitPromise;
     }
+    
+    // 이미 초기화되었으면 바로 반환
+    if (wasmInitialized && wasmModule) {
+        return wasmModule;
+    }
+    
+    wasmInitPromise = (async () => {
+        try {
+            console.log('Starting WASM initialization...');
+            
+            // 경로 결정 - 더 안전한 방식
+            const basePath = window.location.pathname.includes('/voca/') 
+                ? '/voca/wongoji/' 
+                : (window.location.pathname.endsWith('/') 
+                    ? './wongoji/' 
+                    : '../wongoji/');
+            
+            const wasmModulePath = `${basePath}wongoji_wasm.js`;
+            console.log('Loading WASM from:', wasmModulePath);
+            
+            // 동적 import
+            const module = await import(wasmModulePath);
+            console.log('WASM module loaded, initializing...');
+            
+            // WASM 초기화
+            await module.default({
+                module_or_path: `${basePath}wongoji_wasm_bg.wasm`
+            });
+            
+            wasmModule = {
+                authenticate_student: module.authenticate_student,
+                save_manuscript: module.save_manuscript,
+                load_manuscript_list: module.load_manuscript_list,
+                load_existing_files: module.load_existing_files,
+                update_manuscript: module.update_manuscript,
+                check_manuscript_exists: module.check_manuscript_exists,
+                InputHandler: module.InputHandler
+            };
+            
+            window.wasmModule = wasmModule;
+            wasmInitialized = true;
+            console.log('WASM module initialized successfully');
+            
+            return wasmModule;
+        } catch (e) {
+            console.error('WASM initialization error:', e);
+            wasmInitPromise = null; // 실패 시 다시 시도할 수 있도록
+            throw new Error('WASM 초기화 실패: ' + e.message);
+        }
+    })();
+    
+    return wasmInitPromise;
+}
+
+// WASM 준비 확인 함수
+async function ensureWasmReady() {
+    if (!wasmInitialized || !wasmModule) {
+        console.log('WASM not ready, initializing...');
+        await initWasm();
+    }
+    return wasmModule;
 }
 
 // 페이지 로드 시 WASM 초기화
 window.addEventListener('load', async function() {
     try {
         await initWasm();
-        console.log('WASM module initialized');
+        console.log('WASM ready on page load');
     } catch (e) {
-        console.error('WASM initialization failed:', e);
-        alert('시스템 초기화 실패. 페이지를 새로고침해주세요.\n에러: ' + e.message);
+        console.error('WASM initialization failed on load:', e);
+        // 페이지 로드 시 실패해도 나중에 다시 시도할 수 있음
     }
 });
 
@@ -70,11 +99,12 @@ startBtn.addEventListener('click', async function() {
     }
     
     try {
-        if (!wasmModule) {
-            await initWasm();
-        }
+        // WASM 준비 확인
+        const wasm = await ensureWasmReady();
+        console.log('Authenticating student:', studentName, selectedClass);
         
-        const data = await wasmModule.authenticate_student(studentName, selectedClass, studentPassword);
+        const data = await wasm.authenticate_student(studentName, selectedClass, studentPassword);
+        console.log('Authentication successful:', data);
         
         // 로그인 성공
         currentStudentName = studentName;
@@ -117,12 +147,13 @@ startBtn.addEventListener('click', async function() {
         }, 100);
     } catch (error) {
         console.error('Login error:', error);
-        if (error.toString().includes('Student not found')) {
+        const errorMsg = error.toString();
+        if (errorMsg.includes('Student not found')) {
             alert('등록되지 않은 학생입니다.\n이름과 반을 확인해주세요.');
-        } else if (error.toString().includes('Invalid password')) {
+        } else if (errorMsg.includes('Invalid password')) {
             alert('비밀번호가 일치하지 않습니다.');
         } else {
-            alert('로그인 실패: ' + error);
+            alert('로그인 실패: ' + error.message + '\n\n콘솔을 확인해주세요.');
         }
     }
 });
@@ -135,12 +166,10 @@ async function loadFromSupabase() {
     }
     
     try {
-        if (!wasmModule) {
-            await initWasm();
-        }
-        
+        const wasm = await ensureWasmReady();
         console.log('Loading manuscripts for:', currentStudentName, currentClass);
-        const data = await wasmModule.load_manuscript_list(currentStudentName, currentClass);
+        
+        const data = await wasm.load_manuscript_list(currentStudentName, currentClass);
         console.log('Loaded manuscripts:', data);
         
         if (!data || data.length === 0) {
@@ -210,7 +239,7 @@ async function loadFromSupabase() {
         window.savedManuscripts = data;
     } catch (error) {
         console.error('Load error:', error);
-        alert('불러오기 실패: ' + error);
+        alert('불러오기 실패: ' + error.message + '\n\n콘솔을 확인해주세요.');
     }
 }
 
@@ -273,12 +302,10 @@ async function saveToSupabase() {
     }
     
     try {
-        if (!wasmModule) {
-            await initWasm();
-        }
-        
+        const wasm = await ensureWasmReady();
         console.log('Loading existing files for:', currentStudentName, currentClass);
-        const existingFiles = await wasmModule.load_existing_files(currentStudentName, currentClass);
+        
+        const existingFiles = await wasm.load_existing_files(currentStudentName, currentClass);
         console.log('Existing files:', existingFiles);
         
         var existingFilesList = document.getElementById('existingFilesList');
@@ -333,7 +360,7 @@ async function saveToSupabase() {
         document.getElementById('saveTitle').focus();
     } catch (error) {
         console.error('Save modal error:', error);
-        alert('파일 목록 불러오기 실패: ' + error);
+        alert('파일 목록 불러오기 실패: ' + error.message + '\n\n콘솔을 확인해주세요.');
     }
 }
 
@@ -363,12 +390,10 @@ async function confirmSave() {
     }
     
     try {
-        if (!wasmModule) {
-            await initWasm();
-        }
-        
+        const wasm = await ensureWasmReady();
         console.log('Checking existing manuscript:', title);
-        const existingData = await wasmModule.check_manuscript_exists(currentStudentName, currentClass, title);
+        
+        const existingData = await wasm.check_manuscript_exists(currentStudentName, currentClass, title);
         console.log('Existing data:', existingData);
         
         if (existingData && existingData !== null) {
@@ -382,18 +407,18 @@ async function confirmSave() {
             }
             
             console.log('Updating manuscript:', existingData.id);
-            await wasmModule.update_manuscript(existingData.id, text, cols);
+            await wasm.update_manuscript(existingData.id, text, cols);
             alert('원고가 업데이트되었습니다!');
             closeSaveModal();
         } else {
             console.log('Saving new manuscript');
-            await wasmModule.save_manuscript(currentStudentName, currentClass, title, text, cols);
+            await wasm.save_manuscript(currentStudentName, currentClass, title, text, cols);
             alert('새 원고가 저장되었습니다!');
             closeSaveModal();
         }
     } catch (error) {
         console.error('Save error:', error);
-        alert('저장 실패: ' + error);
+        alert('저장 실패: ' + error.message + '\n\n콘솔을 확인해주세요.');
     }
 }
 
@@ -531,3 +556,4 @@ window.closeLoadModal = closeLoadModal;
 window.confirmSave = confirmSave;
 window.selectExistingFile = selectExistingFile;
 window.loadSelectedManuscript = loadSelectedManuscript;
+window.ensureWasmReady = ensureWasmReady;
