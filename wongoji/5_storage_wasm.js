@@ -1,6 +1,6 @@
 let wasmModule = null;
 
-// WASM 초기화 - GitHub Pages 경로 수정
+// WASM 초기화 - 경고 해결
 async function initWasm() {
     if (wasmModule) return;
     
@@ -18,8 +18,10 @@ async function initWasm() {
                 load_manuscript_list, load_existing_files, update_manuscript, 
                 check_manuscript_exists, InputHandler } = await import(wasmModulePath);
         
-        // WASM 초기화 (wasm 파일 경로 명시)
-        await init(`${basePath}wongoji_wasm_bg.wasm`);
+        // WASM 초기화 - 새로운 방식 (경고 해결)
+        await init({
+            module_or_path: `${basePath}wongoji_wasm_bg.wasm`
+        });
         
         wasmModule = {
             authenticate_student,
