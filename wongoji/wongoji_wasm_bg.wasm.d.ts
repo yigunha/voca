@@ -8,6 +8,7 @@ export const inputhandler_get_position: (a: number) => number;
 export const inputhandler_start_composition: (a: number) => void;
 export const inputhandler_end_composition: (a: number) => void;
 export const inputhandler_is_composing: (a: number) => number;
+export const inputhandler_clear_buffers: (a: number) => void;
 export const inputhandler_update_composition: (a: number, b: number, c: number) => any;
 export const inputhandler_finalize_composition: (a: number, b: number, c: number) => any;
 export const inputhandler_process_input: (a: number, b: number, c: number) => any;

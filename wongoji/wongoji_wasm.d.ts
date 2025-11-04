@@ -16,6 +16,7 @@ export class InputHandler {
   start_composition(): void;
   end_composition(): void;
   is_composing(): boolean;
+  clear_buffers(): void;
   update_composition(text: string): any;
   finalize_composition(text: string): any;
   process_input(text: string): any;
@@ -43,6 +44,7 @@ export interface InitOutput {
   readonly inputhandler_start_composition: (a: number) => void;
   readonly inputhandler_end_composition: (a: number) => void;
   readonly inputhandler_is_composing: (a: number) => number;
+  readonly inputhandler_clear_buffers: (a: number) => void;
   readonly inputhandler_update_composition: (a: number, b: number, c: number) => any;
   readonly inputhandler_finalize_composition: (a: number, b: number, c: number) => any;
   readonly inputhandler_process_input: (a: number, b: number, c: number) => any;

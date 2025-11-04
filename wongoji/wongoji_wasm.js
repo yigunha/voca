@@ -374,6 +374,9 @@ export class InputHandler {
         const ret = wasm.inputhandler_is_composing(this.__wbg_ptr);
         return ret !== 0;
     }
+    clear_buffers() {
+        wasm.inputhandler_clear_buffers(this.__wbg_ptr);
+    }
     /**
      * @param {string} text
      * @returns {any}

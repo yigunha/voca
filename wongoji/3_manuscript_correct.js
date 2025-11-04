@@ -189,40 +189,22 @@ function clearSelection() {
 
 // 셀 클릭 핸들러
 function handleCellClick(idx, e) {
-    // 한글 조합 중이면 먼저 종료
+    // ★★★ 한글 조합 중이면 먼저 종료 ★★★
     if (window.inputHandler && window.inputHandler.is_composing()) {
-        var compositionInput = document.getElementById('compositionInput');
-        
-        // 플래그 설정하여 compositionend 이벤트 중복 방지
-        window.isManualFinalize = true;
-        
-        // 조합 종료
         window.inputHandler.end_composition();
-        
+        var compositionInput = document.getElementById('compositionInput');
         if (compositionInput && compositionInput.value) {
-            // ★★★ finalize_composition 호출 (위치가 이동됨)
             var result = window.inputHandler.finalize_composition(compositionInput.value);
             handleInputResults(result);
-            
             compositionInput.value = '';
-            compositionInput.blur();
-        }
-        
-        // 브라우저 이벤트 처리 시간 대기
-        setTimeout(function() {
-            window.isManualFinalize = false;
-        }, 50);
-    } else if (window.inputHandler) {
-        // ★★★ 조합 중이 아니면 일반 버퍼 처리 ★★★
-        var result = window.inputHandler.finalize_buffer();
-        if (result) {
-            handleInputResults(result);
         }
     }
     
-    // 이전 위치의 다음 칸 temp 제거
+    // ★★★ 버퍼 처리 (위치 이동 없이) ★★★
     if (window.inputHandler) {
         var oldPos = window.inputHandler.get_position();
+        
+        // 다음 칸 temp 제거
         if (oldPos + 1 < studentCells.length) {
             var nextCell = studentCells[oldPos + 1];
             if (nextCell.dataset.temp && studentData[oldPos + 1] === '') {
@@ -233,6 +215,24 @@ function handleCellClick(idx, e) {
                 delete nextCell.dataset.temp;
             }
         }
+        
+        // 버퍼에 내용이 있으면 현재 위치에 확정
+        var bufferState = window.inputHandler.get_buffer_state();
+        if (bufferState && bufferState.buffer1) {
+            studentData[oldPos] = bufferState.buffer1;
+            var cell = studentCells[oldPos];
+            var content = cell.querySelector('.cell-content');
+            if (content) {
+                content.textContent = bufferState.buffer1;
+            }
+            delete cell.dataset.temp;
+            if (bufferState.buffer1.length > 1) {
+                cell.dataset.special = 'true';
+            }
+        }
+        
+        // 버퍼만 클리어 (위치 이동 없음)
+        window.inputHandler.clear_buffers();
     }
     
     // Shift 클릭: 범위 선택
@@ -250,10 +250,9 @@ function handleCellClick(idx, e) {
         return;
     }
     
-    // ★★★ 일반 클릭 - 선택 해제하고 커서 이동 ★★★
+    // 일반 클릭 - 선택 해제하고 커서 이동
     clearSelection();
     
-    // ★★★ 클릭한 위치로 즉시 이동 (finalize에서 이동된 위치 무시) ★★★
     currentPos = idx;
     
     if (window.inputHandler) {

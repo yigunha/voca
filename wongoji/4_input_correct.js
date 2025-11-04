@@ -2,7 +2,6 @@
 let inputHandler = null;
 let compositionInput = null;
 let lastCompositionData = '';
-let isManualFinalize = false;  // 수동 조합 종료 플래그
 
 // 입력 핸들러 초기화
 async function initInputHandler() {
@@ -258,18 +257,6 @@ function setupInputEvents() {
     compositionInput.addEventListener('compositionend', function(e) {
         if (!inputHandler) return;
         
-        // 수동으로 이미 처리했으면 스킵
-        if (isManualFinalize) {
-            isManualFinalize = false;
-            isComposing = false;
-            lastCompositionData = '';
-            compositionInput.classList.remove('is-composing');
-            for (var i = 0; i < studentCells.length; i++) {
-                studentCells[i].classList.remove('is-composing');
-            }
-            return;
-        }
-        
         isComposing = false;
         inputHandler.end_composition();
         compositionInput.classList.remove('is-composing');
@@ -493,4 +480,3 @@ window.initInputHandler = initInputHandler;
 window.copySelectedCells = copySelectedCells;
 window.pasteClipboard = pasteClipboard;
 window.cutSelectedCells = cutSelectedCells;
-window.isManualFinalize = isManualFinalize;  // 플래그 노출
