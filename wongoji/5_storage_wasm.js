@@ -384,10 +384,7 @@ async function confirmSave() {
         console.log('Existing data:', existingData);
         
         if (existingData && existingData !== null) {
-            if (existingData.approval_status) {
-                alert('이미 결재된 원고입니다.\n결재된 원고는 수정할 수 없습니다.');
-                return;
-            }
+            // ★★★ 학생은 결재 여부와 관계없이 자기 원본을 언제든 저장 가능 ★★★
             
             if (!confirm('같은 제목의 원고가 있습니다.\n덮어쓰시겠습니까?')) {
                 return;

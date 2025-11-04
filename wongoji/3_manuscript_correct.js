@@ -254,26 +254,27 @@ function clearSelection() {
     isDragging = false;
 }
 
-// 원고 텍스트 가져오기 (학생 데이터만)
+// 원고 텍스트 가져오기 (학생 데이터만) - 탭으로 구분
 function getManuscriptText() {
-    var text = '';
+    var lines = [];
     var studentRowCount = 0;
     
     for (var i = 0; i < rows; i++) {
         if (i % 2 === 0) { // 학생용 행만
-            var line = '';
+            var cells = [];
             for (var j = 0; j < cols; j++) {
                 var idx = studentRowCount * cols + j;
                 if (idx < studentData.length) {
-                    var char = studentData[idx] || '';
-                    line += char;
+                    cells.push(studentData[idx] || '');
+                } else {
+                    cells.push('');
                 }
             }
-            text += line + '\n';
+            lines.push(cells.join('\t'));
             studentRowCount++;
         }
     }
-    return text;
+    return lines.join('\n');
 }
 
 // 원고 텍스트 로드
@@ -295,15 +296,15 @@ function loadManuscriptText(text, savedCols, modifiedText, errorText, memo) {
         initializePaper();
     }
     
-    // 학생 데이터 파싱
+    // 학생 데이터 파싱 - 탭으로 구분된 데이터
     var lines = text.split('\n');
     var idx = 0;
     
     for (var i = 0; i < lines.length && idx < studentData.length; i++) {
-        var line = lines[i];
+        var cells = lines[i].split('\t');
         for (var j = 0; j < cols; j++) {
-            if (j < line.length) {
-                studentData[idx] = line[j];
+            if (j < cells.length) {
+                studentData[idx] = cells[j] || '';
             } else {
                 studentData[idx] = '';
             }
@@ -345,7 +346,7 @@ function loadManuscriptText(text, savedCols, modifiedText, errorText, memo) {
     updateActiveCell();
 }
 
-// 수정본 로드 (선생님 행에 표시)
+// 수정본 로드 (선생님 행에 표시) - 탭으로 구분된 데이터
 function loadModifiedText(modifiedText) {
     if (!modifiedText) return;
     
@@ -353,10 +354,10 @@ function loadModifiedText(modifiedText) {
     var idx = 0;
     
     for (var i = 0; i < lines.length && idx < teacherData.length; i++) {
-        var line = lines[i];
+        var cells = lines[i].split('\t');
         for (var j = 0; j < cols; j++) {
-            if (j < line.length) {
-                teacherData[idx] = line[j];
+            if (j < cells.length) {
+                teacherData[idx] = cells[j] || '';
             } else {
                 teacherData[idx] = '';
             }
@@ -368,31 +369,35 @@ function loadModifiedText(modifiedText) {
     hasModifiedText = true;
 }
 
-// 에러 라인 로드
+// 에러 라인 로드 - 선생님이 저장한 JSON 형식을 읽음
 function loadErrorText(errorText) {
     if (!errorText || !errorLineSvg) return;
     
     errorMarks = [];
     
-    // ★★★ JSON 형식 지원 (이전 버전 호환성) ★★★
-    if (errorText.trim().startsWith('[')) {
-        try {
-            var jsonMarks = JSON.parse(errorText);
-            // JSON 형식: [{row, startCol, endCol}, ...]
+    try {
+        // ★★★ 선생님 형식: JSON [{row, startCol, endCol}, ...] ★★★
+        var jsonMarks = JSON.parse(errorText);
+        
+        // JSON 형식인 경우
+        if (Array.isArray(jsonMarks) && jsonMarks.length > 0) {
             for (var i = 0; i < jsonMarks.length; i++) {
                 var mark = jsonMarks[i];
+                // startCol부터 endCol까지의 모든 셀을 errorMarks에 추가
                 for (var col = mark.startCol; col <= mark.endCol; col++) {
-                    errorMarks.push(mark.row * cols + col);
+                    var cellIndex = mark.row * cols + col;
+                    errorMarks.push(cellIndex);
                 }
             }
             drawErrorLines();
             return;
-        } catch (e) {
-            console.error('JSON 파싱 실패, 텍스트 형식으로 시도:', e);
         }
+    } catch (e) {
+        // JSON 파싱 실패 시 텍스트 형식으로 시도 (하위 호환성)
+        console.log('JSON 파싱 실패, 텍스트 형식으로 시도:', e);
     }
     
-    // ★★★ 텍스트 형식 지원 (현재 형식) ★★★
+    // ★★★ 텍스트 형식 지원 (하위 호환성) ★★★
     var lines = errorText.split('\n');
     
     for (var i = 0; i < lines.length; i++) {
