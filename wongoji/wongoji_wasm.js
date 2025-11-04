@@ -209,6 +209,10 @@ function makeMutClosure(arg0, arg1, dtor, f) {
     return real;
 }
 
+function _assertChar(c) {
+    if (typeof(c) === 'number' && (c >= 0x110000 || (c >= 0xD800 && c < 0xE000))) throw new Error(`expected a valid Unicode scalar value, found ${c}`);
+}
+
 export function init() {
     wasm.init();
 }
@@ -378,6 +382,16 @@ export class InputHandler {
         const ptr0 = passStringToWasm0(text, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
         const len0 = WASM_VECTOR_LEN;
         const ret = wasm.inputhandler_update_composition(this.__wbg_ptr, ptr0, len0);
+        return ret;
+    }
+    /**
+     * @param {string} ch
+     * @returns {any}
+     */
+    finalize_first_char(ch) {
+        const char0 = ch.codePointAt(0);
+        _assertChar(char0);
+        const ret = wasm.inputhandler_finalize_first_char(this.__wbg_ptr, char0);
         return ret;
     }
     /**

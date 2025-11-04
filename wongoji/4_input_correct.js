@@ -114,6 +114,8 @@ function handleInputResults(results) {
                 if (content) {
                     content.textContent = result.content;
                 }
+                cell.dataset.temp = 'true';
+                delete cell.dataset.special;
                 break;
                 
             case 'clear_and_move':
@@ -166,14 +168,29 @@ function setupInputEvents() {
         }
     });
     
-    // 한글 조합 업데이트 - ✅ 중간 글자 표시 안 함
+    // ✅ 한글 조합 업데이트 - 두 번째 글자 감지!
     compositionInput.addEventListener('compositionupdate', function(e) {
         if (!inputHandler) return;
         
-        // 조합 중인 글자는 표시하지 않음 (IME에만 표시됨)
-        // var text = e.data || '';
-        // var result = inputHandler.update_composition(text);
-        // handleInputResults(result);
+        var text = e.data || '';
+        
+        // ✅ 길이가 2 이상 = 첫 글자 확정, 두 번째 글자 시작
+        if (text.length >= 2) {
+            var firstChar = text[0];
+            var remaining = text.slice(1);
+            
+            // 첫 글자 확정
+            var result1 = inputHandler.finalize_first_char(firstChar);
+            handleInputResults(result1);
+            
+            // 두 번째 글자 임시 표시
+            var result2 = inputHandler.update_composition(remaining);
+            handleInputResults(result2);
+        } else {
+            // 한 글자 조합 중
+            var result = inputHandler.update_composition(text);
+            handleInputResults(result);
+        }
     });
     
     // 한글 조합 완료
@@ -189,8 +206,18 @@ function setupInputEvents() {
         var text = e.data || '';
         if (text) {
             compositionInput.value = '';
-            var result = inputHandler.finalize_composition(text);
-            handleInputResults(result);
+            
+            // ✅ 길이 체크: 이미 처리된 경우와 마지막 글자만 처리
+            if (text.length === 1) {
+                // 단일 글자만 입력된 경우
+                var result = inputHandler.finalize_composition(text);
+                handleInputResults(result);
+            } else {
+                // 여러 글자: 마지막 글자만 확정 (나머지는 update에서 처리됨)
+                var lastChar = text[text.length - 1];
+                var result = inputHandler.finalize_composition(lastChar);
+                handleInputResults(result);
+            }
         }
     });
     
