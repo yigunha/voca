@@ -187,74 +187,88 @@ function clearSelection() {
     isSelecting = false;
 }
 
-
-
 // 셀 클릭 핸들러
 function handleCellClick(idx, e) {
-    if (isDragging || e.button !== 0) return;  // 드래그나 우클릭 무시 (충돌 방지 강화)
-
-    var compositionInput = document.getElementById('compositionInput');
-    
-    if (compositionInput) {
-        compositionInput.blur();  // IME 포커스 해제
+    // 한글 조합 중이면 먼저 종료
+    if (window.inputHandler && window.inputHandler.is_composing()) {
+        var compositionInput = document.getElementById('compositionInput');
         
-        // compositionend 강제 dispatch (IME 캐시 클리어)
-        var endEvent = new CompositionEvent('compositionend', { bubbles: true, data: '' });
-        compositionInput.dispatchEvent(endEvent);
+        // 플래그 설정하여 compositionend 이벤트 중복 방지
+        if (window.isManualFinalize !== undefined) {
+            window.isManualFinalize = true;
+        }
         
-        compositionInput.value = '';  // 값 초기화
-    }
-    
-    // WASM 버퍼 확정 (동기 처리: 타임아웃 제거)
-    if (window.inputHandler) {
         window.inputHandler.end_composition();
         
-        var result;
-        if (window.inputHandler.is_composing()) {
-            result = window.inputHandler.finalize_composition('');  // 빈 finalize로 중복 방지
-        } else {
-            result = window.inputHandler.finalize_buffer();
+        if (compositionInput && compositionInput.value) {
+            var result = window.inputHandler.finalize_composition(compositionInput.value);
+            handleInputResults(result);
+            compositionInput.value = '';
+            compositionInput.blur();  // 포커스 제거로 조합 완전 종료
+            
+            // 다음 틱에서 포커스 복구 (브라우저가 이벤트 처리 완료할 시간)
+            setTimeout(function() {
+                if (window.isManualFinalize !== undefined) {
+                    window.isManualFinalize = false;
+                }
+            }, 50);
         }
-        if (result) handleInputResults(result);
-        
-        // 다음 칸 temp 강제 제거 (중복 방지)
+    }
+    
+    // 이전 위치의 다음 칸 temp 제거
+    if (window.inputHandler) {
         var oldPos = window.inputHandler.get_position();
         if (oldPos + 1 < studentCells.length) {
             var nextCell = studentCells[oldPos + 1];
-            if (nextCell.dataset.temp || nextCell.textContent) {  // temp나 잔여 텍스트 확인
-                studentData[oldPos + 1] = '';
-                nextCell.querySelector('.cell-content').textContent = '';
+            if (nextCell.dataset.temp && studentData[oldPos + 1] === '') {
+                var nextContent = nextCell.querySelector('.cell-content');
+                if (nextContent) {
+                    nextContent.textContent = '';
+                }
                 delete nextCell.dataset.temp;
-                delete nextCell.dataset.special;
-                nextCell.classList.remove('active');  // next active 제거
             }
         }
         
-        // 위치 이동
-        window.inputHandler.set_position(idx);
-        updateActiveCell();
+        var result = window.inputHandler.finalize_buffer();
+        if (result) {
+            handleInputResults(result);
+        }
     }
     
-    // 입력 요소 재생성 (IME 완전 리셋)
-    if (compositionInput) {
-        compositionInput.remove();
-        var newInput = document.createElement('input');
-        newInput.type = 'text';
-        newInput.id = 'compositionInput';
-        newInput.className = 'composition-input';
-        newInput.autocomplete = 'off';
-        manuscriptPaper.appendChild(newInput);
-        setupInputEvents();
-        compositionInput = newInput;
-        compositionInput.focus({ preventScroll: true });
+    // Shift 클릭: 범위 선택
+    if (e.shiftKey) {
+        e.preventDefault();
+        
+        // 현재 커서 위치부터 클릭한 위치까지 선택
+        var start = Math.min(currentPos, idx);
+        var end = Math.max(currentPos, idx);
+        
+        clearSelection();
+        for (var i = start; i <= end; i++) {
+            addToSelection(i);
+        }
+        return;
     }
     
-    // 선택 로직 (기존)
+    // 일반 클릭 - 선택 해제하고 커서 이동
     clearSelection();
-    addToSelection(idx);
-    isSelecting = true;
+    
+    currentPos = idx;
+    
+    if (window.inputHandler) {
+        window.inputHandler.set_position(idx);
+    }
+    
+    updateActiveCell();
+    
+    setTimeout(function() {
+        var compositionInput = document.getElementById('compositionInput');
+        if (compositionInput) {
+            compositionInput.value = '';
+            compositionInput.focus();
+        }
+    }, 10);
 }
-
 
 // 원고 텍스트 가져오기
 function getManuscriptText() {
