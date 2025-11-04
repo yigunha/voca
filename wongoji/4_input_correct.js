@@ -338,3 +338,4 @@ window.setupInputEvents = setupInputEvents;
 window.updateActiveCell = updateActiveCell;
 window.initializePaperWithInput = initializePaperWithInput;
 window.handleInputResults = handleInputResults;
+window.initInputHandler = initInputHandler;
