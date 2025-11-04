@@ -167,6 +167,17 @@ function renderTeacherCell(idx) {
 
 // 셀 클릭 핸들러 (학생용만)
 function handleCellClick(idx, e) {
+    // ✅ 한글 조합 중이면 먼저 종료
+    if (window.inputHandler && window.inputHandler.is_composing()) {
+        window.inputHandler.end_composition();
+        var compositionInput = document.getElementById('compositionInput');
+        if (compositionInput && compositionInput.value) {
+            var result = window.inputHandler.finalize_composition(compositionInput.value);
+            handleInputResults(result);
+            compositionInput.value = '';
+        }
+    }
+    
     // ✅ 이전 위치의 다음 칸 temp 제거
     if (window.inputHandler) {
         var oldPos = window.inputHandler.get_position();
