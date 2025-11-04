@@ -249,15 +249,16 @@ body {
     height: 100%;
 }
 
-/* 메모 사이드 패널 (JavaScript로 높이 조정) */
+/* 메모 사이드 패널 (JavaScript로 동적 위치 조정) */
 .memo-side-panel {
     position: absolute;
-    left: 50%;
+    left: 0;  /* JavaScript에서 계산하여 설정 */
+    top: 0;
     width: 300px;
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
-    top: 0;  
+    box-shadow: 0 2px 10px rgba(0,0,0,0.5);
 }
 
 .memo-panel-header {
@@ -280,7 +281,7 @@ body {
     padding: 15px;
     background-color: #1a1a1a;
     color: #e0e0e0;
-    border: 2px solid #555;
+    border: 2px solid #9C27B0;
     border-top: none;
     border-radius: 0 0 5px 5px;
     font-size: 15px;
@@ -582,6 +583,7 @@ body {
 }
 
 .modal-content .cancel-btn {
+    background-color:
     background-color: #EF4444;
     color: white;
 }
