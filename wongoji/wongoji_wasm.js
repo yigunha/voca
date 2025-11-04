@@ -209,6 +209,10 @@ function makeMutClosure(arg0, arg1, dtor, f) {
     return real;
 }
 
+function _assertChar(c) {
+    if (typeof(c) === 'number' && (c >= 0x110000 || (c >= 0xD800 && c < 0xE000))) throw new Error(`expected a valid Unicode scalar value, found ${c}`);
+}
+
 export function init() {
     wasm.init();
 }
@@ -426,6 +430,16 @@ export class InputHandler {
      */
     finalize_buffer() {
         const ret = wasm.inputhandler_finalize_buffer(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @param {string} ch
+     * @returns {any}
+     */
+    place_char_and_move(ch) {
+        const char0 = ch.codePointAt(0);
+        _assertChar(char0);
+        const ret = wasm.inputhandler_place_char_and_move(this.__wbg_ptr, char0);
         return ret;
     }
     /**

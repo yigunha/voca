@@ -23,6 +23,7 @@ export class InputHandler {
   handle_backspace(): any;
   handle_delete(): any;
   finalize_buffer(): any;
+  place_char_and_move(ch: string): any;
   move_left(): boolean;
   move_right(): boolean;
   move_up(): boolean;
@@ -48,6 +49,7 @@ export interface InitOutput {
   readonly inputhandler_handle_space: (a: number) => any;
   readonly inputhandler_handle_backspace: (a: number) => any;
   readonly inputhandler_finalize_buffer: (a: number) => any;
+  readonly inputhandler_place_char_and_move: (a: number, b: number) => any;
   readonly inputhandler_move_left: (a: number) => number;
   readonly inputhandler_move_right: (a: number) => number;
   readonly inputhandler_move_up: (a: number) => number;

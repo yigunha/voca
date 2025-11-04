@@ -14,6 +14,7 @@ export const inputhandler_process_input: (a: number, b: number, c: number) => an
 export const inputhandler_handle_space: (a: number) => any;
 export const inputhandler_handle_backspace: (a: number) => any;
 export const inputhandler_finalize_buffer: (a: number) => any;
+export const inputhandler_place_char_and_move: (a: number, b: number) => any;
 export const inputhandler_move_left: (a: number) => number;
 export const inputhandler_move_right: (a: number) => number;
 export const inputhandler_move_up: (a: number) => number;

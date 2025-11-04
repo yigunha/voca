@@ -180,10 +180,10 @@ function setupInputEvents() {
         
         // 길이가 증가했으면 = 이전 글자들 완성
         if (currentLength > lastCompositionLength && lastCompositionLength > 0) {
-            // 완성된 글자들 처리
+            // 완성된 글자들 즉시 확정하고 이동
             var completedChars = text.substring(0, currentLength - 1);
             for (var i = 0; i < completedChars.length; i++) {
-                var result = inputHandler.process_input(completedChars[i]);
+                var result = inputHandler.place_char_and_move(completedChars[i]);
                 handleInputResults(result);
             }
             
@@ -208,6 +208,15 @@ function setupInputEvents() {
         compositionInput.classList.remove('is-composing');
         for (var i = 0; i < studentCells.length; i++) {
             studentCells[i].classList.remove('is-composing');
+        }
+        
+        // 마지막 남은 글자 확정
+        var text = e.data || '';
+        if (text) {
+            compositionInput.value = '';
+            var lastChar = text[text.length - 1];
+            var result = inputHandler.process_input(lastChar);
+            handleInputResults(result);
         }
         
         lastCompositionLength = 0;
