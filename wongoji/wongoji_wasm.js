@@ -213,6 +213,54 @@ function _assertChar(c) {
     if (typeof(c) === 'number' && (c >= 0x110000 || (c >= 0xD800 && c < 0xE000))) throw new Error(`expected a valid Unicode scalar value, found ${c}`);
 }
 
+function passArrayJsValueToWasm0(array, malloc) {
+    const ptr = malloc(array.length * 4, 4) >>> 0;
+    for (let i = 0; i < array.length; i++) {
+        const add = addToExternrefTable0(array[i]);
+        getDataViewMemory0().setUint32(ptr + 4 * i, add, true);
+    }
+    WASM_VECTOR_LEN = array.length;
+    return ptr;
+}
+
+function getArrayJsValueFromWasm0(ptr, len) {
+    ptr = ptr >>> 0;
+    const mem = getDataViewMemory0();
+    const result = [];
+    for (let i = ptr; i < ptr + 4 * len; i += 4) {
+        result.push(wasm.__wbindgen_externrefs.get(mem.getUint32(i, true)));
+    }
+    wasm.__externref_drop_slice(ptr, len);
+    return result;
+}
+
+function takeFromExternrefTable0(idx) {
+    const value = wasm.__wbindgen_externrefs.get(idx);
+    wasm.__externref_table_dealloc(idx);
+    return value;
+}
+
+let cachedUint32ArrayMemory0 = null;
+
+function getUint32ArrayMemory0() {
+    if (cachedUint32ArrayMemory0 === null || cachedUint32ArrayMemory0.byteLength === 0) {
+        cachedUint32ArrayMemory0 = new Uint32Array(wasm.memory.buffer);
+    }
+    return cachedUint32ArrayMemory0;
+}
+
+function getArrayU32FromWasm0(ptr, len) {
+    ptr = ptr >>> 0;
+    return getUint32ArrayMemory0().subarray(ptr / 4, ptr / 4 + len);
+}
+
+function passArray32ToWasm0(arg, malloc) {
+    const ptr = malloc(arg.length * 4, 4) >>> 0;
+    getUint32ArrayMemory0().set(arg, ptr / 4);
+    WASM_VECTOR_LEN = arg.length;
+    return ptr;
+}
+
 export function init() {
     wasm.init();
 }
@@ -482,6 +530,127 @@ export class InputHandler {
      */
     get_buffer_state() {
         const ret = wasm.inputhandler_get_buffer_state(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * DOM 인덱스 → 학생 데이터 인덱스 변환
+     * @param {number} dom_idx
+     * @returns {number}
+     */
+    dom_to_student_index(dom_idx) {
+        const ret = wasm.inputhandler_dom_to_student_index(this.__wbg_ptr, dom_idx);
+        return ret >>> 0;
+    }
+    /**
+     * 학생 데이터 인덱스 → DOM 인덱스 변환
+     * @param {number} student_idx
+     * @returns {number}
+     */
+    student_to_dom_index(student_idx) {
+        const ret = wasm.inputhandler_student_to_dom_index(this.__wbg_ptr, student_idx);
+        return ret >>> 0;
+    }
+    /**
+     * 원고 텍스트 생성 (학생 데이터 → TSV 문자열)
+     * @param {string[]} data
+     * @returns {string}
+     */
+    build_manuscript_text(data) {
+        let deferred2_0;
+        let deferred2_1;
+        try {
+            const ptr0 = passArrayJsValueToWasm0(data, wasm.__wbindgen_malloc);
+            const len0 = WASM_VECTOR_LEN;
+            const ret = wasm.inputhandler_build_manuscript_text(this.__wbg_ptr, ptr0, len0);
+            deferred2_0 = ret[0];
+            deferred2_1 = ret[1];
+            return getStringFromWasm0(ret[0], ret[1]);
+        } finally {
+            wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
+        }
+    }
+    /**
+     * 원고 텍스트 파싱 (TSV 문자열 → 학생 데이터)
+     * @param {string} text
+     * @returns {string[]}
+     */
+    parse_manuscript_text(text) {
+        const ptr0 = passStringToWasm0(text, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.inputhandler_parse_manuscript_text(this.__wbg_ptr, ptr0, len0);
+        var v2 = getArrayJsValueFromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+        return v2;
+    }
+    /**
+     * 에러 마크 파싱 (JSON 또는 텍스트 형식)
+     * @param {string} error_text
+     * @returns {Uint32Array}
+     */
+    parse_error_marks(error_text) {
+        const ptr0 = passStringToWasm0(error_text, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.inputhandler_parse_error_marks(this.__wbg_ptr, ptr0, len0);
+        if (ret[3]) {
+            throw takeFromExternrefTable0(ret[2]);
+        }
+        var v2 = getArrayU32FromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+        return v2;
+    }
+    /**
+     * 클립보드에 셀 복사
+     * @param {Uint32Array} selected_indices
+     * @param {string[]} data
+     * @returns {any}
+     */
+    copy_to_clipboard(selected_indices, data) {
+        const ptr0 = passArray32ToWasm0(selected_indices, wasm.__wbindgen_malloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passArrayJsValueToWasm0(data, wasm.__wbindgen_malloc);
+        const len1 = WASM_VECTOR_LEN;
+        const ret = wasm.inputhandler_copy_to_clipboard(this.__wbg_ptr, ptr0, len0, ptr1, len1);
+        return ret;
+    }
+    /**
+     * 클립보드에서 붙여넣기
+     * @returns {any}
+     */
+    paste_from_clipboard() {
+        const ret = wasm.inputhandler_paste_from_clipboard(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * 클립보드 내용 확인
+     * @returns {any}
+     */
+    get_clipboard() {
+        const ret = wasm.inputhandler_get_clipboard(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * 클립보드 비우기
+     */
+    clear_clipboard() {
+        wasm.inputhandler_clear_clipboard(this.__wbg_ptr);
+    }
+    /**
+     * 문자 개수 세기 (공백 제외)
+     * @param {string[]} data
+     * @returns {number}
+     */
+    count_characters(data) {
+        const ptr0 = passArrayJsValueToWasm0(data, wasm.__wbindgen_malloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.inputhandler_count_characters(this.__wbg_ptr, ptr0, len0);
+        return ret >>> 0;
+    }
+    /**
+     * cols, rows 정보 가져오기
+     * @returns {any}
+     */
+    get_dimensions() {
+        const ret = wasm.inputhandler_get_dimensions(this.__wbg_ptr);
         return ret;
     }
 }
@@ -831,8 +1000,8 @@ function __wbg_get_imports() {
         const ret = BigInt.asUintN(64, arg0);
         return ret;
     };
-    imports.wbg.__wbindgen_cast_7102a70a763f876e = function(arg0, arg1) {
-        // Cast intrinsic for `Closure(Closure { dtor_idx: 73, function: Function { arguments: [Externref], shim_idx: 74, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
+    imports.wbg.__wbindgen_cast_5d20a5358f99a210 = function(arg0, arg1) {
+        // Cast intrinsic for `Closure(Closure { dtor_idx: 75, function: Function { arguments: [Externref], shim_idx: 76, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
         const ret = makeMutClosure(arg0, arg1, wasm.wasm_bindgen__closure__destroy__he0dfb8770d4ad62e, wasm_bindgen__convert__closures_____invoke__hd9967afd98a984bb);
         return ret;
     };
@@ -864,6 +1033,7 @@ function __wbg_finalize_init(instance, module) {
     wasm = instance.exports;
     __wbg_init.__wbindgen_wasm_module = module;
     cachedDataViewMemory0 = null;
+    cachedUint32ArrayMemory0 = null;
     cachedUint8ArrayMemory0 = null;
 
 

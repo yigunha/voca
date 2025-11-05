@@ -7,7 +7,6 @@ function initializePaper() {
     teacherData = [];
     errorMarks = [];
     
-    // 현재 cols 값에 따라 클래스 설정
     manuscriptPaper.className = 'manuscript-paper';
     if (cols === 20) {
         manuscriptPaper.classList.add('cols-20');
@@ -33,22 +32,20 @@ function initializePaper() {
                 content.className = 'cell-content';
                 cell.appendChild(content);
                 
-                // 클릭 이벤트
                 cell.addEventListener('click', function(e) {
                     var domIdx = parseInt(this.dataset.index);
-                    var studentIdx = domIndexToStudentIndex(domIdx);
+                    // ★ Rust 함수 사용
+                    var studentIdx = window.inputHandler.dom_to_student_index(domIdx);
                     handleCellClick(studentIdx, e);
                 });
                 
-                // 드래그 선택 시작
                 cell.addEventListener('mousedown', function(e) {
                     if (e.button !== 0) return;
                     e.preventDefault();
                     
                     var domIdx = parseInt(this.dataset.index);
-                    var studentIdx = domIndexToStudentIndex(domIdx);
+                    var studentIdx = window.inputHandler.dom_to_student_index(domIdx);
                     
-                    // Shift 클릭이 아닐 때만 드래그 모드 시작
                     if (!e.shiftKey) {
                         isDragging = true;
                         selectionStart = studentIdx;
@@ -57,14 +54,12 @@ function initializePaper() {
                     }
                 });
                 
-                // 드래그 중 선택 확장
                 cell.addEventListener('mouseenter', function(e) {
                     if (!isDragging) return;
                     
                     var domIdx = parseInt(this.dataset.index);
-                    var studentIdx = domIndexToStudentIndex(domIdx);
+                    var studentIdx = window.inputHandler.dom_to_student_index(domIdx);
                     
-                    // 시작점부터 현재 위치까지 선택
                     clearSelection();
                     var start = Math.min(selectionStart, studentIdx);
                     var end = Math.max(selectionStart, studentIdx);
@@ -106,7 +101,6 @@ function initializePaper() {
     input.autocomplete = 'off';
     manuscriptPaper.appendChild(input);
     
-    // 마우스 업 이벤트 (드래그 종료)
     document.addEventListener('mouseup', function() {
         if (isDragging) {
             isDragging = false;
@@ -123,24 +117,9 @@ function initializePaper() {
     updateActiveCell();
 }
 
-// DOM 인덱스 → 학생 데이터 인덱스
-function domIndexToStudentIndex(domIdx) {
-    var domRow = Math.floor(domIdx / cols);
-    var col = domIdx % cols;
-    var studentRow = Math.floor(domRow / 2);
-    return studentRow * cols + col;
-}
-
-// 학생 데이터 인덱스 → DOM 인덱스
-function studentIndexToDomIndex(studentIdx) {
-    var row = Math.floor(studentIdx / cols);
-    var col = studentIdx % cols;
-    return (row * 2) * cols + col;
-}
-
 // 셀 렌더링
 function renderCell(idx) {
-    if (idx < 0 || idx >= studentData.length) return;
+if (idx < 0 || idx >= studentData.length) return;
     
     var cell = studentCells[idx];
     if (!cell) return;
@@ -189,7 +168,6 @@ function clearSelection() {
 
 // 셀 클릭 핸들러
 function handleCellClick(idx, e) {
-    // 한글 조합 중이면 먼저 종료
     if (window.inputHandler && window.inputHandler.is_composing()) {
         window.inputHandler.end_composition();
         var compositionInput = document.getElementById('compositionInput');
@@ -200,7 +178,6 @@ function handleCellClick(idx, e) {
         }
     }
     
-    // 이전 위치의 다음 칸 temp 제거
     if (window.inputHandler) {
         var oldPos = window.inputHandler.get_position();
         if (oldPos + 1 < studentCells.length) {
@@ -220,11 +197,9 @@ function handleCellClick(idx, e) {
         }
     }
     
-    // Shift 클릭: 범위 선택
     if (e.shiftKey) {
         e.preventDefault();
         
-        // 현재 커서 위치부터 클릭한 위치까지 선택
         var start = Math.min(currentPos, idx);
         var end = Math.max(currentPos, idx);
         
@@ -235,7 +210,6 @@ function handleCellClick(idx, e) {
         return;
     }
     
-    // 일반 클릭 - 선택 해제하고 커서 이동
     clearSelection();
     
     currentPos = idx;
@@ -255,8 +229,13 @@ function handleCellClick(idx, e) {
     }, 10);
 }
 
-// 원고 텍스트 가져오기
+// 원고 텍스트 가져오기 - ★ Rust 함수 사용
 function getManuscriptText() {
+    if (window.inputHandler) {
+        return window.inputHandler.build_manuscript_text(studentData);
+    }
+    
+    // 폴백 (WASM 로드 전)
     var lines = [];
     var studentRowCount = 0;
     
@@ -296,26 +275,36 @@ function loadManuscriptText(text, savedCols, modifiedText, errorText, memo) {
         initializePaper();
     }
     
-    var lines = text.split('\n');
-    var idx = 0;
-    
-    for (var i = 0; i < lines.length && idx < studentData.length; i++) {
-        var cells = lines[i].split('\t');
-        for (var j = 0; j < cols; j++) {
-            if (j < cells.length) {
-                studentData[idx] = cells[j] || '';
-            } else {
-                studentData[idx] = '';
+    // ★ Rust 함수로 파싱
+    if (window.inputHandler) {
+        var parsedData = window.inputHandler.parse_manuscript_text(text);
+        for (var i = 0; i < parsedData.length && i < studentData.length; i++) {
+            studentData[i] = parsedData[i];
+            renderCell(i);
+        }
+    } else {
+        // 폴백
+        var lines = text.split('\n');
+        var idx = 0;
+        
+        for (var i = 0; i < lines.length && idx < studentData.length; i++) {
+            var cells = lines[i].split('\t');
+            for (var j = 0; j < cols; j++) {
+                if (j < cells.length) {
+                    studentData[idx] = cells[j] || '';
+                } else {
+                    studentData[idx] = '';
+                }
+                renderCell(idx);
+                idx++;
             }
+        }
+        
+        while (idx < studentData.length) {
+            studentData[idx] = '';
             renderCell(idx);
             idx++;
         }
-    }
-    
-    while (idx < studentData.length) {
-        studentData[idx] = '';
-        renderCell(idx);
-        idx++;
     }
     
     if (modifiedText) {
@@ -345,31 +334,52 @@ function loadManuscriptText(text, savedCols, modifiedText, errorText, memo) {
 function loadModifiedText(modifiedText) {
     if (!modifiedText) return;
     
-    var lines = modifiedText.split('\n');
-    var idx = 0;
-    
-    for (var i = 0; i < lines.length && idx < teacherData.length; i++) {
-        var cells = lines[i].split('\t');
-        for (var j = 0; j < cols; j++) {
-            if (j < cells.length) {
-                teacherData[idx] = cells[j] || '';
-            } else {
-                teacherData[idx] = '';
+    // ★ Rust 함수로 파싱
+    if (window.inputHandler) {
+        var parsedData = window.inputHandler.parse_manuscript_text(modifiedText);
+        for (var i = 0; i < parsedData.length && i < teacherData.length; i++) {
+            teacherData[i] = parsedData[i];
+            renderTeacherCell(i);
+        }
+    } else {
+        // 폴백
+        var lines = modifiedText.split('\n');
+        var idx = 0;
+        
+        for (var i = 0; i < lines.length && idx < teacherData.length; i++) {
+            var cells = lines[i].split('\t');
+            for (var j = 0; j < cols; j++) {
+                if (j < cells.length) {
+                    teacherData[idx] = cells[j] || '';
+                } else {
+                    teacherData[idx] = '';
+                }
+                renderTeacherCell(idx);
+                idx++;
             }
-            renderTeacherCell(idx);
-            idx++;
         }
     }
     
     hasModifiedText = true;
 }
 
-// 에러 라인 로드
+// 에러 라인 로드 - ★ Rust 함수 사용
 function loadErrorText(errorText) {
     if (!errorText || !errorLineSvg) return;
     
     errorMarks = [];
     
+    if (window.inputHandler) {
+        try {
+            errorMarks = window.inputHandler.parse_error_marks(errorText);
+            drawErrorLines();
+        } catch (e) {
+            console.error('Error parsing error marks:', e);
+        }
+        return;
+    }
+    
+    // 폴백 (WASM 로드 전)
     try {
         var jsonMarks = JSON.parse(errorText);
         
@@ -420,7 +430,6 @@ function drawErrorLines() {
     
     errorLineSvg.innerHTML = '';
     
-    // ★ 빨간선 위치 조정값: -8 (위로 8px 이동)
     var LINE_OFFSET_Y = -8;
     
     for (var i = 0; i < errorMarks.length; i++) {
@@ -565,5 +574,15 @@ window.getManuscriptText = getManuscriptText;
 window.loadManuscriptText = loadManuscriptText;
 window.switchLayer = switchLayer;
 window.adjustMemoPanelPosition = adjustMemoPanelPosition;
-window.domIndexToStudentIndex = domIndexToStudentIndex;
-window.studentIndexToDomIndex = studentIndexToDomIndex;
+
+
+
+
+
+
+
+
+
+
+
+

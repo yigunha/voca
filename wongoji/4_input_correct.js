@@ -1,4 +1,3 @@
-// WASM 입력 핸들러 사용
 let inputHandler = null;
 let compositionInput = null;
 let lastCompositionData = '';
@@ -144,52 +143,36 @@ function handleInputResults(results) {
     updateActiveCell();
 }
 
-// 클립보드에 복사
+// ★ 클립보드에 복사 - Rust 함수 사용
 function copySelectedCells() {
     if (selectedCells.length === 0) return false;
+    if (!inputHandler) return false;
     
-    // 선택된 셀들을 정렬
-    var sortedCells = selectedCells.slice().sort(function(a, b) { return a - b; });
-    
-    clipboard = [];
-    for (var i = 0; i < sortedCells.length; i++) {
-        var idx = sortedCells[i];
-        clipboard.push({
-            index: idx,
-            content: studentData[idx] || '',
-            relativePos: idx - sortedCells[0]
-        });
-    }
-    
+    inputHandler.copy_to_clipboard(selectedCells, studentData);
     return true;
 }
 
-// 클립보드에서 붙여넣기
+// ★ 클립보드에서 붙여넣기 - Rust 함수 사용
 function pasteClipboard() {
-    if (clipboard.length === 0) return false;
     if (!inputHandler) return false;
     
-    var startPos = inputHandler.get_position();
+    var pasteData = inputHandler.paste_from_clipboard();
+    if (!pasteData) return false;
     
-    for (var i = 0; i < clipboard.length; i++) {
-        var item = clipboard[i];
-        var targetPos = startPos + item.relativePos;
-        
-        if (targetPos >= 0 && targetPos < studentData.length) {
-            studentData[targetPos] = item.content;
-            renderCell(targetPos);
-        }
+    for (var i = 0; i < pasteData.length; i++) {
+        var item = pasteData[i];
+        studentData[item.pos] = item.content;
+        renderCell(item.pos);
     }
     
     updateActiveCell();
     return true;
 }
 
-// 선택된 셀 잘라내기
+// ★ 선택된 셀 잘라내기 - Rust 함수 사용
 function cutSelectedCells() {
     if (!copySelectedCells()) return false;
     
-    // 선택된 셀들 삭제
     for (var i = 0; i < selectedCells.length; i++) {
         var idx = selectedCells[i];
         studentData[idx] = '';
@@ -316,10 +299,8 @@ function setupInputEvents() {
         // Ctrl/Cmd + V (붙여넣기)
         if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
             e.preventDefault();
-            if (clipboard.length > 0) {
-                if (pasteClipboard()) {
-                    console.log('붙여넣기 완료');
-                }
+            if (pasteClipboard()) {
+                console.log('붙여넣기 완료');
             }
             return;
         }
@@ -393,7 +374,7 @@ function setupInputEvents() {
             return;
         }
         
-        // Arrow keys - 선택 해제
+        // Arrow keys
         if (e.key === 'ArrowLeft') {
             e.preventDefault();
             clearSelection();

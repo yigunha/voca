@@ -30,6 +30,50 @@ export class InputHandler {
   move_down(): boolean;
   move_next_row(): boolean;
   get_buffer_state(): any;
+  /**
+   * DOM 인덱스 → 학생 데이터 인덱스 변환
+   */
+  dom_to_student_index(dom_idx: number): number;
+  /**
+   * 학생 데이터 인덱스 → DOM 인덱스 변환
+   */
+  student_to_dom_index(student_idx: number): number;
+  /**
+   * 원고 텍스트 생성 (학생 데이터 → TSV 문자열)
+   */
+  build_manuscript_text(data: string[]): string;
+  /**
+   * 원고 텍스트 파싱 (TSV 문자열 → 학생 데이터)
+   */
+  parse_manuscript_text(text: string): string[];
+  /**
+   * 에러 마크 파싱 (JSON 또는 텍스트 형식)
+   */
+  parse_error_marks(error_text: string): Uint32Array;
+  /**
+   * 클립보드에 셀 복사
+   */
+  copy_to_clipboard(selected_indices: Uint32Array, data: string[]): any;
+  /**
+   * 클립보드에서 붙여넣기
+   */
+  paste_from_clipboard(): any;
+  /**
+   * 클립보드 내용 확인
+   */
+  get_clipboard(): any;
+  /**
+   * 클립보드 비우기
+   */
+  clear_clipboard(): void;
+  /**
+   * 문자 개수 세기 (공백 제외)
+   */
+  count_characters(data: string[]): number;
+  /**
+   * cols, rows 정보 가져오기
+   */
+  get_dimensions(): any;
 }
 
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
@@ -56,6 +100,17 @@ export interface InitOutput {
   readonly inputhandler_move_down: (a: number) => number;
   readonly inputhandler_move_next_row: (a: number) => number;
   readonly inputhandler_get_buffer_state: (a: number) => any;
+  readonly inputhandler_dom_to_student_index: (a: number, b: number) => number;
+  readonly inputhandler_student_to_dom_index: (a: number, b: number) => number;
+  readonly inputhandler_build_manuscript_text: (a: number, b: number, c: number) => [number, number];
+  readonly inputhandler_parse_manuscript_text: (a: number, b: number, c: number) => [number, number];
+  readonly inputhandler_parse_error_marks: (a: number, b: number, c: number) => [number, number, number, number];
+  readonly inputhandler_copy_to_clipboard: (a: number, b: number, c: number, d: number, e: number) => any;
+  readonly inputhandler_paste_from_clipboard: (a: number) => any;
+  readonly inputhandler_get_clipboard: (a: number) => any;
+  readonly inputhandler_clear_clipboard: (a: number) => void;
+  readonly inputhandler_count_characters: (a: number, b: number, c: number) => number;
+  readonly inputhandler_get_dimensions: (a: number) => any;
   readonly inputhandler_handle_delete: (a: number) => any;
   readonly init: () => void;
   readonly authenticate_student: (a: number, b: number, c: number, d: number, e: number, f: number) => any;
@@ -73,6 +128,8 @@ export interface InitOutput {
   readonly __externref_table_alloc: () => number;
   readonly __wbindgen_externrefs: WebAssembly.Table;
   readonly __wbindgen_free: (a: number, b: number, c: number) => void;
+  readonly __externref_drop_slice: (a: number, b: number) => void;
+  readonly __externref_table_dealloc: (a: number) => void;
   readonly __wbindgen_start: () => void;
 }
 
