@@ -66,6 +66,8 @@ function updateActiveCell() {
 
 // 입력 결과 처리
 function handleInputResults(results) {
+    console.log('[handleInputResults] called with:', results);
+    
     if (!results || !Array.isArray(results)) {
         if (results && typeof results === 'object') {
             results = [results];
@@ -76,6 +78,8 @@ function handleInputResults(results) {
     
     for (var i = 0; i < results.length; i++) {
         var result = results[i];
+        
+        console.log('[handleInputResults] processing:', result.action, 'pos:', result.pos, 'content:', result.content);
         
         switch (result.action) {
             case 'place':
@@ -93,6 +97,7 @@ function handleInputResults(results) {
                         delete cell.dataset.special;
                     }
                     delete cell.dataset.temp;
+                    console.log('[handleInputResults] placed at', result.pos, ':', result.content);
                 }
                 break;
                 
@@ -105,6 +110,7 @@ function handleInputResults(results) {
                 }
                 cell.dataset.temp = 'true';
                 delete cell.dataset.special;
+                console.log('[handleInputResults] buffered at', result.pos, ':', result.buffer1);
                 break;
                 
             case 'composing':
@@ -115,6 +121,7 @@ function handleInputResults(results) {
                 }
                 cell.dataset.temp = 'true';
                 delete cell.dataset.special;
+                console.log('[handleInputResults] composing at', result.pos, ':', result.content);
                 break;
                 
             case 'clear_and_move':
@@ -232,10 +239,16 @@ function setupInputEvents() {
         if (!inputHandler) return;
         
         var text = e.data || '';
+        var pos = inputHandler.get_position();
+        
+        console.log('[compositionupdate]', 'text:', text, 'pos:', pos);
         
         // 조합 중인 텍스트만 현재 칸에 임시 표시 (이동 안 함)
         var result = inputHandler.update_composition(text);
+        console.log('[compositionupdate] result:', result);
         handleInputResults(result);
+        
+        console.log('[compositionupdate] after - 0번 칸:', studentData[0], '1번 칸:', studentData[1]);
         
         lastCompositionData = text;
     });
@@ -244,8 +257,11 @@ function setupInputEvents() {
     compositionInput.addEventListener('compositionend', function(e) {
         if (!inputHandler) return;
         
+        console.log('[compositionend] is_composing:', inputHandler.is_composing());
+        
         // 이미 조합이 종료되었으면 중복 실행 방지
         if (!inputHandler.is_composing()) {
+            console.log('[compositionend] SKIP - already ended');
             return;
         }
         
@@ -258,11 +274,17 @@ function setupInputEvents() {
         }
         
         var text = e.data || '';
+        var pos = inputHandler.get_position();
+        console.log('[compositionend] text:', text, 'pos:', pos);
+        
         if (text) {
             compositionInput.value = '';
             var result = inputHandler.finalize_composition(text);
+            console.log('[compositionend] result:', result);
             handleInputResults(result);
         }
+        
+        console.log('[compositionend] after - 0번 칸:', studentData[0], '1번 칸:', studentData[1]);
         
         lastCompositionData = '';
     });

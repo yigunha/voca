@@ -190,13 +190,20 @@ function clearSelection() {
 
 // 셀 클릭 핸들러
 function handleCellClick(idx, e) {
+    console.log('[handleCellClick] clicked idx:', idx);
+    console.log('[handleCellClick] before - 0번 칸:', studentData[0], '1번 칸:', studentData[1]);
+    
     // 한글 조합 중이면 먼저 종료
     if (window.inputHandler && window.inputHandler.is_composing()) {
+        console.log('[handleCellClick] is_composing = true');
         var oldPos = window.inputHandler.get_position();
+        console.log('[handleCellClick] oldPos:', oldPos);
         
         // ★★★ 먼저 compositionInput.value 비우기! ★★★
         var compositionInput = document.getElementById('compositionInput');
         var textToFinalize = compositionInput ? compositionInput.value : '';
+        console.log('[handleCellClick] textToFinalize:', textToFinalize);
+        
         if (compositionInput) {
             compositionInput.value = '';  // 먼저 비움!
         }
@@ -205,29 +212,36 @@ function handleCellClick(idx, e) {
         
         if (textToFinalize) {
             var result = window.inputHandler.finalize_composition_without_move(textToFinalize);
+            console.log('[handleCellClick] finalize_composition_without_move result:', result);
             handleInputResults(result);
             
             // 다음 칸의 temp 제거
             if (oldPos + 1 < studentCells.length) {
                 var nextCell = studentCells[oldPos + 1];
+                console.log('[handleCellClick] checking next cell:', oldPos + 1, 'temp:', nextCell.dataset.temp, 'data:', studentData[oldPos + 1]);
                 if (nextCell.dataset.temp && studentData[oldPos + 1] === '') {
                     var nextContent = nextCell.querySelector('.cell-content');
                     if (nextContent) {
                         nextContent.textContent = '';
                     }
                     delete nextCell.dataset.temp;
+                    console.log('[handleCellClick] cleared next cell:', oldPos + 1);
                 }
             }
         }
     } else {
         // 한글 조합 중이 아닐 때만 버퍼 확정
+        console.log('[handleCellClick] is_composing = false');
         if (window.inputHandler) {
             var result = window.inputHandler.finalize_buffer();
             if (result) {
+                console.log('[handleCellClick] finalize_buffer result:', result);
                 handleInputResults(result);
             }
         }
     }
+    
+    console.log('[handleCellClick] middle - 0번 칸:', studentData[0], '1번 칸:', studentData[1]);
     
     // Shift 클릭: 범위 선택
     if (e.shiftKey) {
@@ -251,9 +265,12 @@ function handleCellClick(idx, e) {
     
     if (window.inputHandler) {
         window.inputHandler.set_position(idx);
+        console.log('[handleCellClick] set_position to:', idx);
     }
     
     updateActiveCell();
+    
+    console.log('[handleCellClick] after - 0번 칸:', studentData[0], '1번 칸:', studentData[1]);
     
     setTimeout(function() {
         var compositionInput = document.getElementById('compositionInput');
