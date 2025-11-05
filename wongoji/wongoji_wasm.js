@@ -398,16 +398,6 @@ export class InputHandler {
      * @param {string} text
      * @returns {any}
      */
-    finalize_composition_without_move(text) {
-        const ptr0 = passStringToWasm0(text, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-        const len0 = WASM_VECTOR_LEN;
-        const ret = wasm.inputhandler_finalize_composition_without_move(this.__wbg_ptr, ptr0, len0);
-        return ret;
-    }
-    /**
-     * @param {string} text
-     * @returns {any}
-     */
     process_input(text) {
         const ptr0 = passStringToWasm0(text, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
         const len0 = WASM_VECTOR_LEN;

@@ -2,7 +2,6 @@
 let inputHandler = null;
 let compositionInput = null;
 let lastCompositionData = '';
-let isProcessingCompositionEnd = false;  // ⭐ 중복 방지 플래그
 
 // 입력 핸들러 초기화
 async function initInputHandler() {
@@ -67,7 +66,6 @@ function updateActiveCell() {
 
 // 입력 결과 처리
 function handleInputResults(results) {
-    
     if (!results || !Array.isArray(results)) {
         if (results && typeof results === 'object') {
             results = [results];
@@ -78,7 +76,6 @@ function handleInputResults(results) {
     
     for (var i = 0; i < results.length; i++) {
         var result = results[i];
-        
         
         switch (result.action) {
             case 'place':
@@ -220,7 +217,6 @@ function setupInputEvents() {
         if (!inputHandler) return;
         
         lastCompositionData = '';
-        isProcessingCompositionEnd = false;  // ⭐ 플래그 초기화
         inputHandler.start_composition();
         isComposing = true;
         compositionInput.classList.add('is-composing');
@@ -236,13 +232,23 @@ function setupInputEvents() {
         if (!inputHandler) return;
         
         var text = e.data || '';
-        var pos = inputHandler.get_position();
+        var currentLength = text.length;
+        var lastLength = lastCompositionData.length;
         
-        
-        // 조합 중인 텍스트만 현재 칸에 임시 표시 (이동 안 함)
-        var result = inputHandler.update_composition(text);
-        handleInputResults(result);
-        
+        if (currentLength > lastLength && lastLength > 0) {
+            var completedChars = text.substring(0, currentLength - 1);
+            for (var i = lastLength - 1; i < completedChars.length; i++) {
+                var result = inputHandler.place_char_and_move(completedChars[i]);
+                handleInputResults(result);
+            }
+            
+            var lastChar = text[currentLength - 1];
+            var result = inputHandler.update_composition(lastChar);
+            handleInputResults(result);
+        } else {
+            var result = inputHandler.update_composition(text);
+            handleInputResults(result);
+        }
         
         lastCompositionData = text;
     });
@@ -251,23 +257,8 @@ function setupInputEvents() {
     compositionInput.addEventListener('compositionend', function(e) {
         if (!inputHandler) return;
         
-        
-        // ⭐ 이미 처리 중이면 스킵
-        if (isProcessingCompositionEnd) {
-            return;
-        }
-        
-        // ⭐ 이미 조합이 종료되었으면 중복 실행 방지
-        if (!inputHandler.is_composing()) {
-            return;
-        }
-        
-        // ⭐ 처리 시작 플래그
-        isProcessingCompositionEnd = true;
-        
-        // ⭐ 조합 종료
-        inputHandler.end_composition();
         isComposing = false;
+        inputHandler.end_composition();
         compositionInput.classList.remove('is-composing');
         
         for (var i = 0; i < studentCells.length; i++) {
@@ -275,21 +266,13 @@ function setupInputEvents() {
         }
         
         var text = e.data || '';
-        var pos = inputHandler.get_position();
-        
         if (text) {
             compositionInput.value = '';
             var result = inputHandler.finalize_composition(text);
             handleInputResults(result);
         }
         
-        
         lastCompositionData = '';
-        
-        // ⭐ 처리 완료 - 다음 이벤트를 위해 플래그 해제
-        setTimeout(function() {
-            isProcessingCompositionEnd = false;
-        }, 0);
     });
     
     // 일반 입력
@@ -314,6 +297,7 @@ function setupInputEvents() {
             e.preventDefault();
             if (selectedCells.length > 0) {
                 copySelectedCells();
+                console.log('복사됨:', selectedCells.length + '개 셀');
             }
             return;
         }
@@ -323,6 +307,7 @@ function setupInputEvents() {
             e.preventDefault();
             if (selectedCells.length > 0) {
                 if (cutSelectedCells()) {
+                    console.log('잘라내기 완료');
                 }
             }
             return;
@@ -333,6 +318,7 @@ function setupInputEvents() {
             e.preventDefault();
             if (clipboard.length > 0) {
                 if (pasteClipboard()) {
+                    console.log('붙여넣기 완료');
                 }
             }
             return;
