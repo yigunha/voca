@@ -191,29 +191,31 @@ function clearSelection() {
 function handleCellClick(idx, e) {
     // 한글 조합 중이면 먼저 종료
     if (window.inputHandler && window.inputHandler.is_composing()) {
+        var oldPos = window.inputHandler.get_position();  // 먼저 저장
+        
         window.inputHandler.end_composition();
         var compositionInput = document.getElementById('compositionInput');
         if (compositionInput && compositionInput.value) {
             var result = window.inputHandler.finalize_composition_without_move(compositionInput.value);
             handleInputResults(result);
             compositionInput.value = '';
+            
+            // 다음 칸의 temp 제거
+            if (oldPos + 1 < studentCells.length) {
+                var nextCell = studentCells[oldPos + 1];
+                if (nextCell.dataset.temp && studentData[oldPos + 1] === '') {
+                    var nextContent = nextCell.querySelector('.cell-content');
+                    if (nextContent) {
+                        nextContent.textContent = '';
+                    }
+                    delete nextCell.dataset.temp;
+                }
+            }
         }
     }
     
-    // 이전 위치의 다음 칸 temp 제거
+    // 이전 위치의 버퍼 확정
     if (window.inputHandler) {
-        var oldPos = window.inputHandler.get_position();
-        if (oldPos + 1 < studentCells.length) {
-            var nextCell = studentCells[oldPos + 1];
-            if (nextCell.dataset.temp && studentData[oldPos + 1] === '') {
-                var nextContent = nextCell.querySelector('.cell-content');
-                if (nextContent) {
-                    nextContent.textContent = '';
-                }
-                delete nextCell.dataset.temp;
-            }
-        }
-        
         var result = window.inputHandler.finalize_buffer();
         if (result) {
             handleInputResults(result);
