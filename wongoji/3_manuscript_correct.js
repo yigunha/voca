@@ -194,7 +194,7 @@ function handleCellClick(idx, e) {
         window.inputHandler.end_composition();
         var compositionInput = document.getElementById('compositionInput');
         if (compositionInput && compositionInput.value) {
-            var result = window.inputHandler.finalize_composition(compositionInput.value);
+            var result = window.inputHandler.finalize_composition_without_move(compositionInput.value);
             handleInputResults(result);
             compositionInput.value = '';
         }
