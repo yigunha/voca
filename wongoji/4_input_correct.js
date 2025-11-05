@@ -232,10 +232,23 @@ function setupInputEvents() {
         if (!inputHandler) return;
         
         var text = e.data || '';
+        var currentLength = text.length;
+        var lastLength = lastCompositionData.length;
         
-        // 단순히 조합 중인 텍스트만 표시 (이동하지 않음)
-        var result = inputHandler.update_composition(text);
-        handleInputResults(result);
+        if (currentLength > lastLength && lastLength > 0) {
+            var completedChars = text.substring(0, currentLength - 1);
+            for (var i = lastLength - 1; i < completedChars.length; i++) {
+                var result = inputHandler.place_char_and_move(completedChars[i]);
+                handleInputResults(result);
+            }
+            
+            var lastChar = text[currentLength - 1];
+            var result = inputHandler.update_composition(lastChar);
+            handleInputResults(result);
+        } else {
+            var result = inputHandler.update_composition(text);
+            handleInputResults(result);
+        }
         
         lastCompositionData = text;
     });
@@ -243,6 +256,11 @@ function setupInputEvents() {
     // 한글 조합 완료
     compositionInput.addEventListener('compositionend', function(e) {
         if (!inputHandler) return;
+        
+        // 이미 다른 곳에서 조합을 종료했으면 스킵 (중복 방지)
+        if (!inputHandler.is_composing()) {
+            return;
+        }
         
         isComposing = false;
         inputHandler.end_composition();
