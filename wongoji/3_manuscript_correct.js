@@ -192,14 +192,20 @@ function clearSelection() {
 function handleCellClick(idx, e) {
     // 한글 조합 중이면 먼저 종료
     if (window.inputHandler && window.inputHandler.is_composing()) {
-        var oldPos = window.inputHandler.get_position();  // 먼저 저장
+        var oldPos = window.inputHandler.get_position();
+        
+        // ★★★ 먼저 compositionInput.value 비우기! ★★★
+        var compositionInput = document.getElementById('compositionInput');
+        var textToFinalize = compositionInput ? compositionInput.value : '';
+        if (compositionInput) {
+            compositionInput.value = '';  // 먼저 비움!
+        }
         
         window.inputHandler.end_composition();
-        var compositionInput = document.getElementById('compositionInput');
-        if (compositionInput && compositionInput.value) {
-            var result = window.inputHandler.finalize_composition_without_move(compositionInput.value);
+        
+        if (textToFinalize) {
+            var result = window.inputHandler.finalize_composition_without_move(textToFinalize);
             handleInputResults(result);
-            compositionInput.value = '';
             
             // 다음 칸의 temp 제거
             if (oldPos + 1 < studentCells.length) {
@@ -257,7 +263,6 @@ function handleCellClick(idx, e) {
         }
     }, 10);
 }
-
 
 
 // 원고 텍스트 가져오기
