@@ -374,9 +374,6 @@ export class InputHandler {
         const ret = wasm.inputhandler_is_composing(this.__wbg_ptr);
         return ret !== 0;
     }
-    clear_buffers() {
-        wasm.inputhandler_clear_buffers(this.__wbg_ptr);
-    }
     /**
      * @param {string} text
      * @returns {any}
@@ -395,6 +392,16 @@ export class InputHandler {
         const ptr0 = passStringToWasm0(text, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
         const len0 = WASM_VECTOR_LEN;
         const ret = wasm.inputhandler_finalize_composition(this.__wbg_ptr, ptr0, len0);
+        return ret;
+    }
+    /**
+     * @param {string} text
+     * @returns {any}
+     */
+    finalize_composition_without_move(text) {
+        const ptr0 = passStringToWasm0(text, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.inputhandler_finalize_composition_without_move(this.__wbg_ptr, ptr0, len0);
         return ret;
     }
     /**
