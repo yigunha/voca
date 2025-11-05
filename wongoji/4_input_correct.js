@@ -232,23 +232,10 @@ function setupInputEvents() {
         if (!inputHandler) return;
         
         var text = e.data || '';
-        var currentLength = text.length;
-        var lastLength = lastCompositionData.length;
         
-        if (currentLength > lastLength && lastLength > 0) {
-            var completedChars = text.substring(0, currentLength - 1);
-            for (var i = lastLength - 1; i < completedChars.length; i++) {
-                var result = inputHandler.place_char_and_move(completedChars[i]);
-                handleInputResults(result);
-            }
-            
-            var lastChar = text[currentLength - 1];
-            var result = inputHandler.update_composition(lastChar);
-            handleInputResults(result);
-        } else {
-            var result = inputHandler.update_composition(text);
-            handleInputResults(result);
-        }
+        // 단순히 조합 중인 텍스트만 표시 (이동하지 않음)
+        var result = inputHandler.update_composition(text);
+        handleInputResults(result);
         
         lastCompositionData = text;
     });
