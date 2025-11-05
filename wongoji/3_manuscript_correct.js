@@ -1,5 +1,3 @@
-// 3_manuscript_correct.js
-
 // 원고지 초기화
 function initializePaper() {
     manuscriptPaper.innerHTML = '';
@@ -189,34 +187,33 @@ function clearSelection() {
     isSelecting = false;
 }
 
-// ⭐ [수정] 셀 클릭 핸들러 (전체 교체)
+// 셀 클릭 핸들러
 function handleCellClick(idx, e) {
-    var compositionInput = document.getElementById('compositionInput');
-    
-    // ⭐ 1. [핵심] 한글 조합 중일 때 클릭이 발생한 경우
+    // 한글 조합 중이면 먼저 종료
     if (window.inputHandler && window.inputHandler.is_composing()) {
-        // console.log('Click Finalization: "클릭"이 조합을 즉시 확정합니다.');
-
-        // 2. 조합 상태 강제 종료 및 "처리 완료" 신호 설정
         window.inputHandler.end_composition();
-        window.isComposing = false; // "처리 완료" 신호 (가장 중요)
-
-        // 3. 조합 중이던 텍스트('ㅁ')를 전역 변수에서 가져와 확정
-        var textToFinalize = window.lastCompositionData || ''; 
-        window.lastCompositionData = ''; // 사용 후 비움
-        
-        if (compositionInput) {
-            compositionInput.value = ''; // 입력칸 비우기
-        }
-
-        if (textToFinalize) {
-             var result = window.inputHandler.finalize_composition(textToFinalize);
-             handleInputResults(result);
+        var compositionInput = document.getElementById('compositionInput');
+        if (compositionInput && compositionInput.value) {
+            var result = window.inputHandler.finalize_composition(compositionInput.value);
+            handleInputResults(result);
+            compositionInput.value = '';
         }
     }
     
-    // ⭐ 2. [기존 로직] 조합 중이 아닐 때, 남아있는 버퍼(영어, 숫자 등) 확정
+    // 이전 위치의 다음 칸 temp 제거
     if (window.inputHandler) {
+        var oldPos = window.inputHandler.get_position();
+        if (oldPos + 1 < studentCells.length) {
+            var nextCell = studentCells[oldPos + 1];
+            if (nextCell.dataset.temp && studentData[oldPos + 1] === '') {
+                var nextContent = nextCell.querySelector('.cell-content');
+                if (nextContent) {
+                    nextContent.textContent = '';
+                }
+                delete nextCell.dataset.temp;
+            }
+        }
+        
         var result = window.inputHandler.finalize_buffer();
         if (result) {
             handleInputResults(result);
@@ -227,6 +224,7 @@ function handleCellClick(idx, e) {
     if (e.shiftKey) {
         e.preventDefault();
         
+        // 현재 커서 위치부터 클릭한 위치까지 선택
         var start = Math.min(currentPos, idx);
         var end = Math.max(currentPos, idx);
         
@@ -249,13 +247,13 @@ function handleCellClick(idx, e) {
     updateActiveCell();
     
     setTimeout(function() {
+        var compositionInput = document.getElementById('compositionInput');
         if (compositionInput) {
             compositionInput.value = '';
             compositionInput.focus();
         }
     }, 10);
 }
-
 
 // 원고 텍스트 가져오기
 function getManuscriptText() {

@@ -1,9 +1,7 @@
-// 4_input_correct.js
-
 // WASM 입력 핸들러 사용
 let inputHandler = null;
 let compositionInput = null;
-// ⭐ [수정] let lastCompositionData = ''; (제거 - 1_config.js의 전역 변수 사용)
+let lastCompositionData = '';
 
 // 입력 핸들러 초기화
 async function initInputHandler() {
@@ -218,7 +216,7 @@ function setupInputEvents() {
     compositionInput.addEventListener('compositionstart', function(e) {
         if (!inputHandler) return;
         
-        lastCompositionData = ''; // 전역 변수
+        lastCompositionData = '';
         inputHandler.start_composition();
         isComposing = true;
         compositionInput.classList.add('is-composing');
@@ -235,7 +233,7 @@ function setupInputEvents() {
         
         var text = e.data || '';
         var currentLength = text.length;
-        var lastLength = lastCompositionData.length; // 전역 변수
+        var lastLength = lastCompositionData.length;
         
         if (currentLength > lastLength && lastLength > 0) {
             var completedChars = text.substring(0, currentLength - 1);
@@ -252,44 +250,29 @@ function setupInputEvents() {
             handleInputResults(result);
         }
         
-        lastCompositionData = text; // 전역 변수
+        lastCompositionData = text;
     });
     
-    // ⭐ [수정] 한글 조합 완료 (전체 교체)
+    // 한글 조합 완료
     compositionInput.addEventListener('compositionend', function(e) {
-        var text = e.data || '';
+        if (!inputHandler) return;
         
-        // ⭐ [핵심] 10ms 지연 실행 (클릭 이벤트가 먼저 처리될 시간을 줌)
-        setTimeout(function() {
-            
-            // ⭐ 1. [중복 방지]
-            // handleCellClick이 이미 isComposing=false로 만들었다면,
-            // 이 코드는 "클릭으로 인한 조합 종료"이므로, 아무것도 안 함.
-            if (!inputHandler || !isComposing) {
-                // console.log('CompositionEnd: "클릭"이 이미 처리했으므로 중단합니다.');
-                return;
-            }
-
-            // ⭐ 2. [정상 처리]
-            // isComposing이 여전히 true이면, "클릭이 아닌 정상 종료" (예: 엔터)
-            // console.log('CompositionEnd: "정상" 조합 종료를 처리합니다.');
-            isComposing = false;
-            inputHandler.end_composition();
-            compositionInput.classList.remove('is-composing');
-            
-            for (var i = 0; i < studentCells.length; i++) {
-                studentCells[i].classList.remove('is-composing');
-            }
-            
-            if (text) {
-                compositionInput.value = '';
-                var result = inputHandler.finalize_composition(text);
-                handleInputResults(result);
-            }
-            
-            lastCompositionData = ''; // 전역 변수 초기화
-            
-        }, 10); // 10ms 지연
+        isComposing = false;
+        inputHandler.end_composition();
+        compositionInput.classList.remove('is-composing');
+        
+        for (var i = 0; i < studentCells.length; i++) {
+            studentCells[i].classList.remove('is-composing');
+        }
+        
+        var text = e.data || '';
+        if (text) {
+            compositionInput.value = '';
+            var result = inputHandler.finalize_composition(text);
+            handleInputResults(result);
+        }
+        
+        lastCompositionData = '';
     });
     
     // 일반 입력

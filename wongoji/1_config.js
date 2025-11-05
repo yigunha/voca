@@ -1,5 +1,3 @@
-// 1_config.js
-
 // 전역 변수 (Supabase 설정은 WASM 내부로 이동됨)
 var cols = 20, rows = 20;
 var studentCells = [], teacherCells = [];
@@ -25,9 +23,6 @@ var isDragging = false;
 var selectionStart = -1;
 var selectedCells = [];
 var clipboard = [];
-
-// ⭐ [수정] 클릭으로 확정된 'ㅁ'을 참조하기 위한 전역 변수
-var lastCompositionData = ''; 
 
 // DOM 요소
 var studentNameInput = document.getElementById('studentName');
