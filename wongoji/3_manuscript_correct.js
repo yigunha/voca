@@ -187,6 +187,7 @@ function clearSelection() {
     isSelecting = false;
 }
 
+
 // 셀 클릭 핸들러
 function handleCellClick(idx, e) {
     // 한글 조합 중이면 먼저 종료
@@ -212,13 +213,13 @@ function handleCellClick(idx, e) {
                 }
             }
         }
-    }
-    
-    // 이전 위치의 버퍼 확정
-    if (window.inputHandler) {
-        var result = window.inputHandler.finalize_buffer();
-        if (result) {
-            handleInputResults(result);
+    } else {
+        // 한글 조합 중이 아닐 때만 버퍼 확정
+        if (window.inputHandler) {
+            var result = window.inputHandler.finalize_buffer();
+            if (result) {
+                handleInputResults(result);
+            }
         }
     }
     
@@ -256,6 +257,8 @@ function handleCellClick(idx, e) {
         }
     }, 10);
 }
+
+
 
 // 원고 텍스트 가져오기
 function getManuscriptText() {
