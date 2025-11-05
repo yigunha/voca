@@ -1,6 +1,6 @@
 let wasmModule = null;
 
-// WASM 초기화 - 경고 해결
+// WASM 초기화 - 도메인 체크는 WASM 내부에서 처리
 async function initWasm() {
     if (wasmModule) return;
     
@@ -18,7 +18,7 @@ async function initWasm() {
                 load_manuscript_list, load_existing_files, update_manuscript, 
                 check_manuscript_exists, InputHandler } = await import(wasmModulePath);
         
-        // WASM 초기화 - 새로운 방식 (경고 해결)
+        // WASM 초기화 (도메인 체크 포함)
         await init({
             module_or_path: `${basePath}wongoji_wasm_bg.wasm`
         });
@@ -86,7 +86,6 @@ startBtn.addEventListener('click', async function() {
         setCookie('studentPassword', studentPassword, 30);
         
         classSelect.disabled = true;
-        colsSelect.disabled = true; // ★★★ 칸수 선택도 비활성화 ★★★
         studentNameInput.disabled = true;
         studentPasswordInput.style.display = 'none';
         document.querySelector('label[for="studentPassword"]').style.display = 'none';
@@ -118,7 +117,11 @@ startBtn.addEventListener('click', async function() {
         }, 100);
     } catch (error) {
         console.error('Login error:', error);
-        if (error.toString().includes('Student not found')) {
+        
+        // ★ Rust에서 발생한 도메인 에러 표시
+        if (error.toString().includes('Unauthorized')) {
+            alert('⛔ 이 프로그램은 승인되지 않은 사이트에서 실행할 수 없습니다.\n\n정식 사이트: https://yigunha.github.io/voca/wongoji.html');
+        } else if (error.toString().includes('Student not found')) {
             alert('등록되지 않은 학생입니다.\n이름과 반을 확인해주세요.');
         } else if (error.toString().includes('Invalid password')) {
             alert('비밀번호가 일치하지 않습니다.');
@@ -211,7 +214,13 @@ async function loadFromSupabase() {
         window.savedManuscripts = data;
     } catch (error) {
         console.error('Load error:', error);
-        alert('불러오기 실패: ' + error);
+        
+        // ★ 도메인 에러 체크
+        if (error.toString().includes('Unauthorized')) {
+            alert('⛔ 이 프로그램은 승인되지 않은 사이트에서 실행할 수 없습니다.\n\n정식 사이트: https://yigunha.github.io/voca/wongoji.html');
+        } else {
+            alert('불러오기 실패: ' + error);
+        }
     }
 }
 
@@ -242,6 +251,9 @@ async function loadSelectedManuscript(index) {
     var savedCols = item.cols || 20;
     
     loadManuscriptText(textToLoad, savedCols, modifiedText, errorText, memo);
+    
+    // ★ 불러오기 후 항상 학생 모드로 시작
+    switchLayer('student');
     
     // 입력 핸들러 재초기화
     if (inputHandler) {
@@ -341,7 +353,13 @@ async function saveToSupabase() {
 
     } catch (error) {
         console.error('Save modal error:', error);
-        alert('파일 목록 불러오기 실패: ' + error);
+        
+        // ★ 도메인 에러 체크
+        if (error.toString().includes('Unauthorized')) {
+            alert('⛔ 이 프로그램은 승인되지 않은 사이트에서 실행할 수 없습니다.\n\n정식 사이트: https://yigunha.github.io/voca/wongoji.html');
+        } else {
+            alert('파일 목록 불러오기 실패: ' + error);
+        }
     }
 }
 
@@ -384,8 +402,6 @@ async function confirmSave() {
         console.log('Existing data:', existingData);
         
         if (existingData && existingData !== null) {
-            // ★★★ 학생은 결재 여부와 관계없이 자기 원본을 언제든 저장 가능 ★★★
-            
             if (!confirm('같은 제목의 원고가 있습니다.\n덮어쓰시겠습니까?')) {
                 return;
             }
@@ -402,7 +418,13 @@ async function confirmSave() {
         }
     } catch (error) {
         console.error('Save error:', error);
-        alert('저장 실패: ' + error);
+        
+        // ★ 도메인 에러 체크
+        if (error.toString().includes('Unauthorized')) {
+            alert('⛔ 이 프로그램은 승인되지 않은 사이트에서 실행할 수 없습니다.\n\n정식 사이트: https://yigunha.github.io/voca/wongoji.html');
+        } else {
+            alert('저장 실패: ' + error);
+        }
     }
 }
 
@@ -480,6 +502,9 @@ function loadFromFile() {
                 
                 loadManuscriptText(textToLoad, savedCols, null, null, null);
                 
+                // ★ 파일 불러오기 후에도 학생 모드로 시작
+                switchLayer('student');
+                
                 // 입력 핸들러 재초기화
                 if (inputHandler) {
                     inputHandler.set_position(0);
@@ -507,7 +532,6 @@ function logout() {
         isLoggedIn = false;
         
         classSelect.disabled = false;
-        colsSelect.disabled = false; // ★★★ 칸수 선택도 다시 활성화 ★★★
         studentNameInput.disabled = false;
         studentPasswordInput.style.display = '';
         studentPasswordInput.value = '';

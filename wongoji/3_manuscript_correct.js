@@ -420,6 +420,9 @@ function drawErrorLines() {
     
     errorLineSvg.innerHTML = '';
     
+    // ★ 빨간선 위치 조정값: -8 (위로 8px 이동)
+    var LINE_OFFSET_Y = -8;
+    
     for (var i = 0; i < errorMarks.length; i++) {
         var idx = errorMarks[i];
         if (idx >= studentCells.length || !studentCells[idx]) continue;
@@ -428,7 +431,7 @@ function drawErrorLines() {
         var cellRect = cell.getBoundingClientRect();
         
         var x1 = cellRect.left - paperRect.left;
-        var y = cellRect.bottom - paperRect.top - 2;
+        var y = cellRect.bottom - paperRect.top + LINE_OFFSET_Y;
         var x2 = cellRect.right - paperRect.left;
         
         var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
@@ -437,7 +440,7 @@ function drawErrorLines() {
         line.setAttribute('x2', x2);
         line.setAttribute('y2', y);
         line.setAttribute('stroke', 'red');
-        line.setAttribute('stroke-width', '2');
+        line.setAttribute('stroke-width', '4');
         
         errorLineSvg.appendChild(line);
     }
