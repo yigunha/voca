@@ -191,58 +191,35 @@ function clearSelection() {
 
 // ⭐ [수정] 셀 클릭 핸들러 (전체 교체)
 function handleCellClick(idx, e) {
+    var compositionInput = document.getElementById('compositionInput');
     
-    // ⭐ [수정] 한글 조합 중이면 '클릭 핸들러'가 직접 처리
+    // ⭐ 1. [핵심] 한글 조합 중일 때 클릭이 발생한 경우
     if (window.inputHandler && window.inputHandler.is_composing()) {
-        // console.log('Click detected. Finalizing composition from Click.');
+        // console.log('Click Finalization: "클릭"이 조합을 즉시 확정합니다.');
 
-        // 1. 플래그 설정 (compositionend가 중복 실행되지 않도록)
-        window.g_composition_finalized_by_click = true; 
-
-        // 2. 조합 상태 강제 종료
+        // 2. 조합 상태 강제 종료 및 "처리 완료" 신호 설정
         window.inputHandler.end_composition();
-        window.isComposing = false; // JS 플래그도 동기화
+        window.isComposing = false; // "처리 완료" 신호 (가장 중요)
 
-        // 3. 조합 중이던 텍스트 가져오기
-        var compositionInput = document.getElementById('compositionInput');
-        if (compositionInput) {
-            compositionInput.value = ''; 
-        }
-        
-        // (주의) 1_config.js에 선언된 전역 변수 사용
+        // 3. 조합 중이던 텍스트('ㅁ')를 전역 변수에서 가져와 확정
         var textToFinalize = window.lastCompositionData || ''; 
         window.lastCompositionData = ''; // 사용 후 비움
+        
+        if (compositionInput) {
+            compositionInput.value = ''; // 입력칸 비우기
+        }
 
-        // 4. 텍스트 확정
         if (textToFinalize) {
              var result = window.inputHandler.finalize_composition(textToFinalize);
              handleInputResults(result);
         }
-
-        // 5. 플래그 즉시 리셋 (setTimeout을 사용해 다음 이벤트 사이클에서)
-        setTimeout(function() { window.g_composition_finalized_by_click = false; }, 0);
     }
     
-    // 이전 위치의 버퍼 확정 (조합 중이 아닐 때)
+    // ⭐ 2. [기존 로직] 조합 중이 아닐 때, 남아있는 버퍼(영어, 숫자 등) 확정
     if (window.inputHandler) {
-        var oldPos = window.inputHandler.get_position();
-        if (oldPos + 1 < studentCells.length) {
-            var nextCell = studentCells[oldPos + 1];
-            if (nextCell.dataset.temp && studentData[oldPos + 1] === '') {
-                var nextContent = nextCell.querySelector('.cell-content');
-                if (nextContent) {
-                    nextContent.textContent = '';
-                }
-                delete nextCell.dataset.temp;
-            }
-        }
-        
-        // ⭐ 조합 중이 아닐 때만 버퍼를 확정 (위에서 이미 처리함)
-        if (!window.g_composition_finalized_by_click) {
-            var result = window.inputHandler.finalize_buffer();
-            if (result) {
-                handleInputResults(result);
-            }
+        var result = window.inputHandler.finalize_buffer();
+        if (result) {
+            handleInputResults(result);
         }
     }
     
@@ -250,7 +227,6 @@ function handleCellClick(idx, e) {
     if (e.shiftKey) {
         e.preventDefault();
         
-        // 현재 커서 위치부터 클릭한 위치까지 선택
         var start = Math.min(currentPos, idx);
         var end = Math.max(currentPos, idx);
         
@@ -273,7 +249,6 @@ function handleCellClick(idx, e) {
     updateActiveCell();
     
     setTimeout(function() {
-        var compositionInput = document.getElementById('compositionInput');
         if (compositionInput) {
             compositionInput.value = '';
             compositionInput.focus();

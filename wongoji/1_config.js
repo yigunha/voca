@@ -26,9 +26,7 @@ var selectionStart = -1;
 var selectedCells = [];
 var clipboard = [];
 
-// ⭐ [수정] 클릭/조합 충돌 방지용 전역 플래그
-var g_composition_finalized_by_click = false;
-// ⭐ [수정] compositionupdate의 마지막 데이터를 저장 (전역으로 이동)
+// ⭐ [수정] 클릭으로 확정된 'ㅁ'을 참조하기 위한 전역 변수
 var lastCompositionData = ''; 
 
 // DOM 요소
