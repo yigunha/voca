@@ -1,7 +1,9 @@
+// 4_input_correct.js
+
 // WASM 입력 핸들러 사용
 let inputHandler = null;
 let compositionInput = null;
-let lastCompositionData = '';
+// ⭐ [수정] let lastCompositionData = ''; (제거 - 1_config.js의 전역 변수 사용)
 
 // 입력 핸들러 초기화
 async function initInputHandler() {
@@ -216,7 +218,7 @@ function setupInputEvents() {
     compositionInput.addEventListener('compositionstart', function(e) {
         if (!inputHandler) return;
         
-        lastCompositionData = '';
+        lastCompositionData = ''; // 전역 변수
         inputHandler.start_composition();
         isComposing = true;
         compositionInput.classList.add('is-composing');
@@ -233,7 +235,7 @@ function setupInputEvents() {
         
         var text = e.data || '';
         var currentLength = text.length;
-        var lastLength = lastCompositionData.length;
+        var lastLength = lastCompositionData.length; // 전역 변수
         
         if (currentLength > lastLength && lastLength > 0) {
             var completedChars = text.substring(0, currentLength - 1);
@@ -250,13 +252,27 @@ function setupInputEvents() {
             handleInputResults(result);
         }
         
-        lastCompositionData = text;
+        lastCompositionData = text; // 전역 변수
     });
     
-    // 한글 조합 완료
+    // ⭐ [수정] 한글 조합 완료 (전체 교체)
     compositionInput.addEventListener('compositionend', function(e) {
-        if (!inputHandler) return;
         
+        // ⭐ [수정] 클릭 핸들러가 이미 처리했다면, 중복 실행 방지
+        if (window.g_composition_finalized_by_click) {
+            // console.log('CompositionEnd: Blocked, already handled by click.');
+            window.g_composition_finalized_by_click = false; // 플래그만 리셋하고 종료
+            return; 
+        }
+
+        // (기존) 조합 중복 실행 방지 (이것도 그대로 둠)
+        if (!inputHandler || !isComposing) {
+            // console.log('CompositionEnd: Blocked, isComposing is false.');
+            return;
+        }
+        
+        // console.log('CompositionEnd: Handling finalization.');
+
         isComposing = false;
         inputHandler.end_composition();
         compositionInput.classList.remove('is-composing');
@@ -272,7 +288,7 @@ function setupInputEvents() {
             handleInputResults(result);
         }
         
-        lastCompositionData = '';
+        lastCompositionData = ''; // 전역 변수 초기화
     });
     
     // 일반 입력

@@ -1,3 +1,5 @@
+// 1_config.js
+
 // 전역 변수 (Supabase 설정은 WASM 내부로 이동됨)
 var cols = 20, rows = 20;
 var studentCells = [], teacherCells = [];
@@ -23,6 +25,11 @@ var isDragging = false;
 var selectionStart = -1;
 var selectedCells = [];
 var clipboard = [];
+
+// ⭐ [수정] 클릭/조합 충돌 방지용 전역 플래그
+var g_composition_finalized_by_click = false;
+// ⭐ [수정] compositionupdate의 마지막 데이터를 저장 (전역으로 이동)
+var lastCompositionData = ''; 
 
 // DOM 요소
 var studentNameInput = document.getElementById('studentName');
