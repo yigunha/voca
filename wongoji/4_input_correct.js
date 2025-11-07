@@ -148,7 +148,24 @@ function copySelectedCells() {
     if (selectedCells.length === 0) return false;
     if (!inputHandler) return false;
     
+    // Rust WASM 함수로 복사
     inputHandler.copy_to_clipboard(selectedCells, studentData);
+    
+    // 시스템 클립보드에도 복사 (외부 프로그램 붙여넣기용)
+    var textToCopy = '';
+    for (var i = 0; i < selectedCells.length; i++) {
+        var idx = selectedCells[i];
+        textToCopy += studentData[idx] || '';
+    }
+    
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(textToCopy).then(function() {
+            console.log('시스템 클립보드에 복사됨:', textToCopy);
+        }).catch(function(err) {
+            console.error('클립보드 복사 실패:', err);
+        });
+    }
+    
     return true;
 }
 
@@ -279,8 +296,9 @@ function setupInputEvents() {
         if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
             e.preventDefault();
             if (selectedCells.length > 0) {
-                copySelectedCells();
-                console.log('복사됨:', selectedCells.length + '개 셀');
+                if (copySelectedCells()) {
+                    console.log('복사됨:', selectedCells.length + '개 셀');
+                }
             }
             return;
         }

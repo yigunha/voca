@@ -119,7 +119,7 @@ function initializePaper() {
 
 // 셀 렌더링
 function renderCell(idx) {
-if (idx < 0 || idx >= studentData.length) return;
+    if (idx < 0 || idx >= studentData.length) return;
     
     var cell = studentCells[idx];
     if (!cell) return;
@@ -330,11 +330,44 @@ function loadManuscriptText(text, savedCols, modifiedText, errorText, memo) {
     updateActiveCell();
 }
 
-// 수정본 로드
+// ★★★ 수정본 로드 - JSON 형식 지원 ★★★
 function loadModifiedText(modifiedText) {
-    if (!modifiedText) return;
+    if (!modifiedText || !modifiedText.trim()) return;
     
-    // ★ Rust 함수로 파싱
+    try {
+        // JSON 형식인지 확인 (첫 문자가 '{' 또는 '[')
+        var trimmed = modifiedText.trim();
+        if (trimmed[0] === '{' || trimmed[0] === '[') {
+            // JSON 형식으로 파싱
+            var jsonData = JSON.parse(modifiedText);
+            
+            // 빈 객체 체크
+            if (Object.keys(jsonData).length === 0) {
+                console.log('빈 JSON 객체입니다.');
+                return;
+            }
+            
+            // JSON 형식: { "5": {"text": "수정됨", "color": "red"}, "12": {...} }
+            for (var idx in jsonData) {
+                var cellData = jsonData[idx];
+                var index = parseInt(idx);
+                
+                if (index >= 0 && index < teacherData.length) {
+                    // text 속성이 있으면 사용, 없으면 전체를 텍스트로 사용
+                    teacherData[index] = cellData.text || cellData || '';
+                    renderTeacherCell(index);
+                }
+            }
+            
+            console.log('JSON 형식의 수정본을 로드했습니다.');
+            return;
+        }
+    } catch (e) {
+        // JSON 파싱 실패 시 기존 TSV 형식으로 시도
+        console.log('JSON 파싱 실패, TSV 형식으로 시도:', e);
+    }
+    
+    // ★ 기존 TSV 형식으로 파싱 (폴백)
     if (window.inputHandler) {
         var parsedData = window.inputHandler.parse_manuscript_text(modifiedText);
         for (var i = 0; i < parsedData.length && i < teacherData.length; i++) {
@@ -417,12 +450,12 @@ function drawErrorLines() {
     if (!errorLineSvg || !manuscriptPaper) return;
     
     var paperRect = manuscriptPaper.getBoundingClientRect();
-    var containerRect = manuscriptPaper.parentElement.getBoundingClientRect();
+    var wrapperRect = manuscriptPaper.parentElement.getBoundingClientRect();
     
     errorLineSvg.style.width = paperRect.width + 'px';
     errorLineSvg.style.height = paperRect.height + 'px';
-    errorLineSvg.style.left = (paperRect.left - containerRect.left) + 'px';
-    errorLineSvg.style.top = (paperRect.top - containerRect.top) + 'px';
+    errorLineSvg.style.left = '0px';
+    errorLineSvg.style.top = '0px';
     
     errorLineSvg.setAttribute('width', paperRect.width);
     errorLineSvg.setAttribute('height', paperRect.height);
@@ -574,15 +607,3 @@ window.getManuscriptText = getManuscriptText;
 window.loadManuscriptText = loadManuscriptText;
 window.switchLayer = switchLayer;
 window.adjustMemoPanelPosition = adjustMemoPanelPosition;
-
-
-
-
-
-
-
-
-
-
-
-
