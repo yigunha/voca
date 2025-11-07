@@ -85,7 +85,6 @@ startBtn.addEventListener('click', async function() {
         setCookie('studentClass', currentClass, 30);
         setCookie('studentPassword', studentPassword, 30);
         
-        // ★ 칸 수 선택은 활성화 유지 (작업 중 변경 가능)
         classSelect.disabled = true;
         studentNameInput.disabled = true;
         studentPasswordInput.style.display = 'none';
@@ -532,8 +531,6 @@ function logout() {
         studentPasswordInput.value = '';
         isLoggedIn = false;
         
-        // ★ 칸 수 선택도 다시 활성화
-        colsSelect.disabled = false;
         classSelect.disabled = false;
         studentNameInput.disabled = false;
         studentPasswordInput.style.display = '';
