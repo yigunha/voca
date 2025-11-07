@@ -417,12 +417,12 @@ function drawErrorLines() {
     if (!errorLineSvg || !manuscriptPaper) return;
     
     var paperRect = manuscriptPaper.getBoundingClientRect();
-    var containerRect = manuscriptPaper.parentElement.getBoundingClientRect();
+    var wrapperRect = manuscriptPaper.parentElement.getBoundingClientRect();
     
     errorLineSvg.style.width = paperRect.width + 'px';
     errorLineSvg.style.height = paperRect.height + 'px';
-    errorLineSvg.style.left = (paperRect.left - containerRect.left) + 'px';
-    errorLineSvg.style.top = (paperRect.top - containerRect.top) + 'px';
+    errorLineSvg.style.left = '0px';
+    errorLineSvg.style.top = '0px';
     
     errorLineSvg.setAttribute('width', paperRect.width);
     errorLineSvg.setAttribute('height', paperRect.height);
@@ -574,15 +574,3 @@ window.getManuscriptText = getManuscriptText;
 window.loadManuscriptText = loadManuscriptText;
 window.switchLayer = switchLayer;
 window.adjustMemoPanelPosition = adjustMemoPanelPosition;
-
-
-
-
-
-
-
-
-
-
-
-
