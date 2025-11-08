@@ -262,8 +262,7 @@ function setupInputEvents() {
     compositionInput.addEventListener('input', function(e) {
         if (!inputHandler) return;
         
-        // ★★★ 이 부분이 수정되었습니다. (중복 입력 방지)
-        // WASM 호출 대신 더 빠르고 안정적인 전역 플래그와 브라우저 플래그를 사용합니다.
+        // ★★★ 이전 문제 해결 로직: 조합 중인 입력 무시
         if (window.isComposing || e.isComposing) {
             return;
         }
@@ -279,7 +278,14 @@ function setupInputEvents() {
     // 키보드 이벤트
     compositionInput.addEventListener('keydown', function(e) {
         if (!inputHandler) return;
-        // isComposing은 이미 keydown에서 확인하고 있으므로 이 부분은 그대로 둡니다.
+        
+        // ★★★ 핵심 수정: 키를 길게 눌러 반복 입력이 발생하면 WASM 처리를 막습니다.
+        if (e.repeat) {
+            e.preventDefault(); 
+            return;
+        }
+        
+        // 기존 방어 로직 (조합 중 무시)
         if (e.isComposing || window.isComposing) return;
         
         // Backspace
