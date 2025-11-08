@@ -140,14 +140,13 @@
             font-weight: bold;
             cursor: pointer;
             user-select: none;
-            transition: transform 0.05s, opacity 0.05s;
             border: 2px solid rgba(0,0,0,0.2);
             box-shadow: 0 2px 4px rgba(0,0,0,0.3);
             white-space: nowrap;
+            transition: opacity 0.1s;
         }
         
         .block:hover {
-            transform: scale(0.95);
             opacity: 0.8;
         }
 
@@ -429,24 +428,21 @@
         const CONFIG = {
             GRID_WIDTH: 360,
             GRID_HEIGHT: 354,
-            FALL_SPEED: 40, // 한 프레임당 이동 픽셀
-            UPDATE_INTERVAL: 50, // 50ms마다 업데이트 (20fps)
-            SPAWN_DELAY_MIN: 1500,
-            SPAWN_DELAY_MAX: 2500,
+            FALL_SPEED: 2, // 프레임당 2픽셀 (천천히)
+            UPDATE_INTERVAL: 50, // 50ms마다 업데이트
+            SPAWN_DELAY_MIN: 2000,
+            SPAWN_DELAY_MAX: 3000,
             WRONG_ANSWERS_PER_CORRECT: 3,
-            SHUFFLE_IN_GROUPS: true,
-            GROUP_SIZE: 4,
             CHECK_INTERVAL: 5000,
-            CORRECT_BLOCK_PROBABILITY: 0.6,
-            BLOCK_HEIGHT: 40, // 블록 높이
+            CORRECT_BLOCK_PROBABILITY: 0.65,
+            BLOCK_HEIGHT: 44, // 블록 높이 (padding 포함)
         };
 
         // 게임 변수
         let gameData = [];
-        let currentGroup = 0;
         let currentProblem = 0;
         let fallingBlocks = [];
-        let stackedBlocks = []; // 쌓인 블록들
+        let stackedBlocks = [];
         let userAnswer = "";
         let answerHistory = [];
         let gameState = 'ready';
@@ -476,7 +472,7 @@
             }
         }
 
-        // 암호화된 데이터 로드 및 복호화
+        // 암호화된 데이터 로드
         async function loadGameData() {
             try {
                 const response = await fetch('./data/3A_encrypted.dat');
@@ -595,16 +591,6 @@
             document.getElementById('startOverlay').classList.remove('hidden');
         }
 
-        // 셔플
-        function shuffleArray(array) {
-            const arr = [...array];
-            for (let i = arr.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [arr[i], arr[j]] = [arr[j], arr[i]];
-            }
-            return arr;
-        }
-
         // 게임 시작
         window.startGame = function() {
             if (gameState === 'playing') return;
@@ -615,7 +601,7 @@
             
             // 초기 블록 3개 생성
             for (let i = 0; i < 3; i++) {
-                setTimeout(() => spawnBlock(), i * 500);
+                setTimeout(() => spawnBlock(), i * 600);
             }
             
             updateInterval = setInterval(gameLoop, CONFIG.UPDATE_INTERVAL);
@@ -627,43 +613,56 @@
         function gameLoop() {
             if (gameState !== 'playing') return;
             
-            // 떨어지는 블록 업데이트
+            let needsUpdate = false;
+            
             fallingBlocks.forEach(block => {
+                const oldY = block.y;
                 block.y += CONFIG.FALL_SPEED;
                 
-                // 바닥 또는 다른 블록과 충돌 체크
-                if (checkCollision(block)) {
-                    // 충돌 전 위치로 되돌림
-                    block.y -= CONFIG.FALL_SPEED;
+                // 충돌 체크
+                if (isColliding(block)) {
+                    // 충돌했으면 이전 위치로
+                    block.y = oldY;
                     
                     // 쌓인 블록으로 이동
-                    stackedBlocks.push(block);
+                    stackedBlocks.push({...block});
                     fallingBlocks = fallingBlocks.filter(b => b.id !== block.id);
+                    needsUpdate = true;
+                } else if (block.y !== oldY) {
+                    needsUpdate = true;
                 }
             });
             
-            updateDisplay();
+            if (needsUpdate) {
+                updateDisplay();
+            }
         }
 
-        // 충돌 체크
-        function checkCollision(block) {
-            // 블록 크기 계산 (대략)
-            const blockWidth = block.text.length * 20 + 24; // 글자당 20px + 패딩
+        // 충돌 감지 (간단하고 정확하게)
+        function isColliding(block) {
+            const blockEl = document.querySelector(`[data-block-id="${block.id}"]`);
+            if (!blockEl) return false;
+            
+            const blockWidth = blockEl.offsetWidth;
+            const blockBottom = block.y + CONFIG.BLOCK_HEIGHT;
             
             // 바닥 충돌
-            if (block.y + CONFIG.BLOCK_HEIGHT >= CONFIG.GRID_HEIGHT) {
+            if (blockBottom >= CONFIG.GRID_HEIGHT) {
                 return true;
             }
             
             // 다른 쌓인 블록과 충돌
             for (let stacked of stackedBlocks) {
-                const stackedWidth = stacked.text.length * 20 + 24;
+                const stackedEl = document.querySelector(`[data-block-id="${stacked.id}"]`);
+                if (!stackedEl) continue;
                 
-                // x축 겹침 체크
-                const xOverlap = !(block.x + blockWidth < stacked.x || block.x > stacked.x + stackedWidth);
+                const stackedWidth = stackedEl.offsetWidth;
                 
-                // y축 겹침 체크
-                const yOverlap = block.y + CONFIG.BLOCK_HEIGHT >= stacked.y && block.y <= stacked.y + CONFIG.BLOCK_HEIGHT;
+                // x축 겹침
+                const xOverlap = !(block.x + blockWidth <= stacked.x || block.x >= stacked.x + stackedWidth);
+                
+                // y축 겹침 (블록 아래쪽이 쌓인 블록 위쪽에 닿았는지)
+                const yOverlap = blockBottom >= stacked.y && block.y < stacked.y + CONFIG.BLOCK_HEIGHT;
                 
                 if (xOverlap && yOverlap) {
                     return true;
@@ -673,7 +672,7 @@
             return false;
         }
 
-        // 화면에 정답 블록이 있는지 체크
+        // 화면에 정답 블록 체크
         function checkCorrectBlocksOnScreen() {
             if (gameState !== 'playing' || remainingCorrectBlocks.length === 0) return;
             
@@ -711,7 +710,7 @@
                 
                 // 새 블록 생성
                 for (let i = 0; i < 3; i++) {
-                    setTimeout(() => spawnBlock(), i * 300);
+                    setTimeout(() => spawnBlock(), i * 400);
                 }
             }, 500);
         }
@@ -729,8 +728,9 @@
                 blockText = wrongBlocks[Math.floor(Math.random() * wrongBlocks.length)];
             }
             
-            const blockWidth = blockText.length * 20 + 24;
-            const maxX = CONFIG.GRID_WIDTH - blockWidth;
+            // 블록 크기 추정
+            const estimatedWidth = blockText.length * 22 + 28;
+            const maxX = Math.max(0, CONFIG.GRID_WIDTH - estimatedWidth);
             
             const newBlock = {
                 text: blockText,
@@ -778,13 +778,13 @@
             const gridEl = document.getElementById('grid');
             gridEl.innerHTML = '';
             
-            // 쌓인 블록 먼저 렌더링
+            // 쌓인 블록 먼저
             stackedBlocks.forEach(block => {
                 const blockEl = createBlockElement(block);
                 gridEl.appendChild(blockEl);
             });
             
-            // 떨어지는 블록 렌더링
+            // 떨어지는 블록
             fallingBlocks.forEach(block => {
                 const blockEl = createBlockElement(block);
                 gridEl.appendChild(blockEl);
@@ -799,11 +799,14 @@
             blockEl.className = 'block';
             blockEl.style.backgroundColor = block.color.bg;
             blockEl.style.color = block.color.text;
-            blockEl.style.left = block.x + 'px';
-            blockEl.style.top = block.y + 'px';
+            blockEl.style.left = Math.round(block.x) + 'px';
+            blockEl.style.top = Math.round(block.y) + 'px';
             blockEl.textContent = block.text === " " ? "□" : block.text;
             blockEl.dataset.blockId = block.id;
-            blockEl.onclick = () => handleBlockClick(block.id);
+            blockEl.onclick = (e) => {
+                e.stopPropagation();
+                handleBlockClick(block.id);
+            };
             return blockEl;
         }
 
@@ -835,7 +838,7 @@
             answerHistory.push(blockText);
             userAnswer += blockText;
             
-            // 남은 정답 블록 목록에서 제거
+            // 남은 정답 블록에서 제거
             const index = remainingCorrectBlocks.indexOf(blockText);
             if (index > -1) {
                 remainingCorrectBlocks.splice(index, 1);
@@ -859,8 +862,8 @@
                 remainingCorrectBlocks.push(lastBlock);
             }
             
-            const blockWidth = lastBlock.length * 20 + 24;
-            const maxX = CONFIG.GRID_WIDTH - blockWidth;
+            const estimatedWidth = lastBlock.length * 22 + 28;
+            const maxX = Math.max(0, CONFIG.GRID_WIDTH - estimatedWidth);
             
             const newBlock = {
                 text: lastBlock,
@@ -890,8 +893,8 @@
             const isCorrect = userAnswer === correctAnswer;
 
             if (isCorrect) {
-		document.getElementById('message').textContent = '🎉 정답입니다!';
-                document.getElementById('message').className = 'message success';
+                document.getElementById('message').textContent = '🎉 정답입니다!';
+		document.getElementById('message').className = 'message success';
                 gameState = 'success';
                 stopGame();
                 
