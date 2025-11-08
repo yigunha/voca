@@ -34,9 +34,13 @@ export function set_cookie(name: string, value: string, days: number): void;
  */
 export function get_cookie(name: string): string;
 /**
- * 쿠키 삭제
+ * 쿠키 삭제 - JavaScript에서 쉽게 호출 가능
  */
 export function delete_cookie(name: string): void;
+/**
+ * 모든 게임 쿠키 삭제
+ */
+export function clear_all_cookies(): void;
 /**
  * 로그인 상태 확인
  */
@@ -84,7 +88,8 @@ export interface InitOutput {
   readonly authenticate_student: (a: number, b: number, c: number, d: number, e: number, f: number) => any;
   readonly set_cookie: (a: number, b: number, c: number, d: number, e: number) => [number, number];
   readonly get_cookie: (a: number, b: number) => [number, number, number, number];
-  readonly delete_cookie: (a: number, b: number) => [number, number];
+  readonly delete_cookie: (a: number, b: number) => void;
+  readonly clear_all_cookies: () => void;
   readonly check_login_status: () => number;
   readonly refresh_cookies: () => [number, number];
   readonly decrypt_xor: (a: number, b: number) => [number, number, number, number];

@@ -569,16 +569,20 @@ export function get_cookie(name) {
 }
 
 /**
- * 쿠키 삭제
+ * 쿠키 삭제 - JavaScript에서 쉽게 호출 가능
  * @param {string} name
  */
 export function delete_cookie(name) {
     const ptr0 = passStringToWasm0(name, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
     const len0 = WASM_VECTOR_LEN;
-    const ret = wasm.delete_cookie(ptr0, len0);
-    if (ret[1]) {
-        throw takeFromExternrefTable0(ret[0]);
-    }
+    wasm.delete_cookie(ptr0, len0);
+}
+
+/**
+ * 모든 게임 쿠키 삭제
+ */
+export function clear_all_cookies() {
+    wasm.clear_all_cookies();
 }
 
 /**
@@ -972,8 +976,8 @@ function __wbg_get_imports() {
         const ret = getStringFromWasm0(arg0, arg1);
         return ret;
     };
-    imports.wbg.__wbindgen_cast_90fb09e08acc4555 = function(arg0, arg1) {
-        // Cast intrinsic for `Closure(Closure { dtor_idx: 39, function: Function { arguments: [Externref], shim_idx: 40, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
+    imports.wbg.__wbindgen_cast_f59528fc2c089a81 = function(arg0, arg1) {
+        // Cast intrinsic for `Closure(Closure { dtor_idx: 41, function: Function { arguments: [Externref], shim_idx: 42, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
         const ret = makeMutClosure(arg0, arg1, wasm.wasm_bindgen__closure__destroy__h0eb5c646152f9b85, wasm_bindgen__convert__closures_____invoke__he7f4b28c0a248a94);
         return ret;
     };
