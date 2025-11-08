@@ -385,6 +385,15 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        .stats {
+            font-size: 0.75em;
+            color: #9ca3af;
+            margin-top: 6px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
     </style>
 </head>
 <body>
@@ -442,6 +451,10 @@
                         </div>
                         
                         <div class="target" id="target"></div>
+                        <div class="stats" id="stats">
+                            <span>되돌리기: <span id="undoCount">0</span>/20</span>
+                            <span>폭탄: <span id="bombCount">0</span>/3</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -449,14 +462,6 @@
     </div>
 
     <script type="module">
-        const allowedDomains = ['yigunha.github.io', 'localhost', '127.0.0.1'];
-        const currentDomain = window.location.hostname;
-        
-        if (!allowedDomains.some(domain => currentDomain.includes(domain))) {
-            document.body.innerHTML = '<div style="color: white; text-align: center; padding: 50px;">이 도메인에서는 실행할 수 없습니다.</div>';
-            throw new Error('Unauthorized domain');
-        }
-
         let wasmModule = null;
         
         const CONFIG = {
@@ -467,16 +472,6 @@
             SPAWN_DELAY_MIN: 800,
             SPAWN_DELAY_MAX: 1500,
             WRONG_ANSWERS_PER_CORRECT: 3,
-            SHUFFLE_IN_GROUPS: true,
-            GROUP_SIZE: 4,
-            CONTINUOUS_SPAWN: true,
-            COLORS: {
-                SPACE: '#FCD34D',
-                ONE_CHAR: '#F87171',
-                TWO_CHARS: '#6EE7B7',
-                THREE_CHARS: '#7DD3FC',
-                FOUR_PLUS: '#C4B5FD'
-            }
         };
 
         let selectedLevel = null;
@@ -491,9 +486,12 @@
         let speed = CONFIG.FALL_SPEED;
         let fallInterval = null;
         let spawnTimeout = null;
-        let correctAnswer = "";
+        let correctAnswerHash = "";
         let blockIdCounter = 0;
         let gravityInterval = null;
+        let gameStartTime = 0;
+        let mistakeCount = 0;
+        let currentLevelBombCount = 0;
 
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
@@ -503,6 +501,13 @@
                 await wasm.default();
                 wasmModule = wasm;
                 console.log('WASM 초기화:', wasm.get_version());
+                
+                // 강력한 위치 검증
+                if (!wasm.verify_location()) {
+                    document.body.innerHTML = '<div style="color: white; text-align: center; padding: 50px;">⚠️ 인증되지 않은 위치입니다.<br>이 페이지는 허가된 위치에서만 실행할 수 있습니다.</div>';
+                    throw new Error('Unauthorized location');
+                }
+                
                 return true;
             } catch (error) {
                 console.error('WASM 로드 실패:', error);
@@ -584,7 +589,8 @@
 
         function selectRandomProblems(data) {
             return data.map(group => {
-                const randomIndex = Math.floor(Math.random() * group.problems.length);
+                const seed = wasmModule.generate_seed();
+                const randomIndex = seed % group.problems.length;
                 return group.problems[randomIndex];
             });
         }
@@ -606,7 +612,9 @@
 
         function parseAnswer(answer) {
             const blocks = answer.split('/');
-            correctAnswer = blocks.join('');
+            const correctAnswer = blocks.join('');
+            // 정답을 해시로 저장 (개발자 도구로 볼 수 없음)
+            correctAnswerHash = wasmModule.create_answer_hash(correctAnswer);
             return blocks;
         }
         
@@ -621,51 +629,22 @@
         }
         
         function createBlockSequence(correctBlocks, fakeBlocks) {
-            const sequence = [];
-            const fakePool = [...fakeBlocks];
-            
-            for (let i = 0; i < correctBlocks.length; i++) {
-                sequence.push({ text: correctBlocks[i], isCorrect: true, originalIndex: i });
-                
-                for (let j = 0; j < CONFIG.WRONG_ANSWERS_PER_CORRECT; j++) {
-                    if (fakePool.length > 0) {
-                        const fakeIdx = Math.floor(Math.random() * fakePool.length);
-                        sequence.push({ text: fakePool[fakeIdx], isCorrect: false });
-                        fakePool.splice(fakeIdx, 1);
-                    }
-                }
-            }
-            
-            if (CONFIG.SHUFFLE_IN_GROUPS) {
-                const shuffled = [];
-                for (let i = 0; i < sequence.length; i += CONFIG.GROUP_SIZE) {
-                    const chunk = sequence.slice(i, i + CONFIG.GROUP_SIZE);
-                    shuffleArray(chunk);
-                    shuffled.push(...chunk);
-                }
-                return shuffled;
-            }
-            return shuffleArray(sequence);
+            // WASM에서 블록 시퀀스 생성
+            const seed = wasmModule.generate_seed();
+            const correctJson = JSON.stringify(correctBlocks);
+            const fakeJson = JSON.stringify(fakeBlocks);
+            const sequenceJson = wasmModule.generate_block_sequence(correctJson, fakeJson, seed);
+            return JSON.parse(sequenceJson);
         }
         
         window.toggleTarget = function() {
             document.getElementById('target').classList.toggle('show');
         };
 
-        function shuffleArray(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
-            }
-            return array;
-        }
-
         function getBlockColor(blockText) {
-            if (blockText === " ") return { bg: CONFIG.COLORS.SPACE, text: '#000000' };
-            if (blockText.length === 1) return { bg: CONFIG.COLORS.ONE_CHAR, text: '#000000' };
-            if (blockText.length === 2) return { bg: CONFIG.COLORS.TWO_CHARS, text: '#000000' };
-            if (blockText.length === 3) return { bg: CONFIG.COLORS.THREE_CHARS, text: '#000000' };
-            return { bg: CONFIG.COLORS.FOUR_PLUS, text: '#000000' };
+            // WASM에서 색상 계산
+            const color = wasmModule.get_block_color(blockText);
+            return { bg: color, text: '#000000' };
         }
 
         window.startGame = function() {
@@ -676,14 +655,23 @@
             const fakeBlocks = getFakeBlocks(level);
             const sequence = createBlockSequence(blocks, fakeBlocks);
             
-            availableBlocks = sequence.map(item => item.text);
+            availableBlocks = sequence;
             grid = Array(CONFIG.GRID_ROWS).fill(null).map(() => Array(CONFIG.GRID_COLS).fill(null));
             fallingBlocks = [];
             userAnswer = "";
             answerHistory = [];
             gameState = 'playing';
             blockIdCounter = 0;
+            gameStartTime = Date.now();
+            mistakeCount = 0;
+            currentLevelBombCount = 0;
             
+            // 되돌리기와 폭탄 카운트 리셋
+            wasmModule.reset_undo_count();
+            wasmModule.reset_bomb_usage();
+            updateStats();
+            
+            const correctAnswer = blocks.join('');
             document.getElementById('description').textContent = '문장: ' + currentGame.description;
             document.getElementById('target').textContent = '목표: ' + correctAnswer.split('').map(c => c === " " ? "▢" : c).join('');
             document.getElementById('target').classList.remove('show');
@@ -714,6 +702,10 @@
             speed = CONFIG.FALL_SPEED;
             stopGame();
             
+            wasmModule.reset_undo_count();
+            wasmModule.reset_bomb_usage();
+            updateStats();
+            
             document.getElementById('levelNum').textContent = '1';
             document.getElementById('message').textContent = '';
             document.getElementById('buttons').innerHTML = '<button class="btn btn-start" onclick="startGame()">▶ 게임 시작</button>';
@@ -740,7 +732,8 @@
             const blockText = availableBlocks.shift();
             const cells = blockText.split('');
             const maxLane = CONFIG.GRID_COLS - cells.length;
-            const lane = Math.floor(Math.random() * (maxLane + 1));
+            const seed = wasmModule.generate_seed();
+            const lane = seed % (maxLane + 1);
             
             const newBlock = {
                 text: blockText,
@@ -763,7 +756,8 @@
         function scheduleNextBlock() {
             if (gameState !== 'playing' || availableBlocks.length === 0) return;
             
-            const delay = Math.random() * (CONFIG.SPAWN_DELAY_MAX - CONFIG.SPAWN_DELAY_MIN) + CONFIG.SPAWN_DELAY_MIN;
+            const seed = wasmModule.generate_seed();
+            const delay = (seed % (CONFIG.SPAWN_DELAY_MAX - CONFIG.SPAWN_DELAY_MIN)) + CONFIG.SPAWN_DELAY_MIN;
             spawnTimeout = setTimeout(() => {
                 spawnBlock();
                 scheduleNextBlock();
@@ -910,7 +904,6 @@
                         cellEl.textContent = fallingBlock.cells[fallingIdx] === " " ? "" : fallingBlock.cells[fallingIdx];
                         cellEl.classList.add('clickable', 'block-cell');
                         
-                        // 같은 블록의 칸들 연결
                         if (fallingIdx < fallingBlock.cells.length - 1) {
                             cellEl.classList.add('same-block');
                         } else {
@@ -928,7 +921,6 @@
                         cellEl.textContent = cell.char === " " ? "" : cell.char;
                         cellEl.classList.add('clickable', 'block-cell');
                         
-                        // 같은 블록의 칸들 연결
                         const isLastInBlock = !grid[row][col + 1] || grid[row][col + 1].id !== cell.id;
                         if (!isLastInBlock) {
                             cellEl.classList.add('same-block');
@@ -978,7 +970,9 @@
             
             updateDisplay();
             
-            if (userAnswer.length >= correctAnswer.length) {
+            // 정답 길이만 확인 (정답 자체는 노출 안 함)
+            const correctLength = gameData[level].answer.replace(/\//g, '').length;
+            if (userAnswer.length >= correctLength) {
                 checkAnswer();
             }
         }
@@ -1005,7 +999,8 @@
             userAnswer += blockText;
             updateDisplay();
 
-            if (userAnswer.length >= correctAnswer.length) {
+            const correctLength = gameData[level].answer.replace(/\//g, '').length;
+            if (userAnswer.length >= correctLength) {
                 checkAnswer();
             }
         }
@@ -1013,12 +1008,22 @@
         function handleUndo() {
             if (gameState !== 'playing' || answerHistory.length === 0) return;
 
+            // WASM에서 되돌리기 가능 여부 확인
+            if (!wasmModule.can_undo()) {
+                alert('되돌리기는 게임당 20번까지만 가능합니다.');
+                return;
+            }
+
+            wasmModule.increment_undo();
+            updateStats();
+
             const lastBlock = answerHistory.pop();
             userAnswer = userAnswer.slice(0, -lastBlock.length);
             
             const cells = lastBlock.split('');
             const maxLane = CONFIG.GRID_COLS - cells.length;
-            const lane = Math.floor(Math.random() * (maxLane + 1));
+            const seed = wasmModule.generate_seed();
+            const lane = seed % (maxLane + 1);
             
             const newBlock = {
                 text: lastBlock,
@@ -1036,6 +1041,14 @@
         function handleBomb() {
             if (gameState !== 'playing') return;
             
+            // WASM에서 폭탄 사용 가능 여부 확인
+            if (!wasmModule.can_use_bomb(level)) {
+                alert('폭탄은 레벨당 3번까지만 사용할 수 있습니다.');
+                return;
+            }
+            
+            currentLevelBombCount++;
+            updateStats();
             playClickSound();
             
             // 화면의 모든 블록 제거
@@ -1044,9 +1057,6 @@
             
             // 현재 입력된 답 분석
             const currentBlocks = parseAnswer(gameData[level].answer);
-            const enteredBlocks = answerHistory.slice();
-            
-            // 필요한 정답 블록 찾기
             const neededBlocks = [];
             let tempAnswer = userAnswer;
             
@@ -1058,28 +1068,34 @@
                 }
             }
             
-            // 정답 블록의 확률을 높여서 새로운 블록 시퀀스 생성
+            // WASM을 통해 강화된 블록 시퀀스 생성
             const fakeBlocks = getFakeBlocks(level);
-            const enhancedSequence = [];
+            const enhancedBlocks = [];
             
             // 필요한 정답 블록을 3번씩 추가
             neededBlocks.forEach(block => {
                 for (let i = 0; i < 3; i++) {
-                    enhancedSequence.push(block);
+                    enhancedBlocks.push(block);
                 }
             });
             
             // 나머지 오답 블록 추가
             const remainingCount = Math.max(10, neededBlocks.length * 2);
             for (let i = 0; i < remainingCount && fakeBlocks.length > 0; i++) {
-                const fakeIdx = Math.floor(Math.random() * fakeBlocks.length);
-                enhancedSequence.push(fakeBlocks[fakeIdx]);
+                const seed = wasmModule.generate_seed();
+                const fakeIdx = seed % fakeBlocks.length;
+                enhancedBlocks.push(fakeBlocks[fakeIdx]);
                 fakeBlocks.splice(fakeIdx, 1);
             }
             
-            // 섞기
-            shuffleArray(enhancedSequence);
-            availableBlocks = enhancedSequence;
+            // WASM으로 섞기
+            const seed = wasmModule.generate_seed();
+            const shuffledJson = wasmModule.generate_block_sequence(
+                JSON.stringify(enhancedBlocks.slice(0, Math.ceil(enhancedBlocks.length / 2))),
+                JSON.stringify(enhancedBlocks.slice(Math.ceil(enhancedBlocks.length / 2))),
+                seed
+            );
+            availableBlocks = JSON.parse(shuffledJson);
             
             updateDisplay();
         }
@@ -1090,17 +1106,47 @@
             display.innerHTML = text + '<span class="blink">|</span>';
             
             const undoBtn = document.getElementById('undoBtn');
-            undoBtn.disabled = answerHistory.length === 0 || gameState !== 'playing';
+            undoBtn.disabled = answerHistory.length === 0 || gameState !== 'playing' || !wasmModule.can_undo();
             
             const bombBtn = document.getElementById('bombBtn');
-            bombBtn.disabled = gameState !== 'playing';
+            bombBtn.disabled = gameState !== 'playing' || !wasmModule.can_use_bomb(level);
+        }
+
+        function updateStats() {
+            document.getElementById('undoCount').textContent = wasmModule.get_undo_count();
+            document.getElementById('bombCount').textContent = currentLevelBombCount;
         }
 
         function checkAnswer() {
-            const isCorrect = userAnswer === correctAnswer;
+            // WASM을 통한 안전한 정답 검증
+            const isCorrect = wasmModule.verify_answer(userAnswer, correctAnswerHash);
 
             if (isCorrect) {
-                document.getElementById('message').textContent = '🎉 정답입니다!';
+                // 타이밍 검증
+                const elapsedSeconds = Math.floor((Date.now() - gameStartTime) / 1000);
+                if (!wasmModule.verify_timing(level, elapsedSeconds)) {
+                    document.getElementById('message').textContent = '⚠️ 비정상적인 플레이가 감지되었습니다.';
+                    document.getElementById('message').className = 'message fail';
+                    gameState = 'failed';
+                    stopGame();
+                    showButtons();
+                    return;
+                }
+                
+                // 점수 계산
+                const score = wasmModule.calculate_score(
+                    level,
+                    elapsedSeconds,
+                    mistakeCount,
+                    wasmModule.get_undo_count()
+                );
+                
+                // 게임 토큰 생성 (치트 방지)
+                const timestamp = Date.now();
+                const token = wasmModule.create_game_token(level, userAnswer, timestamp);
+                console.log('Game token:', token);
+                
+                document.getElementById('message').textContent = `🎉 정답입니다! (점수: ${score})`;
                 document.getElementById('message').className = 'message success';
                 gameState = 'success';
                 stopGame();
@@ -1110,14 +1156,29 @@
                         level++;
                         document.getElementById('levelNum').textContent = level + 1;
                         speed = Math.max(400, speed - 100);
+                        currentLevelBombCount = 0;
                         startGame();
                     } else {
+                        // 전체 게임 완료 - 성적 암호화
+                        const studentName = wasmModule.get_cookie('studentName') || 'Unknown';
+                        const studentClass = wasmModule.get_cookie('studentClass') || 'Unknown';
+                        const scores = [score]; // 실제로는 모든 레벨 점수 수집
+                        const encryptedScore = wasmModule.encrypt_score_data(
+                            studentName,
+                            studentClass,
+                            selectedLevel,
+                            new Uint32Array(scores),
+                            timestamp
+                        );
+                        console.log('Encrypted score:', encryptedScore);
+                        
                         document.getElementById('message').textContent = '🏆 모든 레벨을 클리어했습니다!';
                         gameState = 'complete';
                         showButtons();
                     }
                 }, 2000);
             } else {
+                mistakeCount++;
                 document.getElementById('message').textContent = '❌ 틀렸습니다!';
                 document.getElementById('message').className = 'message fail';
                 gameState = 'failed';
@@ -1150,6 +1211,21 @@
     </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
