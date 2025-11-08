@@ -13,7 +13,7 @@
     </div>
 
     <div class="container">
-        <div class="game-box" id="gameBox">
+        <div class="game-box">
             <div class="loading" id="loadingScreen">
                 <div class="loading-spinner"></div>
                 <p>게임 데이터를 로드하는 중...</p>
@@ -21,29 +21,33 @@
 
             <div id="gameContent" style="display: none;">
                 <div class="level-selector" id="levelSelector">
-                    <h2>학습 단계 선택</h2>
-                    <div class="level-buttons" id="levelButtons"></div>
+                    <h2>레벨을 선택하세요</h2>
+                    <div class="level-buttons">
+                        <button class="level-btn" onclick="selectLevel('3A')">3A</button>
+                        <button class="level-btn" onclick="selectLevel('3B')">3B</button>
+                        <button class="level-btn" onclick="selectLevel('4A')">4A</button>
+                        <button class="level-btn" onclick="selectLevel('4B')">4B</button>
+                    </div>
                 </div>
 
-                <div id="gameArea" style="display: none;">
-                    <div class="description" id="description"></div>
+                <div id="gameArea" class="hidden">
+                    <div class="description" id="description">문장을 완성하세요</div>
                     
                     <div class="grid-container">
                         <div class="grid" id="grid"></div>
-                        <div class="start-overlay" id="startOverlay">
-                            <div class="buttons">
-                                <button class="btn btn-start" onclick="startGame()">▶ 시작</button>
-                            </div>
-                        </div>
                     </div>
                     
                     <div class="message" id="message"></div>
                     
-                    <div class="buttons">
-                        <button class="btn btn-reset" onclick="backToLevelSelect()">← 레벨 선택</button>
+                    <div class="buttons" id="buttons">
+                        <button class="btn btn-start" onclick="startGame()">▶ 게임 시작</button>
                     </div>
                     
                     <div class="answer-section">
+                        <div class="answer-display" id="answerDisplay">
+                            <span class="blink">|</span>
+                        </div>
+                        
                         <div class="answer-header">
                             <div class="answer-header-left">
                                 <h3>정답칸:</h3>
@@ -51,12 +55,10 @@
                             </div>
                             <div class="button-group">
                                 <button class="show-target-btn" onclick="toggleTarget()">👁️</button>
-                                <button class="undo-btn" id="undoBtn">↶</button>
+                                <button class="undo-btn" id="undoBtn" disabled>↶</button>
                             </div>
                         </div>
-                        <div class="answer-display" id="answerDisplay">
-                            <span class="blink">|</span>
-                        </div>
+                        
                         <div class="target" id="target"></div>
                     </div>
                 </div>
@@ -77,6 +79,7 @@
         // WASM 모듈
         let wasmModule = null;
         
+        // 원본 index.html의 CONFIG 그대로 유지
         const CONFIG = {
             GRID_ROWS: 9,
             GRID_COLS: 9,
@@ -84,64 +87,49 @@
             GRAVITY_SPEED: 150,
             SPAWN_DELAY_MIN: 800,
             SPAWN_DELAY_MAX: 1500,
-            WRONG_ANSWERS_PER_CORRECT: 3
+            WRONG_ANSWERS_PER_CORRECT: 3,
+            SHUFFLE_IN_GROUPS: true,
+            GROUP_SIZE: 4,
+            CONTINUOUS_SPAWN: true,
+            COLORS: {
+                SPACE: '#FCD34D',
+                ONE_CHAR: '#F87171',
+                TWO_CHARS: '#6EE7B7',
+                THREE_CHARS: '#7DD3FC',
+                FOUR_PLUS: '#C4B5FD'
+            }
         };
 
-        // 게임 변수
+        // 게임 변수들 (원본 index.html과 동일)
+        let selectedLevel = null;
         let gameData = [];
-        let currentProblem = 0;
+        let level = 0;
         let grid = [];
         let fallingBlocks = [];
+        let availableBlocks = [];
         let userAnswer = "";
         let answerHistory = [];
         let gameState = 'ready';
+        let speed = CONFIG.FALL_SPEED;
         let fallInterval = null;
         let spawnTimeout = null;
-        let gravityInterval = null;
         let correctAnswer = "";
         let blockIdCounter = 0;
-        let allBlocks = [];
-        let spawnIndex = 0;
+        let gravityInterval = null;
 
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
-        // WASM 초기화
+        // WASM 초기화 (로그인/암호화용)
         async function initWasm() {
             try {
                 const wasm = await import('./pkg/korean_game_wasm.js');
                 await wasm.default();
                 wasmModule = wasm;
-                console.log('WASM initialized:', wasm.get_version());
+                console.log('WASM 초기화:', wasm.get_version());
                 return true;
             } catch (error) {
-                console.error('WASM load failed:', error);
-                alert('WASM 모듈을 로드할 수 없습니다.');
-                return false;
-            }
-        }
-
-        // 암호화된 데이터 로드
-        async function loadGameData() {
-            try {
-                const response = await fetch('./data/3A_encrypted.dat');
-                const encryptedBytes = new Uint8Array(await response.arrayBuffer());
-                
-                const decryptedJson = wasmModule.decrypt_xor(encryptedBytes);
-                const fullData = JSON.parse(decryptedJson);
-                
-                gameData = fullData.map(group => {
-                    const randomIndex = Math.floor(Math.random() * group.problems.length);
-                    return {
-                        group: group.group,
-                        problem: group.problems[randomIndex]
-                    };
-                });
-                
-                console.log('Game data loaded:', gameData.length, 'problems');
-                return true;
-            } catch (error) {
-                console.error('Failed to load game data:', error);
-                alert('게임 데이터를 로드할 수 없습니다.');
+                console.error('WASM 로드 실패:', error);
+                alert('시스템을 초기화할 수 없습니다.');
                 return false;
             }
         }
@@ -166,7 +154,7 @@
                 
                 return true;
             } catch (error) {
-                console.error('Login check failed:', error);
+                console.error('로그인 확인 실패:', error);
                 window.location.href = '../munpup.html';
                 return false;
             }
@@ -182,117 +170,205 @@
             window.location.href = '../munpup.html';
         };
 
-        // 레벨 버튼 생성
-        function createLevelButtons() {
-            const buttonsContainer = document.getElementById('levelButtons');
-            gameData.forEach((item, index) => {
-                const btn = document.createElement('button');
-                btn.className = 'level-btn';
-                btn.textContent = `단계 ${item.group}`;
-                btn.onclick = () => selectLevel(index);
-                buttonsContainer.appendChild(btn);
-            });
+        // 암호화된 데이터 로드 (WASM 복호화 사용)
+        async function loadEncryptedData(levelName) {
+            try {
+                const response = await fetch(`./data/${levelName}_encrypted.dat`);
+                const encryptedBytes = new Uint8Array(await response.arrayBuffer());
+                
+                const decryptedJson = wasmModule.decrypt_xor(encryptedBytes);
+                const fullData = JSON.parse(decryptedJson);
+                
+                return fullData;
+            } catch (error) {
+                console.error('암호화 데이터 로드 실패:', error);
+                throw error;
+            }
         }
 
-        // 레벨 선택
-        function selectLevel(index) {
-            currentProblem = index;
+        // 레벨 선택 (원본 index.html 로직)
+        window.selectLevel = async function(levelName) {
+            selectedLevel = levelName;
             
-            document.querySelectorAll('.level-btn').forEach((btn, i) => {
-                btn.classList.toggle('selected', i === index);
+            document.querySelectorAll('.level-btn').forEach(btn => {
+                btn.classList.remove('selected');
             });
-            
-            document.getElementById('levelSelector').style.display = 'none';
-            document.getElementById('gameArea').style.display = 'block';
-            document.getElementById('levelNum').textContent = (index + 1);
-            
-            loadProblem();
+            event.target.classList.add('selected');
+
+            try {
+                const data = await loadEncryptedData(levelName);
+                gameData = selectRandomProblems(data);
+                
+                document.getElementById('levelSelector').classList.add('hidden');
+                document.getElementById('gameArea').classList.remove('hidden');
+                
+                resetGame();
+            } catch (error) {
+                alert(`데이터 파일을 불러올 수 없습니다: ${levelName}`);
+                console.error(error);
+            }
+        };
+
+        // 랜덤 문제 선택 (원본 로직)
+        function selectRandomProblems(data) {
+            return data.map(group => {
+                const randomIndex = Math.floor(Math.random() * group.problems.length);
+                return group.problems[randomIndex];
+            });
+        }
+        
+        // 사운드 재생 (원본)
+        function playClickSound() {
+            try {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                oscillator.frequency.value = 800;
+                oscillator.type = 'sine';
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.1);
+            } catch(e) {}
         }
 
-        // 문제 로드
-        function loadProblem() {
-            const problem = gameData[currentProblem].problem;
-            document.getElementById('description').textContent = '문장: ' + problem.description;
-            
-            const correctBlocks = problem.answer.split('/').filter(s => s);
-            correctAnswer = correctBlocks.join('');
-            
-            // 오답 블록 생성
-            const wrongBlocks = [];
-            gameData.forEach((item, idx) => {
-                if (idx !== currentProblem) {
-                    wrongBlocks.push(...item.problem.answer.split('/').filter(s => s));
+        // 답안 파싱 (원본)
+        function parseAnswer(answer) {
+            const blocks = answer.split('/');
+            correctAnswer = blocks.join('');
+            return blocks;
+        }
+        
+        // 가짜 블록 생성 (원본)
+        function getFakeBlocks(currentLevel) {
+            const fakeBlocks = [];
+            gameData.forEach((game, idx) => {
+                if (idx !== currentLevel) {
+                    fakeBlocks.push(...game.answer.split('/'));
                 }
             });
-            
-            // 블록 시퀀스 생성 (정답 + 오답 섞기)
+            return fakeBlocks;
+        }
+        
+        // 블록 시퀀스 생성 (원본)
+        function createBlockSequence(correctBlocks, fakeBlocks) {
             const sequence = [];
-            correctBlocks.forEach(block => {
-                sequence.push(block);
-                for (let i = 0; i < CONFIG.WRONG_ANSWERS_PER_CORRECT; i++) {
-                    if (wrongBlocks.length > 0) {
-                        const idx = Math.floor(Math.random() * wrongBlocks.length);
-                        sequence.push(wrongBlocks[idx]);
+            const fakePool = [...fakeBlocks];
+            
+            for (let i = 0; i < correctBlocks.length; i++) {
+                sequence.push({ text: correctBlocks[i], isCorrect: true, originalIndex: i });
+                
+                for (let j = 0; j < CONFIG.WRONG_ANSWERS_PER_CORRECT; j++) {
+                    if (fakePool.length > 0) {
+                        const fakeIdx = Math.floor(Math.random() * fakePool.length);
+                        sequence.push({ text: fakePool[fakeIdx], isCorrect: false });
+                        fakePool.splice(fakeIdx, 1);
                     }
                 }
-            });
-            
-            // 추가 오답 블록 (계속 떨어지게)
-            for (let i = 0; i < 20 && wrongBlocks.length > 0; i++) {
-                const idx = Math.floor(Math.random() * wrongBlocks.length);
-                sequence.push(wrongBlocks[idx]);
             }
             
-            shuffleArray(sequence);
-            allBlocks = sequence;
-            spawnIndex = 0;
+            if (CONFIG.SHUFFLE_IN_GROUPS) {
+                const shuffled = [];
+                for (let i = 0; i < sequence.length; i += CONFIG.GROUP_SIZE) {
+                    const chunk = sequence.slice(i, i + CONFIG.GROUP_SIZE);
+                    shuffleArray(chunk);
+                    shuffled.push(...chunk);
+                }
+                return shuffled;
+            }
+            return shuffleArray(sequence);
+        }
+        
+        // 타겟 토글 (원본)
+        window.toggleTarget = function() {
+            document.getElementById('target').classList.toggle('show');
+        };
+
+        // 배열 섞기 (원본)
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // 블록 색상 (원본)
+        function getBlockColor(blockText) {
+            if (blockText === " ") return { bg: CONFIG.COLORS.SPACE, text: '#000000' };
+            if (blockText.length === 1) return { bg: CONFIG.COLORS.ONE_CHAR, text: '#000000' };
+            if (blockText.length === 2) return { bg: CONFIG.COLORS.TWO_CHARS, text: '#000000' };
+            if (blockText.length === 3) return { bg: CONFIG.COLORS.THREE_CHARS, text: '#000000' };
+            return { bg: CONFIG.COLORS.FOUR_PLUS, text: '#000000' };
+        }
+
+        // 게임 시작 (원본)
+        window.startGame = function() {
+            if (gameData.length === 0) return;
             
-            // 게임 상태 초기화
+            const currentGame = gameData[level];
+            const blocks = parseAnswer(currentGame.answer);
+            const fakeBlocks = getFakeBlocks(level);
+            const sequence = createBlockSequence(blocks, fakeBlocks);
+            
+            availableBlocks = sequence.map(item => item.text);
             grid = Array(CONFIG.GRID_ROWS).fill(null).map(() => Array(CONFIG.GRID_COLS).fill(null));
             fallingBlocks = [];
             userAnswer = "";
             answerHistory = [];
-            gameState = 'ready';
+            gameState = 'playing';
             blockIdCounter = 0;
             
-            document.getElementById('target').textContent = '목표: ' + correctAnswer.split('').map(c => c === " " ? "□" : c).join('');
+            document.getElementById('description').textContent = '문장: ' + currentGame.description;
+            document.getElementById('target').textContent = '목표: ' + correctAnswer.split('').map(c => c === " " ? "▢" : c).join('');
             document.getElementById('target').classList.remove('show');
-            
-            updateDisplay();
-            document.getElementById('startOverlay').classList.remove('hidden');
-        }
-
-        // 게임 시작
-        window.startGame = function() {
-            if (gameState === 'playing') return;
-            
-            gameState = 'playing';
-            document.getElementById('startOverlay').classList.add('hidden');
             document.getElementById('message').textContent = '';
+            document.getElementById('buttons').innerHTML = '';
             
-            // 초기 블록 3개 생성
-            for (let i = 0; i < 3; i++) {
-                setTimeout(() => spawnBlock(), i * 400);
-            }
-            
+            stopGame();
+            updateDisplay();
+            spawnBlock();
             startFalling();
             startGravity();
-            scheduleNextBlock();
+            setTimeout(() => scheduleNextBlock(), 1500);
         };
 
-        // 블록 생성
+        // 게임 리셋 (원본)
+        function resetGame() {
+            level = 0;
+            gameState = 'ready';
+            userAnswer = "";
+            answerHistory = [];
+            speed = CONFIG.FALL_SPEED;
+            stopGame();
+            
+            document.getElementById('levelNum').textContent = '1';
+            document.getElementById('message').textContent = '';
+            document.getElementById('buttons').innerHTML = '<button class="btn btn-start" onclick="startGame()">▶ 게임 시작</button>';
+            
+            grid = Array(CONFIG.GRID_ROWS).fill(null).map(() => Array(CONFIG.GRID_COLS).fill(null));
+            fallingBlocks = [];
+            updateDisplay();
+        }
+
+        // 레벨 선택으로 돌아가기 (원본)
+        window.backToLevelSelect = function() {
+            document.getElementById('gameArea').classList.add('hidden');
+            document.getElementById('levelSelector').classList.remove('hidden');
+            document.querySelectorAll('.level-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            selectedLevel = null;
+            gameData = [];
+            resetGame();
+        };
+
+        // 블록 생성 (원본)
         function spawnBlock() {
-            if (gameState !== 'playing') return;
+            if (gameState !== 'playing' || availableBlocks.length === 0) return;
             
-            // 모든 블록을 사용했으면 다시 처음부터 (무한 반복)
-            if (spawnIndex >= allBlocks.length) {
-                spawnIndex = 0;
-                shuffleArray(allBlocks);
-            }
-            
-            const blockText = allBlocks[spawnIndex];
-            spawnIndex++;
-            
+            const blockText = availableBlocks.shift();
             const cells = blockText.split('');
             const maxLane = CONFIG.GRID_COLS - cells.length;
             const lane = Math.floor(Math.random() * (maxLane + 1));
@@ -300,7 +376,7 @@
             const newBlock = {
                 text: blockText,
                 cells: cells,
-                position: -1,  // 화면 위에서 시작
+                position: -1,
                 lane: lane,
                 id: blockIdCounter++,
                 color: getBlockColor(blockText)
@@ -309,12 +385,15 @@
             if (!checkCollision(newBlock)) {
                 fallingBlocks.push(newBlock);
                 updateDisplay();
+            } else {
+                availableBlocks.unshift(blockText);
+                setTimeout(() => spawnBlock(), 500);
             }
         }
 
-        // 다음 블록 스케줄
+        // 다음 블록 스케줄 (원본)
         function scheduleNextBlock() {
-            if (gameState !== 'playing') return;
+            if (gameState !== 'playing' || availableBlocks.length === 0) return;
             
             const delay = Math.random() * (CONFIG.SPAWN_DELAY_MAX - CONFIG.SPAWN_DELAY_MIN) + CONFIG.SPAWN_DELAY_MIN;
             spawnTimeout = setTimeout(() => {
@@ -323,7 +402,7 @@
             }, delay);
         }
 
-        // 낙하 시작
+        // 낙하 시작 (원본)
         function startFalling() {
             fallInterval = setInterval(() => {
                 if (gameState !== 'playing') return;
@@ -332,20 +411,18 @@
                     const nextBlock = { ...block, position: block.position + 1 };
                     
                     if (checkCollision(nextBlock)) {
-                        // 충돌하면 그리드에 쌓기
                         stackBlock(block);
                         fallingBlocks = fallingBlocks.filter(b => b.id !== block.id);
                     } else {
-                        // 계속 낙하
                         block.position++;
                     }
                 });
                 
                 updateDisplay();
-            }, CONFIG.FALL_SPEED);
+            }, speed);
         }
 
-        // 중력 시작
+        // 중력 시작 (원본)
         function startGravity() {
             gravityInterval = setInterval(() => {
                 if (gameState !== 'playing') return;
@@ -353,7 +430,7 @@
             }, CONFIG.GRAVITY_SPEED);
         }
 
-        // 게임 중지
+        // 게임 중지 (원본)
         function stopGame() {
             if (fallInterval) {
                 clearInterval(fallInterval);
@@ -369,7 +446,7 @@
             }
         }
 
-        // 충돌 감지
+        // 충돌 감지 (원본)
         function checkCollision(block) {
             const row = block.position;
             if (row < 0) return false;
@@ -380,13 +457,13 @@
                 if (col >= CONFIG.GRID_COLS) return false;
                 
                 const nextRow = row + 1;
-                if (nextRow >= CONFIG.GRID_ROWS) return true;  // 바닥 충돌
-                if (grid[nextRow][col] !== null) return true;  // 블록 충돌
+                if (nextRow >= CONFIG.GRID_ROWS) return true;
+                if (grid[nextRow][col] !== null) return true;
             }
             return false;
         }
 
-        // 블록 쌓기
+        // 블록 쌓기 (원본)
         function stackBlock(block) {
             block.cells.forEach((cell, idx) => {
                 const row = block.position;
@@ -402,7 +479,7 @@
             });
         }
 
-        // 중력 적용 (쌓인 블록이 아래로 떨어짐)
+        // 중력 적용 (원본)
         function applyGravityStep() {
             const blockIds = new Set();
             for (let row = 0; row < CONFIG.GRID_ROWS; row++) {
@@ -426,7 +503,6 @@
                 
                 if (blockCells.length === 0) return;
                 
-                // 아래로 떨어질 수 있는지 확인
                 const canFall = blockCells.every(cell => {
                     const nextRow = cell.row + 1;
                     if (nextRow >= CONFIG.GRID_ROWS) return false;
@@ -435,7 +511,6 @@
                 });
                 
                 if (canFall) {
-                    // 아래부터 이동 (덮어쓰기 방지)
                     blockCells.sort((a, b) => b.row - a.row);
                     blockCells.forEach(cell => {
                         grid[cell.row][cell.col] = null;
@@ -450,7 +525,7 @@
             if (moved) updateDisplay();
         }
 
-        // 화면 업데이트
+        // 화면 업데이트 (원본)
         function updateDisplay() {
             const gridEl = document.getElementById('grid');
             gridEl.innerHTML = '';
@@ -463,32 +538,35 @@
                     const cellEl = document.createElement('div');
                     cellEl.className = 'cell';
                     
-                    // 떨어지는 블록 확인
                     const fallingBlock = fallingBlocks.find(fb => 
                         fb.position === row && col >= fb.lane && col < fb.lane + fb.cells.length
                     );
                     
                     if (fallingBlock) {
-                        const idx = col - fallingBlock.lane;
+                        const fallingIdx = col - fallingBlock.lane;
                         cellEl.style.backgroundColor = fallingBlock.color.bg;
                         cellEl.style.color = fallingBlock.color.text;
                         cellEl.style.border = '2px solid rgba(0,0,0,0.2)';
                         cellEl.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
-                        cellEl.textContent = fallingBlock.cells[idx] === " " ? "□" : fallingBlock.cells[idx];
+                        cellEl.textContent = fallingBlock.cells[fallingIdx] === " " ? "" : fallingBlock.cells[fallingIdx];
                         cellEl.classList.add('clickable');
+                        cellEl.dataset.blockId = fallingBlock.id;
                         cellEl.onclick = () => handleBlockClick(fallingBlock.id);
+                        cellEl.onmouseenter = () => highlightBlock(fallingBlock.id, true);
+                        cellEl.onmouseleave = () => highlightBlock(fallingBlock.id, false);
                     } else if (grid[row][col]) {
-                        // 쌓인 블록
                         const cell = grid[row][col];
                         cellEl.style.backgroundColor = cell.color.bg;
                         cellEl.style.color = cell.color.text;
                         cellEl.style.border = '2px solid rgba(0,0,0,0.2)';
                         cellEl.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
-                        cellEl.textContent = cell.char === " " ? "□" : cell.char;
+                        cellEl.textContent = cell.char === " " ? "" : cell.char;
                         cellEl.classList.add('clickable');
+                        cellEl.dataset.blockId = cell.id;
                         cellEl.onclick = () => handleCellClick(row, col);
+                        cellEl.onmouseenter = () => highlightBlock(cell.id, true);
+                        cellEl.onmouseleave = () => highlightBlock(cell.id, false);
                     } else {
-                        // 빈 칸
                         cellEl.classList.add('empty');
                     }
                     
@@ -501,7 +579,19 @@
             updateAnswerDisplay();
         }
 
-        // 떨어지는 블록 클릭
+        // 블록 하이라이트 (원본)
+        function highlightBlock(blockId, highlight) {
+            const cells = document.querySelectorAll(`[data-block-id="${blockId}"]`);
+            cells.forEach(cell => {
+                if (highlight) {
+                    cell.classList.add('block-hover');
+                } else {
+                    cell.classList.remove('block-hover');
+                }
+            });
+        }
+
+        // 블록 클릭 처리 (원본)
         function handleBlockClick(blockId) {
             if (gameState !== 'playing') return;
             
@@ -509,37 +599,8 @@
             if (!block) return;
             
             playClickSound();
+            const blockText = block.text;
             fallingBlocks = fallingBlocks.filter(b => b.id !== blockId);
-            answerHistory.push(block.text);
-            userAnswer += block.text;
-            
-            updateDisplay();
-            
-            if (userAnswer.length >= correctAnswer.length) {
-                checkAnswer();
-            }
-        }
-
-        // 쌓인 블록 클릭
-        function handleCellClick(row, col) {
-            if (gameState !== 'playing') return;
-            
-            const cell = grid[row][col];
-            if (!cell) return;
-            
-            playClickSound();
-            const blockId = cell.id;
-            const blockText = cell.blockText;
-            
-            // 같은 ID 블록 전체 제거
-            for (let r = 0; r < CONFIG.GRID_ROWS; r++) {
-                for (let c = 0; c < CONFIG.GRID_COLS; c++) {
-                    if (grid[r][c] && grid[r][c].id === blockId) {
-                        grid[r][c] = null;
-                    }
-                }
-            }
-            
             answerHistory.push(blockText);
             userAnswer += blockText;
             
@@ -550,14 +611,41 @@
             }
         }
 
-        // 실행취소
+        // 셀 클릭 처리 (원본)
+        function handleCellClick(row, col) {
+            if (gameState !== 'playing') return;
+            
+            const cell = grid[row][col];
+            if (!cell) return;
+
+            playClickSound();
+            const blockText = cell.blockText;
+            const blockId = cell.id;
+
+            for (let r = 0; r < CONFIG.GRID_ROWS; r++) {
+                for (let c = 0; c < CONFIG.GRID_COLS; c++) {
+                    if (grid[r][c] && grid[r][c].id === blockId) {
+                        grid[r][c] = null;
+                    }
+                }
+            }
+
+            answerHistory.push(blockText);
+            userAnswer += blockText;
+            updateDisplay();
+
+            if (userAnswer.length >= correctAnswer.length) {
+                checkAnswer();
+            }
+        }
+
+        // 실행취소 (원본)
         function handleUndo() {
             if (gameState !== 'playing' || answerHistory.length === 0) return;
-            
+
             const lastBlock = answerHistory.pop();
             userAnswer = userAnswer.slice(0, -lastBlock.length);
             
-            // 되돌린 블록을 다시 떨어뜨림
             const cells = lastBlock.split('');
             const maxLane = CONFIG.GRID_COLS - cells.length;
             const lane = Math.floor(Math.random() * (maxLane + 1));
@@ -575,20 +663,20 @@
             updateDisplay();
         }
 
-        // 답안 표시 업데이트
+        // 답안 표시 업데이트 (원본)
         function updateAnswerDisplay() {
             const display = document.getElementById('answerDisplay');
-            const text = userAnswer.split('').map(c => c === " " ? "□" : c).join('');
+            const text = userAnswer.split('').map(c => c === " " ? "▢" : c).join('');
             display.innerHTML = text + '<span class="blink">|</span>';
             
             const undoBtn = document.getElementById('undoBtn');
             undoBtn.disabled = answerHistory.length === 0 || gameState !== 'playing';
         }
 
-        // 정답 확인
+        // 정답 확인 (원본)
         function checkAnswer() {
             const isCorrect = userAnswer === correctAnswer;
-            
+
             if (isCorrect) {
                 document.getElementById('message').textContent = '🎉 정답입니다!';
                 document.getElementById('message').className = 'message success';
@@ -596,91 +684,44 @@
                 stopGame();
                 
                 setTimeout(() => {
-                    if (currentProblem < gameData.length - 1) {
-                        currentProblem++;
-                        document.getElementById('levelNum').textContent = currentProblem + 1;
-                        loadProblem();
+                    if (level < gameData.length - 1) {
+                        level++;
+                        document.getElementById('levelNum').textContent = level + 1;
+                        speed = Math.max(400, speed - 100);
                         startGame();
                     } else {
                         document.getElementById('message').textContent = '🏆 모든 레벨을 클리어했습니다!';
-                        setTimeout(() => backToLevelSelect(), 2000);
+                        gameState = 'complete';
+                        showButtons();
                     }
-                }, 1500);
+                }, 2000);
             } else {
                 document.getElementById('message').textContent = '❌ 틀렸습니다!';
                 document.getElementById('message').className = 'message fail';
                 gameState = 'failed';
                 stopGame();
+                showButtons();
             }
         }
 
-        // 레벨 선택으로 돌아가기
-        window.backToLevelSelect = function() {
-            stopGame();
-            document.getElementById('gameArea').style.display = 'none';
-            document.getElementById('levelSelector').style.display = 'block';
-        };
-
-        // 타겟 토글
-        window.toggleTarget = function() {
-            document.getElementById('target').classList.toggle('show');
-        };
-
-        // 클릭 사운드
-        function playClickSound() {
-            try {
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                oscillator.frequency.value = 800;
-                oscillator.type = 'sine';
-                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
-                oscillator.start(audioContext.currentTime);
-                oscillator.stop(audioContext.currentTime + 0.1);
-            } catch(e) {}
+        // 버튼 표시 (원본)
+        function showButtons() {
+            const buttonsEl = document.getElementById('buttons');
+            buttonsEl.innerHTML = `
+                <button class="btn btn-reset" onclick="backToLevelSelect()">← 레벨 선택</button>
+                ${gameState === 'failed' ? '<button class="btn btn-start" onclick="startGame()">▶ 다시 시도</button>' : ''}
+            `;
         }
 
-        // 블록 색상
-        function getBlockColor(blockText) {
-            const len = blockText.replace(/ /g, '').length;
-            if (blockText.includes(' ')) {
-                return { bg: '#FCD34D', text: '#000' };
-            } else if (len === 1) {
-                const colors = ['#F87171', '#FB923C', '#A78BFA', '#F472B6', '#FBBF24'];
-                return { bg: colors[Math.floor(Math.random() * colors.length)], text: '#000' };
-            } else if (len === 2) {
-                return { bg: '#6EE7B7', text: '#000' };
-            } else if (len === 3) {
-                return { bg: '#7DD3FC', text: '#000' };
-            } else {
-                return { bg: '#C4B5FD', text: '#000' };
-            }
-        }
-
-        // 배열 섞기
-        function shuffleArray(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
-            }
-            return array;
-        }
-
-        // 페이지 로드 시 초기화
+        // 페이지 로드
         window.addEventListener('load', async () => {
             const wasmReady = await initWasm();
             if (!wasmReady) return;
             
             if (!checkLogin()) return;
             
-            const dataReady = await loadGameData();
-            if (!dataReady) return;
-            
             document.getElementById('loadingScreen').style.display = 'none';
             document.getElementById('gameContent').style.display = 'block';
-            createLevelButtons();
             
             document.getElementById('undoBtn').onclick = handleUndo;
         });
