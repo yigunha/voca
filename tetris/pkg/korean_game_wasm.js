@@ -386,11 +386,11 @@ export function verify_timing(_level, elapsed_seconds) {
 }
 
 /**
- * @param {number} level
+ * @param {number} _level
  * @returns {boolean}
  */
-export function can_use_bomb(level) {
-    const ret = wasm.can_use_bomb(level);
+export function can_use_bomb(_level) {
+    const ret = wasm.can_use_bomb(_level);
     return ret !== 0;
 }
 
@@ -411,7 +411,7 @@ export function increment_undo() {
 }
 
 export function reset_undo_count() {
-    wasm.reset_undo_count();
+    wasm.init();
 }
 
 /**
@@ -420,74 +420,6 @@ export function reset_undo_count() {
 export function get_undo_count() {
     const ret = wasm.get_undo_count();
     return ret >>> 0;
-}
-
-let cachedUint32ArrayMemory0 = null;
-
-function getUint32ArrayMemory0() {
-    if (cachedUint32ArrayMemory0 === null || cachedUint32ArrayMemory0.byteLength === 0) {
-        cachedUint32ArrayMemory0 = new Uint32Array(wasm.memory.buffer);
-    }
-    return cachedUint32ArrayMemory0;
-}
-
-function passArray32ToWasm0(arg, malloc) {
-    const ptr = malloc(arg.length * 4, 4) >>> 0;
-    getUint32ArrayMemory0().set(arg, ptr / 4);
-    WASM_VECTOR_LEN = arg.length;
-    return ptr;
-}
-
-function getArrayU8FromWasm0(ptr, len) {
-    ptr = ptr >>> 0;
-    return getUint8ArrayMemory0().subarray(ptr / 1, ptr / 1 + len);
-}
-/**
- * @param {string} student_name
- * @param {string} student_class
- * @param {string} level
- * @param {Uint32Array} scores
- * @param {bigint} timestamp
- * @returns {Uint8Array}
- */
-export function encrypt_score_data(student_name, student_class, level, scores, timestamp) {
-    const ptr0 = passStringToWasm0(student_name, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-    const len0 = WASM_VECTOR_LEN;
-    const ptr1 = passStringToWasm0(student_class, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-    const len1 = WASM_VECTOR_LEN;
-    const ptr2 = passStringToWasm0(level, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-    const len2 = WASM_VECTOR_LEN;
-    const ptr3 = passArray32ToWasm0(scores, wasm.__wbindgen_malloc);
-    const len3 = WASM_VECTOR_LEN;
-    const ret = wasm.encrypt_score_data(ptr0, len0, ptr1, len1, ptr2, len2, ptr3, len3, timestamp);
-    var v5 = getArrayU8FromWasm0(ret[0], ret[1]).slice();
-    wasm.__wbindgen_free(ret[0], ret[1] * 1, 1);
-    return v5;
-}
-
-function passArray8ToWasm0(arg, malloc) {
-    const ptr = malloc(arg.length * 1, 1) >>> 0;
-    getUint8ArrayMemory0().set(arg, ptr / 1);
-    WASM_VECTOR_LEN = arg.length;
-    return ptr;
-}
-/**
- * @param {Uint8Array} encrypted
- * @returns {string}
- */
-export function decrypt_score_data(encrypted) {
-    let deferred2_0;
-    let deferred2_1;
-    try {
-        const ptr0 = passArray8ToWasm0(encrypted, wasm.__wbindgen_malloc);
-        const len0 = WASM_VECTOR_LEN;
-        const ret = wasm.decrypt_score_data(ptr0, len0);
-        deferred2_0 = ret[0];
-        deferred2_1 = ret[1];
-        return getStringFromWasm0(ret[0], ret[1]);
-    } finally {
-        wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
-    }
 }
 
 /**
@@ -502,22 +434,11 @@ export function init() {
     wasm.init();
 }
 
-/**
- * 학생 인증 함수
- * @param {string} student_name
- * @param {string} _class
- * @param {string} password
- * @returns {Promise<any>}
- */
-export function authenticate_student(student_name, _class, password) {
-    const ptr0 = passStringToWasm0(student_name, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-    const len0 = WASM_VECTOR_LEN;
-    const ptr1 = passStringToWasm0(_class, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-    const len1 = WASM_VECTOR_LEN;
-    const ptr2 = passStringToWasm0(password, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-    const len2 = WASM_VECTOR_LEN;
-    const ret = wasm.authenticate_student(ptr0, len0, ptr1, len1, ptr2, len2);
-    return ret;
+function passArray8ToWasm0(arg, malloc) {
+    const ptr = malloc(arg.length * 1, 1) >>> 0;
+    getUint8ArrayMemory0().set(arg, ptr / 1);
+    WASM_VECTOR_LEN = arg.length;
+    return ptr;
 }
 
 function takeFromExternrefTable0(idx) {
@@ -525,85 +446,6 @@ function takeFromExternrefTable0(idx) {
     wasm.__externref_table_dealloc(idx);
     return value;
 }
-/**
- * 쿠키 설정 (30일)
- * @param {string} name
- * @param {string} value
- * @param {number} days
- */
-export function set_cookie(name, value, days) {
-    const ptr0 = passStringToWasm0(name, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-    const len0 = WASM_VECTOR_LEN;
-    const ptr1 = passStringToWasm0(value, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-    const len1 = WASM_VECTOR_LEN;
-    const ret = wasm.set_cookie(ptr0, len0, ptr1, len1, days);
-    if (ret[1]) {
-        throw takeFromExternrefTable0(ret[0]);
-    }
-}
-
-/**
- * 쿠키 읽기
- * @param {string} name
- * @returns {string}
- */
-export function get_cookie(name) {
-    let deferred3_0;
-    let deferred3_1;
-    try {
-        const ptr0 = passStringToWasm0(name, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-        const len0 = WASM_VECTOR_LEN;
-        const ret = wasm.get_cookie(ptr0, len0);
-        var ptr2 = ret[0];
-        var len2 = ret[1];
-        if (ret[3]) {
-            ptr2 = 0; len2 = 0;
-            throw takeFromExternrefTable0(ret[2]);
-        }
-        deferred3_0 = ptr2;
-        deferred3_1 = len2;
-        return getStringFromWasm0(ptr2, len2);
-    } finally {
-        wasm.__wbindgen_free(deferred3_0, deferred3_1, 1);
-    }
-}
-
-/**
- * 쿠키 삭제 - JavaScript에서 쉽게 호출 가능
- * @param {string} name
- */
-export function delete_cookie(name) {
-    const ptr0 = passStringToWasm0(name, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-    const len0 = WASM_VECTOR_LEN;
-    wasm.delete_cookie(ptr0, len0);
-}
-
-/**
- * 모든 게임 쿠키 삭제
- */
-export function clear_all_cookies() {
-    wasm.clear_all_cookies();
-}
-
-/**
- * 로그인 상태 확인
- * @returns {boolean}
- */
-export function check_login_status() {
-    const ret = wasm.check_login_status();
-    return ret !== 0;
-}
-
-/**
- * 쿠키 갱신 (30일 연장)
- */
-export function refresh_cookies() {
-    const ret = wasm.refresh_cookies();
-    if (ret[1]) {
-        throw takeFromExternrefTable0(ret[0]);
-    }
-}
-
 /**
  * XOR cipher를 사용하여 데이터를 복호화합니다.
  * Python의 encrypt_data.py와 동일한 알고리즘을 사용합니다.
@@ -655,6 +497,103 @@ export function decrypt_xor_base64(encrypted_base64) {
         return getStringFromWasm0(ptr2, len2);
     } finally {
         wasm.__wbindgen_free(deferred3_0, deferred3_1, 1);
+    }
+}
+
+/**
+ * 학생 인증 함수
+ * @param {string} student_name
+ * @param {string} _class
+ * @param {string} password
+ * @returns {Promise<any>}
+ */
+export function authenticate_student(student_name, _class, password) {
+    const ptr0 = passStringToWasm0(student_name, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len0 = WASM_VECTOR_LEN;
+    const ptr1 = passStringToWasm0(_class, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len1 = WASM_VECTOR_LEN;
+    const ptr2 = passStringToWasm0(password, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len2 = WASM_VECTOR_LEN;
+    const ret = wasm.authenticate_student(ptr0, len0, ptr1, len1, ptr2, len2);
+    return ret;
+}
+
+/**
+ * 쿠키 설정 (30일)
+ * @param {string} name
+ * @param {string} value
+ * @param {number} days
+ */
+export function set_cookie(name, value, days) {
+    const ptr0 = passStringToWasm0(name, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len0 = WASM_VECTOR_LEN;
+    const ptr1 = passStringToWasm0(value, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len1 = WASM_VECTOR_LEN;
+    const ret = wasm.set_cookie(ptr0, len0, ptr1, len1, days);
+    if (ret[1]) {
+        throw takeFromExternrefTable0(ret[0]);
+    }
+}
+
+/**
+ * 쿠키 읽기
+ * @param {string} name
+ * @returns {string}
+ */
+export function get_cookie(name) {
+    let deferred3_0;
+    let deferred3_1;
+    try {
+        const ptr0 = passStringToWasm0(name, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.get_cookie(ptr0, len0);
+        var ptr2 = ret[0];
+        var len2 = ret[1];
+        if (ret[3]) {
+            ptr2 = 0; len2 = 0;
+            throw takeFromExternrefTable0(ret[2]);
+        }
+        deferred3_0 = ptr2;
+        deferred3_1 = len2;
+        return getStringFromWasm0(ptr2, len2);
+    } finally {
+        wasm.__wbindgen_free(deferred3_0, deferred3_1, 1);
+    }
+}
+
+/**
+ * 쿠키 삭제
+ * @param {string} name
+ */
+export function delete_cookie(name) {
+    const ptr0 = passStringToWasm0(name, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len0 = WASM_VECTOR_LEN;
+    wasm.delete_cookie(ptr0, len0);
+}
+
+/**
+ * 모든 게임 쿠키 삭제
+ */
+export function clear_all_cookies() {
+    wasm.clear_all_cookies();
+}
+
+/**
+ * 로그인 상태 확인
+ * @returns {boolean}
+ */
+export function check_login_status() {
+    const ret = wasm.check_login_status();
+    return ret !== 0;
+}
+
+/**
+ * 쿠키 갱신 (30일 연장)
+ */
+export function refresh_cookies() {
+    const ret = wasm.refresh_cookies();
+    if (ret[1]) {
+        throw takeFromExternrefTable0(ret[0]);
     }
 }
 
@@ -976,8 +915,8 @@ function __wbg_get_imports() {
         const ret = getStringFromWasm0(arg0, arg1);
         return ret;
     };
-    imports.wbg.__wbindgen_cast_f59528fc2c089a81 = function(arg0, arg1) {
-        // Cast intrinsic for `Closure(Closure { dtor_idx: 41, function: Function { arguments: [Externref], shim_idx: 42, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
+    imports.wbg.__wbindgen_cast_90fb09e08acc4555 = function(arg0, arg1) {
+        // Cast intrinsic for `Closure(Closure { dtor_idx: 39, function: Function { arguments: [Externref], shim_idx: 40, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
         const ret = makeMutClosure(arg0, arg1, wasm.wasm_bindgen__closure__destroy__h0eb5c646152f9b85, wasm_bindgen__convert__closures_____invoke__he7f4b28c0a248a94);
         return ret;
     };
@@ -999,7 +938,6 @@ function __wbg_finalize_init(instance, module) {
     wasm = instance.exports;
     __wbg_init.__wbindgen_wasm_module = module;
     cachedDataViewMemory0 = null;
-    cachedUint32ArrayMemory0 = null;
     cachedUint8ArrayMemory0 = null;
 
 

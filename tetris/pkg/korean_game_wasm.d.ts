@@ -11,16 +11,24 @@ export function calculate_score(level: number, time_seconds: number, mistakes: n
 export function create_game_token(level: number, user_answer: string, timestamp: bigint): string;
 export function verify_game_token(level: number, user_answer: string, timestamp: bigint, token: string): boolean;
 export function verify_timing(_level: number, elapsed_seconds: number): boolean;
-export function can_use_bomb(level: number): boolean;
+export function can_use_bomb(_level: number): boolean;
 export function reset_bomb_usage(): void;
 export function can_undo(): boolean;
 export function increment_undo(): void;
 export function reset_undo_count(): void;
 export function get_undo_count(): number;
-export function encrypt_score_data(student_name: string, student_class: string, level: string, scores: Uint32Array, timestamp: bigint): Uint8Array;
-export function decrypt_score_data(encrypted: Uint8Array): string;
 export function generate_seed(): number;
 export function init(): void;
+/**
+ * XOR cipher를 사용하여 데이터를 복호화합니다.
+ * Python의 encrypt_data.py와 동일한 알고리즘을 사용합니다.
+ * SECRET_KEY는 WASM 내부에 저장되어 JavaScript에서 접근할 수 없습니다.
+ */
+export function decrypt_xor(encrypted_data: Uint8Array): string;
+/**
+ * Base64로 인코딩된 암호화 데이터를 복호화합니다.
+ */
+export function decrypt_xor_base64(encrypted_base64: string): string;
 /**
  * 학생 인증 함수
  */
@@ -34,7 +42,7 @@ export function set_cookie(name: string, value: string, days: number): void;
  */
 export function get_cookie(name: string): string;
 /**
- * 쿠키 삭제 - JavaScript에서 쉽게 호출 가능
+ * 쿠키 삭제
  */
 export function delete_cookie(name: string): void;
 /**
@@ -49,16 +57,6 @@ export function check_login_status(): boolean;
  * 쿠키 갱신 (30일 연장)
  */
 export function refresh_cookies(): void;
-/**
- * XOR cipher를 사용하여 데이터를 복호화합니다.
- * Python의 encrypt_data.py와 동일한 알고리즘을 사용합니다.
- * SECRET_KEY는 WASM 내부에 저장되어 JavaScript에서 접근할 수 없습니다.
- */
-export function decrypt_xor(encrypted_data: Uint8Array): string;
-/**
- * Base64로 인코딩된 암호화 데이터를 복호화합니다.
- */
-export function decrypt_xor_base64(encrypted_base64: string): string;
 
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
 
@@ -78,13 +76,13 @@ export interface InitOutput {
   readonly reset_bomb_usage: () => void;
   readonly can_undo: () => number;
   readonly increment_undo: () => void;
-  readonly reset_undo_count: () => void;
   readonly get_undo_count: () => number;
-  readonly encrypt_score_data: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number, i: bigint) => [number, number];
-  readonly decrypt_score_data: (a: number, b: number) => [number, number];
   readonly generate_seed: () => number;
   readonly init: () => void;
+  readonly reset_undo_count: () => void;
   readonly hash_answer: (a: number, b: number) => [number, number];
+  readonly decrypt_xor: (a: number, b: number) => [number, number, number, number];
+  readonly decrypt_xor_base64: (a: number, b: number) => [number, number, number, number];
   readonly authenticate_student: (a: number, b: number, c: number, d: number, e: number, f: number) => any;
   readonly set_cookie: (a: number, b: number, c: number, d: number, e: number) => [number, number];
   readonly get_cookie: (a: number, b: number) => [number, number, number, number];
@@ -92,8 +90,6 @@ export interface InitOutput {
   readonly clear_all_cookies: () => void;
   readonly check_login_status: () => number;
   readonly refresh_cookies: () => [number, number];
-  readonly decrypt_xor: (a: number, b: number) => [number, number, number, number];
-  readonly decrypt_xor_base64: (a: number, b: number) => [number, number, number, number];
   readonly wasm_bindgen__convert__closures_____invoke__he7f4b28c0a248a94: (a: number, b: number, c: any) => void;
   readonly wasm_bindgen__closure__destroy__h0eb5c646152f9b85: (a: number, b: number) => void;
   readonly wasm_bindgen__convert__closures_____invoke__h0a224680a6fed1b2: (a: number, b: number, c: any, d: any) => void;
