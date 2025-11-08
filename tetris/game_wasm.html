@@ -120,7 +120,7 @@
         .grid-container {
             position: relative;
             width: 100%;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
         }
         
         .grid {
@@ -162,6 +162,11 @@
         .cell.empty {
             background: #374151;
             border: 1px solid #4b5563;
+        }
+        
+        .cell.block-cell {
+            border: 3px solid rgba(255, 255, 255, 0.3) !important;
+            box-shadow: 0 0 8px rgba(0,0,0,0.5) !important;
         }
         
         .cell.removing {
@@ -209,6 +214,15 @@
         
         .btn-start:hover {
             background: #16a34a;
+        }
+        
+        .btn-stop {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .btn-stop:hover {
+            background: #dc2626;
         }
         
         .btn-reset {
@@ -415,7 +429,6 @@
     </div>
 
     <script type="module">
-        // 도메인 체크
         const allowedDomains = ['yigunha.github.io', 'localhost', '127.0.0.1'];
         const currentDomain = window.location.hostname;
         
@@ -424,7 +437,6 @@
             throw new Error('Unauthorized domain');
         }
 
-        // WASM 모듈
         let wasmModule = null;
         
         const CONFIG = {
@@ -465,7 +477,6 @@
 
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
-        // WASM 초기화
         async function initWasm() {
             try {
                 const wasm = await import('./pkg/korean_game_wasm.js');
@@ -480,7 +491,6 @@
             }
         }
 
-        // 로그인 확인
         function checkLogin() {
             if (!wasmModule) return false;
             
@@ -506,7 +516,6 @@
             }
         }
 
-        // 로그아웃
         window.logout = function() {
             if (wasmModule) {
                 wasmModule.delete_cookie('studentName');
@@ -516,7 +525,6 @@
             window.location.href = '../munpup.html';
         };
 
-        // 암호화된 데이터 로드
         async function loadEncryptedData(levelName) {
             try {
                 const response = await fetch(`./data/${levelName}_encrypted.dat`);
@@ -532,7 +540,6 @@
             }
         }
 
-        // 레벨 선택
         window.selectLevel = async function(levelName) {
             selectedLevel = levelName;
             
@@ -661,7 +668,7 @@
             document.getElementById('target').textContent = '목표: ' + correctAnswer.split('').map(c => c === " " ? "▢" : c).join('');
             document.getElementById('target').classList.remove('show');
             document.getElementById('message').textContent = '';
-            document.getElementById('buttons').innerHTML = '';
+            document.getElementById('buttons').innerHTML = '<button class="btn btn-stop" onclick="stopGameManually()">■ 게임 중단</button>';
             
             stopGame();
             updateDisplay();
@@ -669,6 +676,14 @@
             startFalling();
             startGravity();
             setTimeout(() => scheduleNextBlock(), 1500);
+        };
+
+        window.stopGameManually = function() {
+            gameState = 'stopped';
+            stopGame();
+            document.getElementById('message').textContent = '게임이 중단되었습니다';
+            document.getElementById('message').className = 'message';
+            showButtons();
         };
 
         function resetGame() {
@@ -872,10 +887,8 @@
                         const fallingIdx = col - fallingBlock.lane;
                         cellEl.style.backgroundColor = fallingBlock.color.bg;
                         cellEl.style.color = fallingBlock.color.text;
-                        cellEl.style.border = '2px solid rgba(0,0,0,0.2)';
-                        cellEl.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
                         cellEl.textContent = fallingBlock.cells[fallingIdx] === " " ? "" : fallingBlock.cells[fallingIdx];
-                        cellEl.classList.add('clickable');
+                        cellEl.classList.add('clickable', 'block-cell');
                         cellEl.dataset.blockId = fallingBlock.id;
                         cellEl.onclick = () => handleBlockClick(fallingBlock.id);
                         cellEl.onmouseenter = () => highlightBlock(fallingBlock.id, true);
@@ -884,10 +897,8 @@
                         const cell = grid[row][col];
                         cellEl.style.backgroundColor = cell.color.bg;
                         cellEl.style.color = cell.color.text;
-                        cellEl.style.border = '2px solid rgba(0,0,0,0.2)';
-                        cellEl.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
                         cellEl.textContent = cell.char === " " ? "" : cell.char;
-                        cellEl.classList.add('clickable');
+                        cellEl.classList.add('clickable', 'block-cell');
                         cellEl.dataset.blockId = cell.id;
                         cellEl.onclick = () => handleCellClick(row, col);
                         cellEl.onmouseenter = () => highlightBlock(cell.id, true);
@@ -1028,7 +1039,7 @@
             const buttonsEl = document.getElementById('buttons');
             buttonsEl.innerHTML = `
                 <button class="btn btn-reset" onclick="backToLevelSelect()">← 레벨 선택</button>
-                ${gameState === 'failed' ? '<button class="btn btn-start" onclick="startGame()">▶ 다시 시도</button>' : ''}
+                ${gameState === 'failed' || gameState === 'stopped' ? '<button class="btn btn-start" onclick="startGame()">▶ 다시 시도</button>' : ''}
             `;
         }
 
