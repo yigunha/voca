@@ -262,16 +262,12 @@ function setupInputEvents() {
     compositionInput.addEventListener('input', function(e) {
         if (!inputHandler) return;
         
-        // ★★★ 이 if 문을 추가하거나 수정하여 중복 호출을 방지합니다. ★★★
-        // inputHandler.is_composing() 대신 전역 isComposing 변수를 사용하는 경우도 고려
-        if (window.isComposing) { 
-            // 조합 중인 상태에서 'input' 이벤트가 발생해도 처리를 건너뛰어 중복 입력을 막습니다.
+        // ★★★ 이 부분이 수정되었습니다. (중복 입력 방지)
+        // WASM 호출 대신 더 빠르고 안정적인 전역 플래그와 브라우저 플래그를 사용합니다.
+        if (window.isComposing || e.isComposing) {
             return;
         }
 
-        // 기존 코드는 inputHandler.is_composing()을 사용했습니다.
-        // if (inputHandler.is_composing()) return; // 이 코드가 현재는 아래 if문으로 대체됩니다.
-        
         var text = e.target.value;
         if (text) {
             compositionInput.value = '';
@@ -283,8 +279,7 @@ function setupInputEvents() {
     // 키보드 이벤트
     compositionInput.addEventListener('keydown', function(e) {
         if (!inputHandler) return;
-        // e.isComposing은 브라우저 제공 값입니다.
-        // isComposing은 직접 만든 변수입니다. 두 플래그 모두 확인하면 더 안전할 수 있습니다.
+        // isComposing은 이미 keydown에서 확인하고 있으므로 이 부분은 그대로 둡니다.
         if (e.isComposing || window.isComposing) return;
         
         // Backspace
