@@ -119,7 +119,7 @@ function initializePaper() {
 
 // 셀 렌더링
 function renderCell(idx) {
-    if (idx < 0 || idx >= studentData.length) return;
+if (idx < 0 || idx >= studentData.length) return;
     
     var cell = studentCells[idx];
     if (!cell) return;
@@ -168,33 +168,36 @@ function clearSelection() {
 
 // 셀 클릭 핸들러
 function handleCellClick(idx, e) {
+    // 1. Composition 중인 경우, 확정 이벤트 발생 (기존 로직 유지)
     if (window.inputHandler && window.inputHandler.is_composing()) {
         window.inputHandler.end_composition();
         var compositionInput = document.getElementById('compositionInput');
         if (compositionInput && compositionInput.value) {
             var result = window.inputHandler.finalize_composition(compositionInput.value);
-            handleInputResults(result);
+            // handleInputResults(result); // 확정 후 처리. 여기서는 클리어 로직을 위해 제거
             compositionInput.value = '';
         }
     }
     
     if (window.inputHandler) {
-        var oldPos = window.inputHandler.get_position();
-        if (oldPos + 1 < studentCells.length) {
-            var nextCell = studentCells[oldPos + 1];
-            if (nextCell.dataset.temp && studentData[oldPos + 1] === '') {
-                var nextContent = nextCell.querySelector('.cell-content');
-                if (nextContent) {
-                    nextContent.textContent = '';
-                }
-                delete nextCell.dataset.temp;
+        var oldPos = window.inputHandler.get_position(); // 현재 포지션을 저장
+        
+        // ★★★ 핵심 수정: finalize_buffer() 대신 clear_all_buffers() 호출 ★★★
+        
+        // 2. 버퍼를 확정(place)하지 않고 강제 클리어 (Rust 함수 사용)
+        window.inputHandler.clear_all_buffers(); 
+        
+        // 3. 기존 위치(oldPos)에 data-temp로 남아있던 임시 문자("ㅁ")를 DOM에서도 지웁니다.
+        if (oldPos >= 0 && oldPos < studentCells.length) {
+            var oldCell = studentCells[oldPos];
+            if (oldCell.dataset.temp) {
+                var content = oldCell.querySelector('.cell-content');
+                if (content) content.textContent = '';
+                delete oldCell.dataset.temp;
             }
         }
         
-        var result = window.inputHandler.finalize_buffer();
-        if (result) {
-            handleInputResults(result);
-        }
+        // (기존의 finalize_buffer() 호출 및 다음 셀 정리 로직은 제거됨)
     }
     
     if (e.shiftKey) {
@@ -330,44 +333,11 @@ function loadManuscriptText(text, savedCols, modifiedText, errorText, memo) {
     updateActiveCell();
 }
 
-// ★★★ 수정본 로드 - JSON 형식 지원 ★★★
+// 수정본 로드
 function loadModifiedText(modifiedText) {
-    if (!modifiedText || !modifiedText.trim()) return;
+    if (!modifiedText) return;
     
-    try {
-        // JSON 형식인지 확인 (첫 문자가 '{' 또는 '[')
-        var trimmed = modifiedText.trim();
-        if (trimmed[0] === '{' || trimmed[0] === '[') {
-            // JSON 형식으로 파싱
-            var jsonData = JSON.parse(modifiedText);
-            
-            // 빈 객체 체크
-            if (Object.keys(jsonData).length === 0) {
-                console.log('빈 JSON 객체입니다.');
-                return;
-            }
-            
-            // JSON 형식: { "5": {"text": "수정됨", "color": "red"}, "12": {...} }
-            for (var idx in jsonData) {
-                var cellData = jsonData[idx];
-                var index = parseInt(idx);
-                
-                if (index >= 0 && index < teacherData.length) {
-                    // text 속성이 있으면 사용, 없으면 전체를 텍스트로 사용
-                    teacherData[index] = cellData.text || cellData || '';
-                    renderTeacherCell(index);
-                }
-            }
-            
-            console.log('JSON 형식의 수정본을 로드했습니다.');
-            return;
-        }
-    } catch (e) {
-        // JSON 파싱 실패 시 기존 TSV 형식으로 시도
-        console.log('JSON 파싱 실패, TSV 형식으로 시도:', e);
-    }
-    
-    // ★ 기존 TSV 형식으로 파싱 (폴백)
+    // ★ Rust 함수로 파싱
     if (window.inputHandler) {
         var parsedData = window.inputHandler.parse_manuscript_text(modifiedText);
         for (var i = 0; i < parsedData.length && i < teacherData.length; i++) {
@@ -450,12 +420,12 @@ function drawErrorLines() {
     if (!errorLineSvg || !manuscriptPaper) return;
     
     var paperRect = manuscriptPaper.getBoundingClientRect();
-    var wrapperRect = manuscriptPaper.parentElement.getBoundingClientRect();
+    var containerRect = manuscriptPaper.parentElement.getBoundingClientRect();
     
     errorLineSvg.style.width = paperRect.width + 'px';
     errorLineSvg.style.height = paperRect.height + 'px';
-    errorLineSvg.style.left = '0px';
-    errorLineSvg.style.top = '0px';
+    errorLineSvg.style.left = (paperRect.left - containerRect.left) + 'px';
+    errorLineSvg.style.top = (paperRect.top - containerRect.top) + 'px';
     
     errorLineSvg.setAttribute('width', paperRect.width);
     errorLineSvg.setAttribute('height', paperRect.height);

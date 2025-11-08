@@ -275,6 +275,36 @@ function setupInputEvents() {
         if (!inputHandler) return;
         if (e.isComposing) return;
         
+        // Ctrl/Cmd + C (복사)
+        if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+            e.preventDefault();
+            if (selectedCells.length > 0) {
+                copySelectedCells();
+                console.log('복사됨:', selectedCells.length + '개 셀');
+            }
+            return;
+        }
+        
+        // Ctrl/Cmd + X (잘라내기)
+        if ((e.ctrlKey || e.metaKey) && e.key === 'x') {
+            e.preventDefault();
+            if (selectedCells.length > 0) {
+                if (cutSelectedCells()) {
+                    console.log('잘라내기 완료');
+                }
+            }
+            return;
+        }
+        
+        // Ctrl/Cmd + V (붙여넣기)
+        if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+            e.preventDefault();
+            if (pasteClipboard()) {
+                console.log('붙여넣기 완료');
+            }
+            return;
+        }
+        
         // Backspace
         if (e.key === 'Backspace') {
             e.preventDefault();
@@ -387,66 +417,6 @@ function setupInputEvents() {
             clearSelection();
             if (inputHandler.move_next_row()) {
                 updateActiveCell();
-            }
-            return;
-        }
-    });
-    
-    // ★★★ document 레벨에서 Ctrl+C, X, V 처리 (포커스 무관) ★★★
-    document.addEventListener('keydown', function(e) {
-        // 작업 영역이 표시되지 않았으면 무시
-        if (!workArea || !workArea.classList.contains('show')) return;
-        
-        // 모달이나 input에 포커스되어 있으면 무시
-        if (e.target.closest('.modal') || 
-            (e.target.tagName === 'INPUT' && e.target.id !== 'compositionInput') ||
-            e.target.tagName === 'TEXTAREA') {
-            return;
-        }
-        
-        // Ctrl/Cmd + C (복사)
-        if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
-            if (selectedCells.length > 0) {
-                e.preventDefault();
-                if (copySelectedCells()) {
-                    console.log('복사됨:', selectedCells.length + '개 셀');
-                    // 시각적 피드백 (선택 셀 깜빡임)
-                    for (var i = 0; i < selectedCells.length; i++) {
-                        var cell = studentCells[selectedCells[i]];
-                        if (cell) {
-                            cell.style.animation = 'none';
-                            setTimeout(function(c) {
-                                c.style.animation = 'blink-once 0.3s';
-                            }, 10, cell);
-                        }
-                    }
-                }
-            }
-            return;
-        }
-        
-        // Ctrl/Cmd + X (잘라내기)
-        if ((e.ctrlKey || e.metaKey) && e.key === 'x') {
-            if (selectedCells.length > 0) {
-                e.preventDefault();
-                if (cutSelectedCells()) {
-                    console.log('잘라내기 완료:', selectedCells.length + '개 셀');
-                }
-            }
-            return;
-        }
-        
-        // Ctrl/Cmd + V (붙여넣기)
-        if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
-            e.preventDefault();
-            if (pasteClipboard()) {
-                console.log('붙여넣기 완료');
-                // 포커스 복원
-                setTimeout(function() {
-                    if (compositionInput) {
-                        compositionInput.focus({ preventScroll: true });
-                    }
-                }, 10);
             }
             return;
         }

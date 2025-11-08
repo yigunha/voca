@@ -525,6 +525,9 @@ export class InputHandler {
         const ret = wasm.inputhandler_move_next_row(this.__wbg_ptr);
         return ret !== 0;
     }
+    clear_all_buffers() {
+        wasm.inputhandler_clear_all_buffers(this.__wbg_ptr);
+    }
     /**
      * @returns {any}
      */
