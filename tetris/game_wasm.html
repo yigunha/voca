@@ -543,9 +543,7 @@
 
         window.logout = function() {
             if (wasmModule) {
-                wasmModule.delete_cookie('studentName');
-                wasmModule.delete_cookie('studentClass');
-                wasmModule.delete_cookie('studentPassword');
+                wasmModule.clear_all_cookies();
             }
             window.location.href = '../munpup.html';
         };
