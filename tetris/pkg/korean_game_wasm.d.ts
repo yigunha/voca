@@ -35,6 +35,10 @@ export function decrypt_xor(encrypted_data: Uint8Array): string;
  */
 export function decrypt_xor_base64(encrypted_base64: string): string;
 /**
+ * 도메인 체크 함수
+ */
+export function check_domain(): boolean;
+/**
  * WASM 모듈 초기화
  */
 export function main(): void;
@@ -46,6 +50,14 @@ export function get_version(): string;
  * 간단한 테스트 함수
  */
 export function greet(name: string): string;
+/**
+ * 현재 도메인 정보 반환 (디버깅용)
+ */
+export function get_current_domain(): string;
+/**
+ * 허용된 도메인 목록 반환 (디버깅용)
+ */
+export function get_allowed_domains(): any[];
 
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
 
@@ -59,9 +71,12 @@ export interface InitOutput {
   readonly refresh_cookies: () => [number, number];
   readonly decrypt_xor: (a: number, b: number) => [number, number, number, number];
   readonly decrypt_xor_base64: (a: number, b: number) => [number, number, number, number];
+  readonly check_domain: () => [number, number, number];
   readonly main: () => void;
   readonly get_version: () => [number, number];
   readonly greet: (a: number, b: number) => [number, number];
+  readonly get_current_domain: () => [number, number, number, number];
+  readonly get_allowed_domains: () => [number, number];
   readonly wasm_bindgen__convert__closures_____invoke__h1531974488df2bb8: (a: number, b: number, c: any) => void;
   readonly wasm_bindgen__closure__destroy__he4e11a560d193a5b: (a: number, b: number) => void;
   readonly wasm_bindgen__convert__closures_____invoke__h154ba7a3ea507bfe: (a: number, b: number, c: any, d: any) => void;
@@ -72,6 +87,7 @@ export interface InitOutput {
   readonly __wbindgen_externrefs: WebAssembly.Table;
   readonly __externref_table_dealloc: (a: number) => void;
   readonly __wbindgen_free: (a: number, b: number, c: number) => void;
+  readonly __externref_drop_slice: (a: number, b: number) => void;
   readonly __wbindgen_start: () => void;
 }
 

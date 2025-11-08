@@ -2,13 +2,14 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>한국어 학습 게임</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
         
         body {
@@ -33,6 +34,7 @@
             display: flex;
             gap: 15px;
             align-items: center;
+            z-index: 100;
         }
         
         .logout-btn {
@@ -43,6 +45,10 @@
             color: white;
             cursor: pointer;
             font-size: 0.85em;
+        }
+        
+        .logout-btn:hover {
+            background: #dc2626;
         }
         
         .container {
@@ -68,6 +74,7 @@
         .level-selector h2 {
             color: #f3f4f6;
             margin-bottom: 15px;
+            font-size: 1.2em;
         }
 
         .level-buttons {
@@ -81,6 +88,7 @@
             border: none;
             border-radius: 8px;
             font-weight: bold;
+            font-size: 1em;
             cursor: pointer;
             background: #3b82f6;
             color: white;
@@ -107,45 +115,77 @@
             text-align: center;
         }
         
-        .grid {
+        .grid-container {
+            position: relative;
+            margin-bottom: 4px;
             background: #111827;
             padding: 8px;
             border-radius: 8px;
-            margin-bottom: 4px;
+            height: 370px;
+            overflow: hidden;
         }
         
-        .row {
-            display: flex;
-            gap: 2px;
-            margin-bottom: 2px;
+        .grid {
+            position: relative;
+            width: 100%;
+            height: 100%;
         }
         
-        .cell {
-            width: 40px;
-            height: 40px;
+        .block {
+            position: absolute;
+            display: inline-block;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            user-select: none;
+            transition: transform 0.05s, opacity 0.05s;
+            border: 2px solid rgba(0,0,0,0.2);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            white-space: nowrap;
+        }
+        
+        .block:hover {
+            transform: scale(0.95);
+            opacity: 0.8;
+        }
+
+        .block.exploding {
+            animation: explode 0.5s ease-out forwards;
+        }
+
+        @keyframes explode {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.5);
+                opacity: 0.5;
+            }
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+        
+        .start-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
-            font-weight: bold;
-            color: #000000;
-            border-radius: 3px;
-            cursor: pointer;
-            user-select: none;
+            background: rgba(17, 24, 39, 0.85);
+            border-radius: 8px;
+            z-index: 10;
         }
         
-        .cell.empty {
-            background: #374151;
-            border: 1px solid #4b5563;
-        }
-        
-        .cell.block {
-            border: 2px solid rgba(0,0,0,0.2);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        }
-        
-        .cell.block-hover {
-            filter: brightness(1.2);
+        .start-overlay.hidden {
+            display: none;
         }
         
         .message {
@@ -158,6 +198,7 @@
         
         .message.success { color: #10b981; }
         .message.fail { color: #ef4444; }
+        .message.explode { color: #f59e0b; }
         
         .buttons {
             display: flex;
@@ -167,11 +208,11 @@
         }
         
         .btn {
-            padding: 10px 15px;
+            padding: 10px 20px;
             border: none;
             border-radius: 8px;
             font-weight: bold;
-            font-size: 0.9em;
+            font-size: 0.95em;
             cursor: pointer;
         }
         
@@ -180,19 +221,17 @@
             color: white;
         }
         
+        .btn-start:hover {
+            background: #16a34a;
+        }
+        
         .btn-reset {
             background: #3b82f6;
             color: white;
         }
         
-        .btn-show-answer {
-            background: #f59e0b;
-            color: white;
-        }
-        
-        .btn-boom {
-            background: #ef4444;
-            color: white;
+        .btn-reset:hover {
+            background: #2563eb;
         }
         
         .answer-section {
@@ -222,11 +261,97 @@
             0%, 50% { opacity: 1; }
             51%, 100% { opacity: 0; }
         }
+        
+        .answer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .answer-header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .answer-header h3 {
+            font-size: 0.85em;
+            color: #f3f4f6;
+        }
+
+        .level {
+            font-size: 0.75em;
+            color: #9ca3af;
+            background: #1f2937;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 6px;
+        }
+        
+        .undo-btn, .show-target-btn {
+            padding: 6px 12px;
+            background: #f59e0b;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.85em;
+        }
+
+        .show-target-btn {
+            background: #6b7280;
+        }
+
+        .show-target-btn:hover {
+            background: #4b5563;
+        }
+        
+        .undo-btn:hover:not(:disabled) {
+            background: #d97706;
+        }
+        
+        .undo-btn:disabled {
+            background: #6b7280;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        .target {
+            font-size: 0.75em;
+            color: #9ca3af;
+            margin-top: 6px;
+            display: none;
+        }
+
+        .target.show {
+            display: block;
+        }
 
         .loading {
             text-align: center;
             color: white;
             padding: 40px;
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -237,9 +362,10 @@
     </div>
 
     <div class="container">
-        <div class="game-box">
+        <div class="game-box" id="gameBox">
             <div class="loading" id="loadingScreen">
-                <p>게임 데이터 로딩 중...</p>
+                <div class="loading-spinner"></div>
+                <p>게임 데이터를 로드하는 중...</p>
             </div>
 
             <div id="gameContent" style="display: none;">
@@ -250,21 +376,37 @@
 
                 <div id="gameArea" style="display: none;">
                     <div class="description" id="description"></div>
-                    <div class="grid" id="grid"></div>
+                    
+                    <div class="grid-container">
+                        <div class="grid" id="grid"></div>
+                        <div class="start-overlay" id="startOverlay">
+                            <div class="buttons">
+                                <button class="btn btn-start" onclick="startGame()">▶ 시작</button>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="message" id="message"></div>
                     
                     <div class="buttons">
-                        <button class="btn btn-reset" onclick="backToLevelSelect()">← 단계선택</button>
-                        <button class="btn btn-start" onclick="startGame()" id="startBtn">▶ 시작</button>
-                        <button class="btn btn-show-answer" onclick="showAnswer()">💡 정답보기</button>
-                        <button class="btn btn-boom" onclick="boom()">💥 폭발</button>
+                        <button class="btn btn-reset" onclick="backToLevelSelect()">← 레벨 선택</button>
                     </div>
                     
                     <div class="answer-section">
-                        <h3 style="color: #f3f4f6; margin-bottom: 8px;">내 답안</h3>
+                        <div class="answer-header">
+                            <div class="answer-header-left">
+                                <h3>정답칸:</h3>
+                                <div class="level">레벨 <span id="levelNum">1</span> / 12</div>
+                            </div>
+                            <div class="button-group">
+                                <button class="show-target-btn" onclick="toggleTarget()">👁️</button>
+                                <button class="undo-btn" id="undoBtn">↶</button>
+                            </div>
+                        </div>
                         <div class="answer-display" id="answerDisplay">
                             <span class="blink">|</span>
                         </div>
+                        <div class="target" id="target"></div>
                     </div>
                 </div>
             </div>
@@ -272,27 +414,52 @@
     </div>
 
     <script type="module">
+        // 도메인 체크
+        const allowedDomains = ['yigunha.github.io', 'localhost', '127.0.0.1'];
+        const currentDomain = window.location.hostname;
+        
+        if (!allowedDomains.some(domain => currentDomain.includes(domain))) {
+            document.body.innerHTML = '<div style="color: white; text-align: center; padding: 50px;">이 도메인에서는 실행할 수 없습니다.</div>';
+            throw new Error('Unauthorized domain');
+        }
+
+        // WASM 모듈
         let wasmModule = null;
         
         const CONFIG = {
-            GRID_ROWS: 9,
-            GRID_COLS: 9,
+            GRID_WIDTH: 360,
+            GRID_HEIGHT: 354,
             FALL_SPEED: 600,
-            SPAWN_DELAY: 1200,
+            GRAVITY_SPEED: 150,
+            SPAWN_DELAY_MIN: 800,
+            SPAWN_DELAY_MAX: 1500,
+            WRONG_ANSWERS_PER_CORRECT: 3,
+            SHUFFLE_IN_GROUPS: true,
+            GROUP_SIZE: 4,
+            CHECK_INTERVAL: 5000, // 5초마다 정답 블록 체크
+            CORRECT_BLOCK_PROBABILITY: 0.6, // 정답 블록 60% 확률
         };
 
+        // 게임 변수
         let gameData = [];
         let currentGroup = 0;
         let currentProblem = 0;
-        let grid = [];
         let fallingBlocks = [];
-        let availableBlocks = [];
         let userAnswer = "";
+        let answerHistory = [];
         let gameState = 'ready';
+        let speed = CONFIG.FALL_SPEED;
         let fallInterval = null;
         let spawnTimeout = null;
         let correctAnswer = "";
         let blockIdCounter = 0;
+        let gravityInterval = null;
+        let correctBlocks = [];
+        let wrongBlocks = [];
+        let remainingCorrectBlocks = [];
+        let checkInterval = null;
+
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
         // WASM 초기화
         async function initWasm() {
@@ -300,26 +467,37 @@
                 const wasm = await import('./pkg/korean_game_wasm.js');
                 await wasm.default();
                 wasmModule = wasm;
-                console.log('WASM 초기화 완료');
+                console.log('WASM initialized:', wasm.get_version());
                 return true;
             } catch (error) {
-                console.error('WASM 로드 실패:', error);
+                console.error('WASM load failed:', error);
                 alert('WASM 모듈을 로드할 수 없습니다.');
                 return false;
             }
         }
 
-        // 데이터 로드
+        // 암호화된 데이터 로드 및 복호화
         async function loadGameData() {
             try {
                 const response = await fetch('./data/3A_encrypted.dat');
                 const encryptedBytes = new Uint8Array(await response.arrayBuffer());
+                
                 const decryptedJson = wasmModule.decrypt_xor(encryptedBytes);
-                gameData = JSON.parse(decryptedJson);
-                console.log('데이터 로드 완료:', gameData.length, '그룹');
+                const fullData = JSON.parse(decryptedJson);
+                
+                // 각 그룹에서 랜덤으로 하나씩 선택
+                gameData = fullData.map(group => {
+                    const randomIndex = Math.floor(Math.random() * group.problems.length);
+                    return {
+                        group: group.group,
+                        problem: group.problems[randomIndex]
+                    };
+                });
+                
+                console.log('Game data loaded:', gameData.length, 'problems');
                 return true;
             } catch (error) {
-                console.error('데이터 로드 실패:', error);
+                console.error('Failed to load game data:', error);
                 alert('게임 데이터를 로드할 수 없습니다.');
                 return false;
             }
@@ -328,120 +506,206 @@
         // 로그인 확인
         function checkLogin() {
             if (!wasmModule) return false;
+            
             try {
                 if (!wasmModule.check_login_status()) {
-                    window.location.href = '../index.html';
+                    window.location.href = '../munpup.html';
                     return false;
                 }
+                
                 wasmModule.refresh_cookies();
+                
                 const studentName = wasmModule.get_cookie('studentName');
                 const studentClass = wasmModule.get_cookie('studentClass');
-                document.getElementById('studentInfo').textContent = `${studentClass} ${studentName}`;
+                document.getElementById('studentInfo').textContent = 
+                    `${studentClass} ${studentName}`;
                 document.getElementById('userInfo').style.display = 'flex';
+                
                 return true;
             } catch (error) {
-                console.error('로그인 확인 실패:', error);
-                window.location.href = '../index.html';
+                console.error('Login check failed:', error);
+                window.location.href = '../munpup.html';
                 return false;
             }
         }
 
+        // 로그아웃
         window.logout = function() {
             if (wasmModule) {
                 wasmModule.delete_cookie('studentName');
                 wasmModule.delete_cookie('studentClass');
                 wasmModule.delete_cookie('studentPassword');
             }
-            window.location.href = '../index.html';
+            window.location.href = '../munpup.html';
         };
 
         // 레벨 버튼 생성
         function createLevelButtons() {
             const buttonsContainer = document.getElementById('levelButtons');
-            gameData.forEach((group, index) => {
+            gameData.forEach((item, index) => {
                 const btn = document.createElement('button');
                 btn.className = 'level-btn';
-                btn.textContent = `단계 ${group.group}`;
+                btn.textContent = `단계 ${item.group}`;
                 btn.onclick = () => selectLevel(index);
                 buttonsContainer.appendChild(btn);
             });
         }
 
-        function selectLevel(groupIndex) {
-            currentGroup = groupIndex;
-            currentProblem = 0;
+        // 레벨 선택
+        function selectLevel(index) {
+            currentProblem = index;
             
             document.querySelectorAll('.level-btn').forEach((btn, i) => {
-                btn.classList.toggle('selected', i === groupIndex);
+                btn.classList.toggle('selected', i === index);
             });
             
             document.getElementById('levelSelector').style.display = 'none';
             document.getElementById('gameArea').style.display = 'block';
+            document.getElementById('levelNum').textContent = (index + 1);
             
             loadProblem();
         }
 
+        // 문제 로드
         function loadProblem() {
-            const problem = gameData[currentGroup].problems[currentProblem];
-            document.getElementById('description').textContent = problem.description;
-            correctAnswer = problem.answer;
+            const problem = gameData[currentProblem].problem;
+            document.getElementById('description').textContent = '문장: ' + problem.description;
             
-            // 그리드 초기화
-            grid = Array(CONFIG.GRID_ROWS).fill(null).map(() => 
-                Array(CONFIG.GRID_COLS).fill(null)
-            );
+            correctBlocks = problem.answer.split('/').filter(s => s);
+            correctAnswer = correctBlocks.join('');
+            remainingCorrectBlocks = [...correctBlocks];
+            
+            // 오답 블록 생성
+            wrongBlocks = [];
+            gameData.forEach((item, idx) => {
+                if (idx !== currentProblem) {
+                    wrongBlocks.push(...item.problem.answer.split('/').filter(s => s));
+                }
+            });
             
             fallingBlocks = [];
-            availableBlocks = problem.answer.split('/').filter(s => s);
             userAnswer = "";
+            answerHistory = [];
             gameState = 'ready';
+            blockIdCounter = 0;
+            
+            document.getElementById('target').textContent = '목표: ' + correctAnswer.split('').map(c => c === " " ? "▢" : c).join('');
+            document.getElementById('target').classList.remove('show');
             
             updateDisplay();
+            document.getElementById('startOverlay').classList.remove('hidden');
         }
 
+        // 셔플
+        function shuffleArray(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        // 게임 시작
         window.startGame = function() {
             if (gameState === 'playing') return;
             
             gameState = 'playing';
+            document.getElementById('startOverlay').classList.add('hidden');
             document.getElementById('message').textContent = '';
-            document.getElementById('startBtn').textContent = '⏸ 일시정지';
             
-            spawnBlock();
+            // 초기 블록 5개 생성 (정답 블록 확률 높임)
+            for (let i = 0; i < 5; i++) {
+                setTimeout(() => spawnBlock(), i * 300);
+            }
+            
             fallInterval = setInterval(updateFalling, CONFIG.FALL_SPEED);
+            gravityInterval = setInterval(applyGravity, CONFIG.GRAVITY_SPEED);
+            scheduleNextBlock();
+            
+            // 정답 블록 체크 시작
+            checkInterval = setInterval(checkCorrectBlocksOnScreen, CONFIG.CHECK_INTERVAL);
         };
 
-        function spawnBlock() {
-            if (gameState !== 'playing' || availableBlocks.length === 0) return;
+        // 화면에 정답 블록이 있는지 체크
+        function checkCorrectBlocksOnScreen() {
+            if (gameState !== 'playing' || remainingCorrectBlocks.length === 0) return;
             
-            const blockIndex = Math.floor(Math.random() * availableBlocks.length);
-            const blockText = availableBlocks.splice(blockIndex, 1)[0];
-            const cells = blockText.split('');
-            const maxLane = CONFIG.GRID_COLS - cells.length;
-            const lane = Math.floor(Math.random() * (maxLane + 1));
+            const hasCorrectBlock = fallingBlocks.some(block => 
+                remainingCorrectBlocks.includes(block.text)
+            );
+            
+            if (!hasCorrectBlock) {
+                explodeAllBlocks();
+            }
+        }
+
+        // 모든 블록 폭파
+        function explodeAllBlocks() {
+            if (fallingBlocks.length === 0) return;
+            
+            playExplodeSound();
+            document.getElementById('message').textContent = '💥 정답 블록이 없어서 폭파!';
+            document.getElementById('message').className = 'message explode';
+            
+            // 폭파 애니메이션
+            fallingBlocks.forEach(block => {
+                const blockEl = document.querySelector(`[data-block-id="${block.id}"]`);
+                if (blockEl) {
+                    blockEl.classList.add('exploding');
+                }
+            });
+            
+            // 500ms 후 블록 제거 및 새 블록 생성
+            setTimeout(() => {
+                fallingBlocks = [];
+                updateDisplay();
+                document.getElementById('message').textContent = '';
+                
+                // 새 블록 생성 (정답 블록 위주로)
+                for (let i = 0; i < 5; i++) {
+                    setTimeout(() => spawnBlock(), i * 200);
+                }
+            }, 500);
+        }
+
+        // 블록 생성 (정답 블록 확률 높임)
+        function spawnBlock() {
+            if (gameState !== 'playing') return;
+            
+            let blockText;
+            
+            // 남은 정답 블록이 있으면 확률적으로 선택
+            if (remainingCorrectBlocks.length > 0 && Math.random() < CONFIG.CORRECT_BLOCK_PROBABILITY) {
+                // 정답 블록 선택
+                blockText = remainingCorrectBlocks[Math.floor(Math.random() * remainingCorrectBlocks.length)];
+            } else {
+                // 오답 블록 선택
+                if (wrongBlocks.length === 0) return;
+                blockText = wrongBlocks[Math.floor(Math.random() * wrongBlocks.length)];
+            }
             
             const newBlock = {
                 text: blockText,
-                cells: cells,
-                position: 0,
-                lane: lane,
+                x: Math.random() * (CONFIG.GRID_WIDTH - 100),
+                y: -50,
+                velocityY: 1,
                 id: blockIdCounter++,
-                color: getBlockColor(blockText)
+                color: getBlockColor(blockText),
+                isCorrect: correctBlocks.includes(blockText)
             };
             
             fallingBlocks.push(newBlock);
             updateDisplay();
-            
-            if (availableBlocks.length > 0) {
-                spawnTimeout = setTimeout(spawnBlock, CONFIG.SPAWN_DELAY);
-            }
         }
 
+        // 블록 색상
         function getBlockColor(text) {
             const len = text.replace(/ /g, '').length;
             if (text.includes(' ')) {
                 return { bg: '#FCD34D', text: '#000' };
             } else if (len === 1) {
-                const colors = ['#F87171', '#FB923C', '#A78BFA', '#F472B6'];
+                const colors = ['#F87171', '#FB923C', '#A78BFA', '#F472B6', '#FBBF24'];
                 return { bg: colors[Math.floor(Math.random() * colors.length)], text: '#000' };
             } else if (len === 2) {
                 return { bg: '#6EE7B7', text: '#000' };
@@ -452,209 +716,224 @@
             }
         }
 
+        // 다음 블록 스케줄
+        function scheduleNextBlock() {
+            if (gameState !== 'playing') return;
+            
+            const delay = Math.random() * (CONFIG.SPAWN_DELAY_MAX - CONFIG.SPAWN_DELAY_MIN) + CONFIG.SPAWN_DELAY_MIN;
+            spawnTimeout = setTimeout(() => {
+                spawnBlock();
+                scheduleNextBlock();
+            }, delay);
+        }
+
+        // 블록 낙하 업데이트
         function updateFalling() {
             if (gameState !== 'playing') return;
             
-            const blocksToLand = [];
-            
             fallingBlocks.forEach(block => {
-                block.position++;
+                block.y += block.velocityY * 40;
                 
-                // 바닥 도달 또는 충돌 검사
-                if (block.position >= CONFIG.GRID_ROWS) {
-                    blocksToLand.push(block);
-                } else {
-                    // 아래에 블록이 있는지 검사
-                    let hasCollision = false;
-                    for (let i = 0; i < block.cells.length; i++) {
-                        const col = block.lane + i;
-                        if (grid[block.position][col] !== null) {
-                            hasCollision = true;
-                            break;
-                        }
-                    }
-                    
-                    if (hasCollision) {
-                        block.position--; // 한 칸 위로
-                        blocksToLand.push(block);
-                    }
+                if (block.y > CONFIG.GRID_HEIGHT) {
+                    fallingBlocks = fallingBlocks.filter(b => b.id !== block.id);
                 }
-            });
-            
-            // 블록 착지
-            blocksToLand.forEach(block => {
-                if (block.position >= 0 && block.position < CONFIG.GRID_ROWS) {
-                    for (let i = 0; i < block.cells.length; i++) {
-                        const col = block.lane + i;
-                        grid[block.position][col] = {
-                            char: block.cells[i],
-                            blockText: block.text,
-                            color: block.color,
-                            id: block.id
-                        };
-                    }
-                }
-                fallingBlocks = fallingBlocks.filter(b => b.id !== block.id);
             });
             
             updateDisplay();
         }
 
+        // 중력 적용
+        function applyGravity() {
+            if (gameState !== 'playing') return;
+            
+            fallingBlocks.forEach(block => {
+                block.velocityY += 0.1;
+            });
+        }
+
+        // 디스플레이 업데이트
         function updateDisplay() {
             const gridEl = document.getElementById('grid');
             gridEl.innerHTML = '';
             
-            for (let row = 0; row < CONFIG.GRID_ROWS; row++) {
-                const rowEl = document.createElement('div');
-                rowEl.className = 'row';
+            fallingBlocks.forEach(block => {
+                const blockEl = document.createElement('div');
+                blockEl.className = 'block';
+                blockEl.style.backgroundColor = block.color.bg;
+                blockEl.style.color = block.color.text;
+                blockEl.style.left = block.x + 'px';
+                blockEl.style.top = block.y + 'px';
+                blockEl.textContent = block.text === " " ? "□" : block.text;
+                blockEl.dataset.blockId = block.id;
+                blockEl.onclick = () => handleBlockClick(block.id);
                 
-                for (let col = 0; col < CONFIG.GRID_COLS; col++) {
-                    const cellEl = document.createElement('div');
-                    cellEl.className = 'cell';
-                    
-                    // 떨어지는 블록 확인
-                    const fallingBlock = fallingBlocks.find(fb => 
-                        fb.position === row && col >= fb.lane && col < fb.lane + fb.cells.length
-                    );
-                    
-                    if (fallingBlock) {
-                        const idx = col - fallingBlock.lane;
-                        cellEl.classList.add('block');
-                        cellEl.style.backgroundColor = fallingBlock.color.bg;
-                        cellEl.style.color = fallingBlock.color.text;
-                        cellEl.textContent = fallingBlock.cells[idx] === " " ? "" : fallingBlock.cells[idx];
-                        cellEl.dataset.blockId = fallingBlock.id;
-                        cellEl.onclick = () => handleBlockClick(fallingBlock.id, fallingBlock.text);
-                        cellEl.onmouseenter = () => highlightBlock(fallingBlock.id, true);
-                        cellEl.onmouseleave = () => highlightBlock(fallingBlock.id, false);
-                    } else if (grid[row][col]) {
-                        const cell = grid[row][col];
-                        cellEl.classList.add('block');
-                        cellEl.style.backgroundColor = cell.color.bg;
-                        cellEl.style.color = cell.color.text;
-                        cellEl.textContent = cell.char === " " ? "" : cell.char;
-                        cellEl.dataset.blockId = cell.id;
-                        cellEl.onclick = () => handleCellClick(row, col, cell.blockText);
-                        cellEl.onmouseenter = () => highlightBlock(cell.id, true);
-                        cellEl.onmouseleave = () => highlightBlock(cell.id, false);
-                    } else {
-                        cellEl.classList.add('empty');
-                    }
-                    
-                    rowEl.appendChild(cellEl);
-                }
-                
-                gridEl.appendChild(rowEl);
-            }
+                gridEl.appendChild(blockEl);
+            });
             
             updateAnswerDisplay();
         }
 
-        function highlightBlock(blockId, highlight) {
-            const cells = document.querySelectorAll(`[data-block-id="${blockId}"]`);
-            cells.forEach(cell => {
-                cell.classList.toggle('block-hover', highlight);
-            });
-        }
-
-        function handleBlockClick(blockId, blockText) {
+        // 블록 클릭
+        function handleBlockClick(blockId) {
             if (gameState !== 'playing') return;
             
+            const block = fallingBlocks.find(b => b.id === blockId);
+            if (!block) return;
+            
+            playClickSound();
+            const blockText = block.text;
+            
+            // 블록 제거
             fallingBlocks = fallingBlocks.filter(b => b.id !== blockId);
+            
+            // 답안에 추가
+            answerHistory.push(blockText);
             userAnswer += blockText;
             
-            updateDisplay();
-            checkAnswer();
-        }
-
-        function handleCellClick(row, col, blockText) {
-            if (gameState !== 'playing') return;
-            
-            const blockId = grid[row][col].id;
-            
-            // 해당 블록의 모든 셀 제거
-            for (let r = 0; r < CONFIG.GRID_ROWS; r++) {
-                for (let c = 0; c < CONFIG.GRID_COLS; c++) {
-                    if (grid[r][c] && grid[r][c].id === blockId) {
-                        grid[r][c] = null;
-                    }
-                }
+            // 남은 정답 블록 목록에서 제거
+            const index = remainingCorrectBlocks.indexOf(blockText);
+            if (index > -1) {
+                remainingCorrectBlocks.splice(index, 1);
             }
             
-            userAnswer += blockText;
             updateDisplay();
-            checkAnswer();
+            
+            if (userAnswer.length >= correctAnswer.length) {
+                checkAnswer();
+            }
         }
 
+        // 실행취소
+        function handleUndo() {
+            if (gameState !== 'playing' || answerHistory.length === 0) return;
+
+            const lastBlock = answerHistory.pop();
+            userAnswer = userAnswer.slice(0, -lastBlock.length);
+            
+            // 정답 블록이었다면 다시 목록에 추가
+            if (correctBlocks.includes(lastBlock)) {
+                remainingCorrectBlocks.push(lastBlock);
+            }
+            
+            // 되돌린 블록을 다시 떨어뜨림
+            const newBlock = {
+                text: lastBlock,
+                x: Math.random() * (CONFIG.GRID_WIDTH - 100),
+                y: -50,
+                velocityY: 1,
+                id: blockIdCounter++,
+                color: getBlockColor(lastBlock),
+                isCorrect: correctBlocks.includes(lastBlock)
+            };
+            
+            fallingBlocks.push(newBlock);
+            updateDisplay();
+        }
+
+        // 답안 표시 업데이트
         function updateAnswerDisplay() {
             const display = document.getElementById('answerDisplay');
             const text = userAnswer.split('').map(c => c === " " ? "▢" : c).join('');
             display.innerHTML = text + '<span class="blink">|</span>';
+            
+            const undoBtn = document.getElementById('undoBtn');
+            undoBtn.disabled = answerHistory.length === 0 || gameState !== 'playing';
         }
 
+        // 정답 확인
         function checkAnswer() {
-            if (userAnswer.length >= correctAnswer.length) {
-                const isCorrect = userAnswer === correctAnswer;
+            const isCorrect = userAnswer === correctAnswer;
+
+            if (isCorrect) {
+                document.getElementById('message').textContent = '🎉 정답입니다!';
+                document.getElementById('message').className = 'message success';
+                gameState = 'success';
+                stopGame();
                 
-                if (isCorrect) {
-                    document.getElementById('message').textContent = '🎉 정답입니다!';
-                    document.getElementById('message').className = 'message success';
-                    stopGame();
-                    
-                    setTimeout(() => {
+                setTimeout(() => {
+                    if (currentProblem < gameData.length - 1) {
                         currentProblem++;
-                        if (currentProblem < gameData[currentGroup].problems.length) {
-                            loadProblem();
-                        } else {
-                            document.getElementById('message').textContent = '🏆 단계 완료!';
-                            setTimeout(() => backToLevelSelect(), 2000);
-                        }
-                    }, 1500);
-                } else {
-                    document.getElementById('message').textContent = '❌ 틀렸습니다!';
-                    document.getElementById('message').className = 'message fail';
-                    stopGame();
-                }
+                        document.getElementById('levelNum').textContent = currentProblem + 1;
+                        loadProblem();
+                        startGame();
+                    } else {
+                        document.getElementById('message').textContent = '🏆 모든 레벨을 클리어했습니다!';
+                        setTimeout(() => backToLevelSelect(), 2000);
+                    }
+                }, 1500);
+            } else {
+                document.getElementById('message').textContent = '❌ 틀렸습니다!';
+                document.getElementById('message').className = 'message fail';
+                gameState = 'failed';
+                stopGame();
             }
         }
 
-        window.showAnswer = function() {
-            alert('정답: ' + correctAnswer);
-        };
-
-        window.boom = function() {
-            if (gameState !== 'playing') return;
-            
-            // 모든 블록 제거
-            grid = Array(CONFIG.GRID_ROWS).fill(null).map(() => 
-                Array(CONFIG.GRID_COLS).fill(null)
-            );
-            fallingBlocks = [];
-            
-            updateDisplay();
-        };
-
+        // 게임 중지
         function stopGame() {
-            gameState = 'stopped';
             if (fallInterval) {
                 clearInterval(fallInterval);
                 fallInterval = null;
+            }
+            if (gravityInterval) {
+                clearInterval(gravityInterval);
+                gravityInterval = null;
             }
             if (spawnTimeout) {
                 clearTimeout(spawnTimeout);
                 spawnTimeout = null;
             }
-            document.getElementById('startBtn').textContent = '▶ 시작';
+            if (checkInterval) {
+                clearInterval(checkInterval);
+                checkInterval = null;
+            }
         }
 
+        // 레벨 선택으로 돌아가기
         window.backToLevelSelect = function() {
             stopGame();
-            userAnswer = "";
             document.getElementById('gameArea').style.display = 'none';
             document.getElementById('levelSelector').style.display = 'block';
         };
 
-        // 초기화
+        // 타겟 토글
+        window.toggleTarget = function() {
+            document.getElementById('target').classList.toggle('show');
+        };
+
+        // 클릭 사운드
+        function playClickSound() {
+            try {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                oscillator.frequency.value = 800;
+                oscillator.type = 'sine';
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.1);
+            } catch(e) {}
+        }
+
+        // 폭발 사운드
+        function playExplodeSound() {
+            try {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                oscillator.frequency.value = 100;
+                oscillator.type = 'sawtooth';
+                gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.3);
+            } catch(e) {}
+        }
+
+        // 페이지 로드 시 초기화
         window.addEventListener('load', async () => {
             const wasmReady = await initWasm();
             if (!wasmReady) return;
@@ -667,6 +946,8 @@
             document.getElementById('loadingScreen').style.display = 'none';
             document.getElementById('gameContent').style.display = 'block';
             createLevelButtons();
+            
+            document.getElementById('undoBtn').onclick = handleUndo;
         });
     </script>
 </body>

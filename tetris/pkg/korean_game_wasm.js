@@ -367,6 +367,18 @@ export function decrypt_xor_base64(encrypted_base64) {
 }
 
 /**
+ * 도메인 체크 함수
+ * @returns {boolean}
+ */
+export function check_domain() {
+    const ret = wasm.check_domain();
+    if (ret[2]) {
+        throw takeFromExternrefTable0(ret[1]);
+    }
+    return ret[0] !== 0;
+}
+
+/**
  * WASM 모듈 초기화
  */
 export function main() {
@@ -408,6 +420,50 @@ export function greet(name) {
     } finally {
         wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
     }
+}
+
+/**
+ * 현재 도메인 정보 반환 (디버깅용)
+ * @returns {string}
+ */
+export function get_current_domain() {
+    let deferred2_0;
+    let deferred2_1;
+    try {
+        const ret = wasm.get_current_domain();
+        var ptr1 = ret[0];
+        var len1 = ret[1];
+        if (ret[3]) {
+            ptr1 = 0; len1 = 0;
+            throw takeFromExternrefTable0(ret[2]);
+        }
+        deferred2_0 = ptr1;
+        deferred2_1 = len1;
+        return getStringFromWasm0(ptr1, len1);
+    } finally {
+        wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
+    }
+}
+
+function getArrayJsValueFromWasm0(ptr, len) {
+    ptr = ptr >>> 0;
+    const mem = getDataViewMemory0();
+    const result = [];
+    for (let i = ptr; i < ptr + 4 * len; i += 4) {
+        result.push(wasm.__wbindgen_externrefs.get(mem.getUint32(i, true)));
+    }
+    wasm.__externref_drop_slice(ptr, len);
+    return result;
+}
+/**
+ * 허용된 도메인 목록 반환 (디버깅용)
+ * @returns {any[]}
+ */
+export function get_allowed_domains() {
+    const ret = wasm.get_allowed_domains();
+    var v1 = getArrayJsValueFromWasm0(ret[0], ret[1]).slice();
+    wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+    return v1;
 }
 
 function wasm_bindgen__convert__closures_____invoke__h1531974488df2bb8(arg0, arg1, arg2) {
@@ -520,6 +576,13 @@ function __wbg_get_imports() {
         const ret = Reflect.get(arg0, arg1);
         return ret;
     }, arguments) };
+    imports.wbg.__wbg_hostname_b3afa4677fba29d1 = function() { return handleError(function (arg0, arg1) {
+        const ret = arg1.hostname;
+        const ptr1 = passStringToWasm0(ret, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len1 = WASM_VECTOR_LEN;
+        getDataViewMemory0().setInt32(arg0 + 4 * 1, len1, true);
+        getDataViewMemory0().setInt32(arg0 + 4 * 0, ptr1, true);
+    }, arguments) };
     imports.wbg.__wbg_instanceof_Error_a944ec10920129e2 = function(arg0) {
         let result;
         try {
@@ -568,6 +631,10 @@ function __wbg_get_imports() {
             result = false;
         }
         const ret = result;
+        return ret;
+    };
+    imports.wbg.__wbg_location_ef1665506d996dd9 = function(arg0) {
+        const ret = arg0.location;
         return ret;
     };
     imports.wbg.__wbg_log_f3e4ef0395fb2759 = function(arg0, arg1) {
