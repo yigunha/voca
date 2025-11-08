@@ -165,8 +165,16 @@
         }
         
         .cell.block-cell {
-            border: 3px solid rgba(255, 255, 255, 0.3) !important;
-            box-shadow: 0 0 8px rgba(0,0,0,0.5) !important;
+            border: 1px solid rgba(0, 0, 0, 0.15) !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3) !important;
+        }
+        
+        .cell.block-cell.same-block {
+            border-right: none !important;
+        }
+        
+        .cell.block-cell.same-block-last {
+            border-right: 1px solid rgba(0, 0, 0, 0.15) !important;
         }
         
         .cell.removing {
@@ -210,6 +218,7 @@
         .btn-start {
             background: #22c55e;
             color: white;
+            flex: 1;
         }
         
         .btn-start:hover {
@@ -219,6 +228,7 @@
         .btn-stop {
             background: #ef4444;
             color: white;
+            flex: 1;
         }
         
         .btn-stop:hover {
@@ -228,6 +238,7 @@
         .btn-reset {
             background: #3b82f6;
             color: white;
+            flex: 1;
         }
         
         .btn-reset:hover {
@@ -297,7 +308,7 @@
             gap: 6px;
         }
         
-        .undo-btn, .show-target-btn {
+        .undo-btn, .show-target-btn, .bomb-btn {
             background: #6b7280;
             color: white;
             border: none;
@@ -316,11 +327,19 @@
             background: #ea580c;
         }
         
+        .bomb-btn {
+            background: #dc2626;
+        }
+        
+        .bomb-btn:hover {
+            background: #b91c1c;
+        }
+        
         .show-target-btn:hover {
             background: #4b5563;
         }
         
-        .undo-btn:disabled {
+        .undo-btn:disabled, .bomb-btn:disabled {
             background: #4b5563;
             color: #9ca3af;
             cursor: not-allowed;
@@ -417,6 +436,7 @@
                             </div>
                             <div class="button-group">
                                 <button class="show-target-btn" onclick="toggleTarget()">👁️</button>
+                                <button class="bomb-btn" id="bombBtn" disabled>💣</button>
                                 <button class="undo-btn" id="undoBtn" disabled>↶</button>
                             </div>
                         </div>
@@ -681,7 +701,7 @@
         window.stopGameManually = function() {
             gameState = 'stopped';
             stopGame();
-            document.getElementById('message').textContent = '게임이 중단되었습니다';
+            document.getElementById('message').textContent = '';
             document.getElementById('message').className = 'message';
             showButtons();
         };
@@ -889,6 +909,14 @@
                         cellEl.style.color = fallingBlock.color.text;
                         cellEl.textContent = fallingBlock.cells[fallingIdx] === " " ? "" : fallingBlock.cells[fallingIdx];
                         cellEl.classList.add('clickable', 'block-cell');
+                        
+                        // 같은 블록의 칸들 연결
+                        if (fallingIdx < fallingBlock.cells.length - 1) {
+                            cellEl.classList.add('same-block');
+                        } else {
+                            cellEl.classList.add('same-block-last');
+                        }
+                        
                         cellEl.dataset.blockId = fallingBlock.id;
                         cellEl.onclick = () => handleBlockClick(fallingBlock.id);
                         cellEl.onmouseenter = () => highlightBlock(fallingBlock.id, true);
@@ -899,6 +927,15 @@
                         cellEl.style.color = cell.color.text;
                         cellEl.textContent = cell.char === " " ? "" : cell.char;
                         cellEl.classList.add('clickable', 'block-cell');
+                        
+                        // 같은 블록의 칸들 연결
+                        const isLastInBlock = !grid[row][col + 1] || grid[row][col + 1].id !== cell.id;
+                        if (!isLastInBlock) {
+                            cellEl.classList.add('same-block');
+                        } else {
+                            cellEl.classList.add('same-block-last');
+                        }
+                        
                         cellEl.dataset.blockId = cell.id;
                         cellEl.onclick = () => handleCellClick(row, col);
                         cellEl.onmouseenter = () => highlightBlock(cell.id, true);
@@ -996,6 +1033,57 @@
             updateDisplay();
         }
 
+        function handleBomb() {
+            if (gameState !== 'playing') return;
+            
+            playClickSound();
+            
+            // 화면의 모든 블록 제거
+            grid = Array(CONFIG.GRID_ROWS).fill(null).map(() => Array(CONFIG.GRID_COLS).fill(null));
+            fallingBlocks = [];
+            
+            // 현재 입력된 답 분석
+            const currentBlocks = parseAnswer(gameData[level].answer);
+            const enteredBlocks = answerHistory.slice();
+            
+            // 필요한 정답 블록 찾기
+            const neededBlocks = [];
+            let tempAnswer = userAnswer;
+            
+            for (const block of currentBlocks) {
+                if (!tempAnswer.startsWith(block)) {
+                    neededBlocks.push(block);
+                } else {
+                    tempAnswer = tempAnswer.slice(block.length);
+                }
+            }
+            
+            // 정답 블록의 확률을 높여서 새로운 블록 시퀀스 생성
+            const fakeBlocks = getFakeBlocks(level);
+            const enhancedSequence = [];
+            
+            // 필요한 정답 블록을 3번씩 추가
+            neededBlocks.forEach(block => {
+                for (let i = 0; i < 3; i++) {
+                    enhancedSequence.push(block);
+                }
+            });
+            
+            // 나머지 오답 블록 추가
+            const remainingCount = Math.max(10, neededBlocks.length * 2);
+            for (let i = 0; i < remainingCount && fakeBlocks.length > 0; i++) {
+                const fakeIdx = Math.floor(Math.random() * fakeBlocks.length);
+                enhancedSequence.push(fakeBlocks[fakeIdx]);
+                fakeBlocks.splice(fakeIdx, 1);
+            }
+            
+            // 섞기
+            shuffleArray(enhancedSequence);
+            availableBlocks = enhancedSequence;
+            
+            updateDisplay();
+        }
+
         function updateAnswerDisplay() {
             const display = document.getElementById('answerDisplay');
             const text = userAnswer.split('').map(c => c === " " ? "▢" : c).join('');
@@ -1003,6 +1091,9 @@
             
             const undoBtn = document.getElementById('undoBtn');
             undoBtn.disabled = answerHistory.length === 0 || gameState !== 'playing';
+            
+            const bombBtn = document.getElementById('bombBtn');
+            bombBtn.disabled = gameState !== 'playing';
         }
 
         function checkAnswer() {
@@ -1040,6 +1131,7 @@
             buttonsEl.innerHTML = `
                 <button class="btn btn-reset" onclick="backToLevelSelect()">← 레벨 선택</button>
                 ${gameState === 'failed' || gameState === 'stopped' ? '<button class="btn btn-start" onclick="startGame()">▶ 다시 시도</button>' : ''}
+                ${gameState === 'failed' || gameState === 'stopped' ? '<button class="btn btn-stop" onclick="logout()">로그아웃</button>' : ''}
             `;
         }
 
@@ -1053,7 +1145,15 @@
             document.getElementById('gameContent').style.display = 'block';
             
             document.getElementById('undoBtn').onclick = handleUndo;
+            document.getElementById('bombBtn').onclick = handleBomb;
         });
     </script>
 </body>
 </html>
+
+
+
+
+
+
+
