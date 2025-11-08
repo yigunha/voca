@@ -2,13 +2,6 @@
 /* eslint-disable */
 export function get_version(): string;
 export function verify_location(): boolean;
-export function get_cookie(name: string): string | undefined;
-export function set_cookie(name: string, value: string, days: number): void;
-export function delete_cookie(name: string): void;
-export function refresh_cookies(): void;
-export function check_login_status(): boolean;
-export function decrypt_xor(data: Uint8Array): string;
-export function encrypt_xor(data: string): Uint8Array;
 export function hash_answer(answer: string): string;
 export function verify_answer(user_answer: string, correct_hash: string): boolean;
 export function create_answer_hash(answer: string): string;
@@ -28,6 +21,40 @@ export function encrypt_score_data(student_name: string, student_class: string, 
 export function decrypt_score_data(encrypted: Uint8Array): string;
 export function generate_seed(): number;
 export function init(): void;
+/**
+ * 학생 인증 함수
+ */
+export function authenticate_student(student_name: string, _class: string, password: string): Promise<any>;
+/**
+ * 쿠키 설정 (30일)
+ */
+export function set_cookie(name: string, value: string, days: number): void;
+/**
+ * 쿠키 읽기
+ */
+export function get_cookie(name: string): string;
+/**
+ * 쿠키 삭제
+ */
+export function delete_cookie(name: string): void;
+/**
+ * 로그인 상태 확인
+ */
+export function check_login_status(): boolean;
+/**
+ * 쿠키 갱신 (30일 연장)
+ */
+export function refresh_cookies(): void;
+/**
+ * XOR cipher를 사용하여 데이터를 복호화합니다.
+ * Python의 encrypt_data.py와 동일한 알고리즘을 사용합니다.
+ * SECRET_KEY는 WASM 내부에 저장되어 JavaScript에서 접근할 수 없습니다.
+ */
+export function decrypt_xor(encrypted_data: Uint8Array): string;
+/**
+ * Base64로 인코딩된 암호화 데이터를 복호화합니다.
+ */
+export function decrypt_xor_base64(encrypted_base64: string): string;
 
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
 
@@ -35,12 +62,6 @@ export interface InitOutput {
   readonly memory: WebAssembly.Memory;
   readonly get_version: () => [number, number];
   readonly verify_location: () => number;
-  readonly get_cookie: (a: number, b: number) => [number, number];
-  readonly set_cookie: (a: number, b: number, c: number, d: number, e: number) => void;
-  readonly delete_cookie: (a: number, b: number) => void;
-  readonly refresh_cookies: () => void;
-  readonly check_login_status: () => number;
-  readonly encrypt_xor: (a: number, b: number) => [number, number];
   readonly verify_answer: (a: number, b: number, c: number, d: number) => number;
   readonly create_answer_hash: (a: number, b: number) => [number, number];
   readonly generate_block_sequence: (a: number, b: number, c: number, d: number, e: number) => [number, number];
@@ -60,13 +81,24 @@ export interface InitOutput {
   readonly generate_seed: () => number;
   readonly init: () => void;
   readonly hash_answer: (a: number, b: number) => [number, number];
-  readonly decrypt_xor: (a: number, b: number) => [number, number];
+  readonly authenticate_student: (a: number, b: number, c: number, d: number, e: number, f: number) => any;
+  readonly set_cookie: (a: number, b: number, c: number, d: number, e: number) => [number, number];
+  readonly get_cookie: (a: number, b: number) => [number, number, number, number];
+  readonly delete_cookie: (a: number, b: number) => [number, number];
+  readonly check_login_status: () => number;
+  readonly refresh_cookies: () => [number, number];
+  readonly decrypt_xor: (a: number, b: number) => [number, number, number, number];
+  readonly decrypt_xor_base64: (a: number, b: number) => [number, number, number, number];
+  readonly wasm_bindgen__convert__closures_____invoke__he7f4b28c0a248a94: (a: number, b: number, c: any) => void;
+  readonly wasm_bindgen__closure__destroy__h0eb5c646152f9b85: (a: number, b: number) => void;
+  readonly wasm_bindgen__convert__closures_____invoke__h0a224680a6fed1b2: (a: number, b: number, c: any, d: any) => void;
+  readonly __wbindgen_malloc: (a: number, b: number) => number;
+  readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
   readonly __wbindgen_exn_store: (a: number) => void;
   readonly __externref_table_alloc: () => number;
   readonly __wbindgen_externrefs: WebAssembly.Table;
-  readonly __wbindgen_malloc: (a: number, b: number) => number;
-  readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
   readonly __wbindgen_free: (a: number, b: number, c: number) => void;
+  readonly __externref_table_dealloc: (a: number) => void;
   readonly __wbindgen_start: () => void;
 }
 
