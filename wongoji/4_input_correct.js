@@ -260,13 +260,8 @@ function setupInputEvents() {
     
     // 일반 입력
     compositionInput.addEventListener('input', function(e) {
-        if (!inputHandler) return;
+        if (!inputHandler || inputHandler.is_composing()) return;
         
-        // ★★★ 이전 문제 해결 로직: 조합 중인 입력 무시
-        if (window.isComposing || e.isComposing) {
-            return;
-        }
-
         var text = e.target.value;
         if (text) {
             compositionInput.value = '';
@@ -278,15 +273,7 @@ function setupInputEvents() {
     // 키보드 이벤트
     compositionInput.addEventListener('keydown', function(e) {
         if (!inputHandler) return;
-        
-        // ★★★ 핵심 수정: 키를 길게 눌러 반복 입력이 발생하면 WASM 처리를 막습니다.
-        if (e.repeat) {
-            e.preventDefault(); 
-            return;
-        }
-        
-        // 기존 방어 로직 (조합 중 무시)
-        if (e.isComposing || window.isComposing) return;
+        if (e.isComposing) return;
         
         // Backspace
         if (e.key === 'Backspace') {
