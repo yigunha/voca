@@ -28,7 +28,7 @@
                 <div id="gameArea" style="display: none;">
                     <div class="description" id="description"></div>
                     
-                    <div class="grid-container">
+                    <div class="grid-container" style="height: auto;">
                         <div class="grid" id="grid"></div>
                         <div class="start-overlay" id="startOverlay">
                             <div class="buttons">
@@ -78,33 +78,30 @@
         let wasmModule = null;
         
         const CONFIG = {
-            GRID_WIDTH: 360,
-            GRID_HEIGHT: 354,
-            FALL_SPEED: 2,
-            UPDATE_INTERVAL: 50,
-            SPAWN_DELAY_MIN: 2000,
-            SPAWN_DELAY_MAX: 3000,
-            WRONG_ANSWERS_PER_CORRECT: 3,
-            CHECK_INTERVAL: 5000,
-            CORRECT_BLOCK_PROBABILITY: 0.65,
+            GRID_ROWS: 9,
+            GRID_COLS: 9,
+            FALL_SPEED: 600,
+            GRAVITY_SPEED: 150,
+            SPAWN_DELAY_MIN: 800,
+            SPAWN_DELAY_MAX: 1500,
+            WRONG_ANSWERS_PER_CORRECT: 3
         };
 
         // 게임 변수
         let gameData = [];
         let currentProblem = 0;
+        let grid = [];
         let fallingBlocks = [];
-        let stackedBlocks = [];
         let userAnswer = "";
         let answerHistory = [];
         let gameState = 'ready';
-        let updateInterval = null;
+        let fallInterval = null;
         let spawnTimeout = null;
+        let gravityInterval = null;
         let correctAnswer = "";
         let blockIdCounter = 0;
-        let correctBlocks = [];
-        let wrongBlocks = [];
-        let remainingCorrectBlocks = [];
-        let checkInterval = null;
+        let allBlocks = [];
+        let spawnIndex = 0;
 
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
@@ -217,25 +214,47 @@
             const problem = gameData[currentProblem].problem;
             document.getElementById('description').textContent = '문장: ' + problem.description;
             
-            correctBlocks = problem.answer.split('/').filter(s => s);
+            const correctBlocks = problem.answer.split('/').filter(s => s);
             correctAnswer = correctBlocks.join('');
-            remainingCorrectBlocks = [...correctBlocks];
             
-            wrongBlocks = [];
+            // 오답 블록 생성
+            const wrongBlocks = [];
             gameData.forEach((item, idx) => {
                 if (idx !== currentProblem) {
                     wrongBlocks.push(...item.problem.answer.split('/').filter(s => s));
                 }
             });
             
+            // 블록 시퀀스 생성
+            const sequence = [];
+            correctBlocks.forEach(block => {
+                sequence.push(block);
+                for (let i = 0; i < CONFIG.WRONG_ANSWERS_PER_CORRECT; i++) {
+                    if (wrongBlocks.length > 0) {
+                        const idx = Math.floor(Math.random() * wrongBlocks.length);
+                        sequence.push(wrongBlocks[idx]);
+                    }
+                }
+            });
+            
+            // 추가 오답 블록 (계속 떨어지게)
+            for (let i = 0; i < 20 && wrongBlocks.length > 0; i++) {
+                const idx = Math.floor(Math.random() * wrongBlocks.length);
+                sequence.push(wrongBlocks[idx]);
+            }
+            
+            shuffleArray(sequence);
+            allBlocks = sequence;
+            spawnIndex = 0;
+            
+            grid = Array(CONFIG.GRID_ROWS).fill(null).map(() => Array(CONFIG.GRID_COLS).fill(null));
             fallingBlocks = [];
-            stackedBlocks = [];
             userAnswer = "";
             answerHistory = [];
             gameState = 'ready';
             blockIdCounter = 0;
             
-            document.getElementById('target').textContent = '목표: ' + correctAnswer.split('').map(c => c === " " ? "▢" : c).join('');
+            document.getElementById('target').textContent = '목표: ' + correctAnswer.split('').map(c => c === " " ? "□" : c).join('');
             document.getElementById('target').classList.remove('show');
             
             updateDisplay();
@@ -252,168 +271,45 @@
             
             // 초기 블록 3개 생성
             for (let i = 0; i < 3; i++) {
-                setTimeout(() => spawnBlock(), i * 600);
+                setTimeout(() => spawnBlock(), i * 400);
             }
             
-            updateInterval = setInterval(gameLoop, CONFIG.UPDATE_INTERVAL);
+            startFalling();
+            startGravity();
             scheduleNextBlock();
-            checkInterval = setInterval(checkCorrectBlocksOnScreen, CONFIG.CHECK_INTERVAL);
         };
-
-        // 게임 루프 (수정됨 - 충돌 감지 개선)
-        function gameLoop() {
-            if (gameState !== 'playing') return;
-            
-            let needsUpdate = false;
-            
-            fallingBlocks.forEach(block => {
-                const blockEl = document.querySelector(`[data-block-id="${block.id}"]`);
-                if (!blockEl) return;
-                
-                const blockHeight = blockEl.offsetHeight;
-                const blockWidth = blockEl.offsetWidth;
-                
-                // 다음 위치 계산
-                const nextY = block.y + CONFIG.FALL_SPEED;
-                const blockBottom = nextY + blockHeight;
-                
-                // 바닥 충돌 확인
-                if (blockBottom >= CONFIG.GRID_HEIGHT) {
-                    // 바닥에 정확히 맞춤
-                    block.y = CONFIG.GRID_HEIGHT - blockHeight;
-                    stackedBlocks.push({...block});
-                    fallingBlocks = fallingBlocks.filter(b => b.id !== block.id);
-                    needsUpdate = true;
-                    return;
-                }
-                
-                // 쌓인 블록과 충돌 확인
-                let collided = false;
-                for (let stacked of stackedBlocks) {
-                    const stackedEl = document.querySelector(`[data-block-id="${stacked.id}"]`);
-                    if (!stackedEl) continue;
-                    
-                    const stackedWidth = stackedEl.offsetWidth;
-                    const stackedHeight = stackedEl.offsetHeight;
-                    
-                    // X축 겹침 확인
-                    const xOverlap = !(block.x + blockWidth <= stacked.x || block.x >= stacked.x + stackedWidth);
-                    
-                    // Y축 충돌 확인 (다음 위치 기준)
-                    if (xOverlap && blockBottom >= stacked.y && nextY < stacked.y) {
-                        // 쌓인 블록 바로 위에 정확히 배치
-                        block.y = stacked.y - blockHeight;
-                        stackedBlocks.push({...block});
-                        fallingBlocks = fallingBlocks.filter(b => b.id !== block.id);
-                        collided = true;
-                        needsUpdate = true;
-                        break;
-                    }
-                }
-                
-                // 충돌하지 않았으면 계속 낙하
-                if (!collided) {
-                    block.y = nextY;
-                    needsUpdate = true;
-                }
-            });
-            
-            if (needsUpdate) {
-                updateDisplay();
-            }
-        }
-
-        // 화면에 정답 블록 체크
-        function checkCorrectBlocksOnScreen() {
-            if (gameState !== 'playing' || remainingCorrectBlocks.length === 0) return;
-            
-            const allBlocks = [...fallingBlocks, ...stackedBlocks];
-            const hasCorrectBlock = allBlocks.some(block => 
-                remainingCorrectBlocks.includes(block.text)
-            );
-            
-            if (!hasCorrectBlock) {
-                explodeAllBlocks();
-            }
-        }
-
-        // 모든 블록 폭파
-        function explodeAllBlocks() {
-            if (fallingBlocks.length === 0 && stackedBlocks.length === 0) return;
-            
-            playExplodeSound();
-            document.getElementById('message').textContent = '💥 정답 블록이 없어서 폭파!';
-            document.getElementById('message').className = 'message explode';
-            
-            // 폭파 애니메이션
-            [...fallingBlocks, ...stackedBlocks].forEach(block => {
-                const blockEl = document.querySelector(`[data-block-id="${block.id}"]`);
-                if (blockEl) {
-                    blockEl.classList.add('exploding');
-                }
-            });
-            
-            setTimeout(() => {
-                fallingBlocks = [];
-                stackedBlocks = [];
-                updateDisplay();
-                document.getElementById('message').textContent = '';
-                
-                // 새 블록 생성
-                for (let i = 0; i < 3; i++) {
-                    setTimeout(() => spawnBlock(), i * 400);
-                }
-            }, 500);
-        }
 
         // 블록 생성
         function spawnBlock() {
             if (gameState !== 'playing') return;
             
-            let blockText;
-            
-            if (remainingCorrectBlocks.length > 0 && Math.random() < CONFIG.CORRECT_BLOCK_PROBABILITY) {
-                blockText = remainingCorrectBlocks[Math.floor(Math.random() * remainingCorrectBlocks.length)];
-            } else {
-                if (wrongBlocks.length === 0) return;
-                blockText = wrongBlocks[Math.floor(Math.random() * wrongBlocks.length)];
+            if (spawnIndex >= allBlocks.length) {
+                spawnIndex = 0;
+                shuffleArray(allBlocks);
             }
             
-            // 블록 크기 추정
-            const estimatedWidth = blockText.length * 22 + 28;
-            const maxX = Math.max(0, CONFIG.GRID_WIDTH - estimatedWidth);
+            const blockText = allBlocks[spawnIndex];
+            spawnIndex++;
+            
+            const cells = blockText.split('');
+            const maxLane = CONFIG.GRID_COLS - cells.length;
+            const lane = Math.floor(Math.random() * (maxLane + 1));
             
             const newBlock = {
                 text: blockText,
-                x: Math.random() * maxX,
-                y: -50,  // 화면 위에서 시작
+                cells: cells,
+                position: -1,
+                lane: lane,
                 id: blockIdCounter++,
-                color: getBlockColor(blockText),
-                isCorrect: correctBlocks.includes(blockText)
+                color: getBlockColor(blockText)
             };
             
-            fallingBlocks.push(newBlock);
-            updateDisplay();
-        }
-
-        // 블록 색상
-        function getBlockColor(text) {
-            const len = text.replace(/ /g, '').length;
-            if (text.includes(' ')) {
-                return { bg: '#FCD34D', text: '#000' };
-            } else if (len === 1) {
-                const colors = ['#F87171', '#FB923C', '#A78BFA', '#F472B6', '#FBBF24'];
-                return { bg: colors[Math.floor(Math.random() * colors.length)], text: '#000' };
-            } else if (len === 2) {
-                return { bg: '#6EE7B7', text: '#000' };
-            } else if (len === 3) {
-                return { bg: '#7DD3FC', text: '#000' };
-            } else {
-                return { bg: '#C4B5FD', text: '#000' };
+            if (!checkCollision(newBlock)) {
+                fallingBlocks.push(newBlock);
+                updateDisplay();
             }
         }
 
-        // 다음 블록 스케줄
         function scheduleNextBlock() {
             if (gameState !== 'playing') return;
             
@@ -424,76 +320,174 @@
             }, delay);
         }
 
-        // 디스플레이 업데이트
+        function startFalling() {
+            fallInterval = setInterval(() => {
+                if (gameState !== 'playing') return;
+                
+                fallingBlocks.forEach(block => {
+                    const nextBlock = { ...block, position: block.position + 1 };
+                    
+                    if (checkCollision(nextBlock)) {
+                        stackBlock(block);
+                        fallingBlocks = fallingBlocks.filter(b => b.id !== block.id);
+                    } else {
+                        block.position++;
+                    }
+                });
+                
+                updateDisplay();
+            }, CONFIG.FALL_SPEED);
+        }
+
+        function startGravity() {
+            gravityInterval = setInterval(() => {
+                if (gameState !== 'playing') return;
+                applyGravityStep();
+            }, CONFIG.GRAVITY_SPEED);
+        }
+
+        function stopGame() {
+            if (fallInterval) clearInterval(fallInterval);
+            if (spawnTimeout) clearTimeout(spawnTimeout);
+            if (gravityInterval) clearInterval(gravityInterval);
+            fallInterval = null;
+            spawnTimeout = null;
+            gravityInterval = null;
+        }
+
+        function checkCollision(block) {
+            const row = block.position;
+            if (row < 0) return false;
+            if (row >= CONFIG.GRID_ROWS) return false;
+            
+            for (let i = 0; i < block.cells.length; i++) {
+                const col = block.lane + i;
+                if (col >= CONFIG.GRID_COLS) return false;
+                
+                const nextRow = row + 1;
+                if (nextRow >= CONFIG.GRID_ROWS) return true;
+                if (grid[nextRow][col] !== null) return true;
+            }
+            return false;
+        }
+
+        function stackBlock(block) {
+            block.cells.forEach((cell, idx) => {
+                const row = block.position;
+                const col = block.lane + idx;
+                if (row >= 0 && row < CONFIG.GRID_ROWS && col < CONFIG.GRID_COLS) {
+                    grid[row][col] = {
+                        char: cell,
+                        blockText: block.text,
+                        color: block.color,
+                        id: block.id
+                    };
+                }
+            });
+        }
+
+        function applyGravityStep() {
+            const blockIds = new Set();
+            for (let row = 0; row < CONFIG.GRID_ROWS; row++) {
+                for (let col = 0; col < CONFIG.GRID_COLS; col++) {
+                    if (grid[row][col] !== null) {
+                        blockIds.add(grid[row][col].id);
+                    }
+                }
+            }
+            
+            let moved = false;
+            blockIds.forEach(blockId => {
+                const blockCells = [];
+                for (let row = 0; row < CONFIG.GRID_ROWS; row++) {
+                    for (let col = 0; col < CONFIG.GRID_COLS; col++) {
+                        if (grid[row][col] && grid[row][col].id === blockId) {
+                            blockCells.push({ row, col, data: grid[row][col] });
+                        }
+                    }
+                }
+                
+                if (blockCells.length === 0) return;
+                
+                const canFall = blockCells.every(cell => {
+                    const nextRow = cell.row + 1;
+                    if (nextRow >= CONFIG.GRID_ROWS) return false;
+                    const cellBelow = grid[nextRow][cell.col];
+                    return cellBelow === null || cellBelow.id === blockId;
+                });
+                
+                if (canFall) {
+                    blockCells.sort((a, b) => b.row - a.row);
+                    blockCells.forEach(cell => {
+                        grid[cell.row][cell.col] = null;
+                    });
+                    blockCells.forEach(cell => {
+                        grid[cell.row + 1][cell.col] = cell.data;
+                    });
+                    moved = true;
+                }
+            });
+            
+            if (moved) updateDisplay();
+        }
+
         function updateDisplay() {
             const gridEl = document.getElementById('grid');
             gridEl.innerHTML = '';
             
-            // 쌓인 블록 먼저
-            stackedBlocks.forEach(block => {
-                const blockEl = createBlockElement(block);
-                gridEl.appendChild(blockEl);
-            });
-            
-            // 떨어지는 블록
-            fallingBlocks.forEach(block => {
-                const blockEl = createBlockElement(block);
-                gridEl.appendChild(blockEl);
-            });
+            for (let row = 0; row < CONFIG.GRID_ROWS; row++) {
+                const rowEl = document.createElement('div');
+                rowEl.className = 'row';
+                
+                for (let col = 0; col < CONFIG.GRID_COLS; col++) {
+                    const cellEl = document.createElement('div');
+                    cellEl.className = 'cell';
+                    
+                    const fallingBlock = fallingBlocks.find(fb => 
+                        fb.position === row && col >= fb.lane && col < fb.lane + fb.cells.length
+                    );
+                    
+                    if (fallingBlock) {
+                        const idx = col - fallingBlock.lane;
+                        cellEl.style.backgroundColor = fallingBlock.color.bg;
+                        cellEl.style.color = fallingBlock.color.text;
+                        cellEl.style.border = '2px solid rgba(0,0,0,0.2)';
+                        cellEl.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+                        cellEl.textContent = fallingBlock.cells[idx] === " " ? "□" : fallingBlock.cells[idx];
+                        cellEl.classList.add('clickable');
+                        cellEl.onclick = () => handleBlockClick(fallingBlock.id);
+                    } else if (grid[row][col]) {
+                        const cell = grid[row][col];
+                        cellEl.style.backgroundColor = cell.color.bg;
+                        cellEl.style.color = cell.color.text;
+                        cellEl.style.border = '2px solid rgba(0,0,0,0.2)';
+                        cellEl.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+                        cellEl.textContent = cell.char === " " ? "□" : cell.char;
+                        cellEl.classList.add('clickable');
+                        cellEl.onclick = () => handleCellClick(row, col);
+                    } else {
+                        cellEl.classList.add('empty');
+                    }
+                    
+                    rowEl.appendChild(cellEl);
+                }
+                
+                gridEl.appendChild(rowEl);
+            }
             
             updateAnswerDisplay();
         }
 
-        // 블록 엘리먼트 생성
-        function createBlockElement(block) {
-            const blockEl = document.createElement('div');
-            blockEl.className = 'block';
-            blockEl.style.backgroundColor = block.color.bg;
-            blockEl.style.color = block.color.text;
-            blockEl.style.left = Math.round(block.x) + 'px';
-            blockEl.style.top = Math.round(block.y) + 'px';
-            blockEl.textContent = block.text === " " ? "□" : block.text;
-            blockEl.dataset.blockId = block.id;
-            blockEl.onclick = (e) => {
-                e.stopPropagation();
-                handleBlockClick(block.id);
-            };
-            return blockEl;
-        }
-
-        // 블록 클릭
         function handleBlockClick(blockId) {
             if (gameState !== 'playing') return;
             
-            let block = fallingBlocks.find(b => b.id === blockId);
-            let isStacked = false;
-            
-            if (!block) {
-                block = stackedBlocks.find(b => b.id === blockId);
-                isStacked = true;
-            }
-            
+            const block = fallingBlocks.find(b => b.id === blockId);
             if (!block) return;
             
             playClickSound();
-            const blockText = block.text;
-            
-            // 블록 제거
-            if (isStacked) {
-                stackedBlocks = stackedBlocks.filter(b => b.id !== blockId);
-            } else {
-                fallingBlocks = fallingBlocks.filter(b => b.id !== blockId);
-            }
-            
-            // 답안에 추가
-            answerHistory.push(blockText);
-            userAnswer += blockText;
-            
-            // 남은 정답 블록에서 제거
-            const index = remainingCorrectBlocks.indexOf(blockText);
-            if (index > -1) {
-                remainingCorrectBlocks.splice(index, 1);
-            }
+            fallingBlocks = fallingBlocks.filter(b => b.id !== blockId);
+            answerHistory.push(block.text);
+            userAnswer += block.text;
             
             updateDisplay();
             
@@ -502,47 +496,69 @@
             }
         }
 
-        // 실행취소
+        function handleCellClick(row, col) {
+            if (gameState !== 'playing') return;
+            
+            const cell = grid[row][col];
+            if (!cell) return;
+            
+            playClickSound();
+            const blockId = cell.id;
+            const blockText = cell.blockText;
+            
+            for (let r = 0; r < CONFIG.GRID_ROWS; r++) {
+                for (let c = 0; c < CONFIG.GRID_COLS; c++) {
+                    if (grid[r][c] && grid[r][c].id === blockId) {
+                        grid[r][c] = null;
+                    }
+                }
+            }
+            
+            answerHistory.push(blockText);
+            userAnswer += blockText;
+            
+            updateDisplay();
+            
+            if (userAnswer.length >= correctAnswer.length) {
+                checkAnswer();
+            }
+        }
+
         function handleUndo() {
             if (gameState !== 'playing' || answerHistory.length === 0) return;
-
+            
             const lastBlock = answerHistory.pop();
             userAnswer = userAnswer.slice(0, -lastBlock.length);
             
-            if (correctBlocks.includes(lastBlock)) {
-                remainingCorrectBlocks.push(lastBlock);
-            }
-            
-            const estimatedWidth = lastBlock.length * 22 + 28;
-            const maxX = Math.max(0, CONFIG.GRID_WIDTH - estimatedWidth);
+            const cells = lastBlock.split('');
+            const maxLane = CONFIG.GRID_COLS - cells.length;
+            const lane = Math.floor(Math.random() * (maxLane + 1));
             
             const newBlock = {
                 text: lastBlock,
-                x: Math.random() * maxX,
-                y: -50,
+                cells: cells,
+                position: -1,
+                lane: lane,
                 id: blockIdCounter++,
-                color: getBlockColor(lastBlock),
-                isCorrect: correctBlocks.includes(lastBlock)
+                color: getBlockColor(lastBlock)
             };
             
             fallingBlocks.push(newBlock);
             updateDisplay();
         }
 
-        // 답안 표시 업데이트
         function updateAnswerDisplay() {
             const display = document.getElementById('answerDisplay');
-            const text = userAnswer.split('').map(c => c === " " ? "▢" : c).join('');
+            const text = userAnswer.split('').map(c => c === " " ? "□" : c).join('');
             display.innerHTML = text + '<span class="blink">|</span>';
             
             const undoBtn = document.getElementById('undoBtn');
             undoBtn.disabled = answerHistory.length === 0 || gameState !== 'playing';
         }
 
-        // 정답 확인
         function checkAnswer() {
             const isCorrect = userAnswer === correctAnswer;
-
+            
             if (isCorrect) {
                 document.getElementById('message').textContent = '🎉 정답입니다!';
                 document.getElementById('message').className = 'message success';
@@ -568,35 +584,16 @@
             }
         }
 
-        // 게임 중지
-        function stopGame() {
-            if (updateInterval) {
-                clearInterval(updateInterval);
-                updateInterval = null;
-            }
-            if (spawnTimeout) {
-                clearTimeout(spawnTimeout);
-                spawnTimeout = null;
-            }
-            if (checkInterval) {
-                clearInterval(checkInterval);
-                checkInterval = null;
-            }
-        }
-
-        // 레벨 선택으로 돌아가기
         window.backToLevelSelect = function() {
             stopGame();
             document.getElementById('gameArea').style.display = 'none';
             document.getElementById('levelSelector').style.display = 'block';
         };
 
-        // 타겟 토글
         window.toggleTarget = function() {
             document.getElementById('target').classList.toggle('show');
         };
 
-        // 클릭 사운드
         function playClickSound() {
             try {
                 const oscillator = audioContext.createOscillator();
@@ -612,20 +609,28 @@
             } catch(e) {}
         }
 
-        // 폭발 사운드
-        function playExplodeSound() {
-            try {
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                oscillator.frequency.value = 100;
-                oscillator.type = 'sawtooth';
-                gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-                oscillator.start(audioContext.currentTime);
-                oscillator.stop(audioContext.currentTime + 0.3);
-            } catch(e) {}
+        function getBlockColor(blockText) {
+            const len = blockText.replace(/ /g, '').length;
+            if (blockText.includes(' ')) {
+                return { bg: '#FCD34D', text: '#000' };
+            } else if (len === 1) {
+                const colors = ['#F87171', '#FB923C', '#A78BFA', '#F472B6', '#FBBF24'];
+                return { bg: colors[Math.floor(Math.random() * colors.length)], text: '#000' };
+            } else if (len === 2) {
+                return { bg: '#6EE7B7', text: '#000' };
+            } else if (len === 3) {
+                return { bg: '#7DD3FC', text: '#000' };
+            } else {
+                return { bg: '#C4B5FD', text: '#000' };
+            }
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
         }
 
         // 페이지 로드 시 초기화
