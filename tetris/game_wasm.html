@@ -132,8 +132,8 @@
         
         .row {
             display: flex;
-            gap: 2px;
-            margin-bottom: 2px;
+            gap: 0;
+            margin-bottom: 0;
         }
         
         .row:last-child {
@@ -149,10 +149,11 @@
             font-size: 24px;
             font-weight: bold;
             color: #000000;
-            border-radius: 3px;
+            border-radius: 0;
             cursor: default;
             user-select: none;
             position: relative;
+            border: 1px solid #111827;
         }
         
         .cell.clickable {
@@ -162,19 +163,30 @@
         .cell.empty {
             background: #374151;
             border: 1px solid #4b5563;
+            border-radius: 3px;
+            margin: 1px;
         }
         
         .cell.block-cell {
-            border: 1px solid rgba(0, 0, 0, 0.15) !important;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3) !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            margin: 1px 0;
         }
         
-        .cell.block-cell.same-block {
-            border-right: none !important;
+        .cell.block-cell.block-start {
+            border-top-left-radius: 3px;
+            border-bottom-left-radius: 3px;
+            margin-left: 1px;
         }
         
-        .cell.block-cell.same-block-last {
-            border-right: 1px solid rgba(0, 0, 0, 0.15) !important;
+        .cell.block-cell.block-end {
+            border-top-right-radius: 3px;
+            border-bottom-right-radius: 3px;
+            margin-right: 1px;
+        }
+        
+        .cell.block-cell.block-single {
+            border-radius: 3px;
+            margin: 1px;
         }
         
         .cell.removing {
@@ -339,7 +351,7 @@
             background: #4b5563;
         }
         
-        .undo-btn:disabled, .bomb-btn:disabled {
+        .undo-btn:disabled {
             background: #4b5563;
             color: #9ca3af;
             cursor: not-allowed;
@@ -453,7 +465,7 @@
                         <div class="target" id="target"></div>
                         <div class="stats" id="stats">
                             <span>되돌리기: <span id="undoCount">0</span>/20</span>
-                            <span>폭탄: <span id="bombCount">0</span>/3</span>
+                            <span>폭탄: <span id="bombCount">0</span> (무제한)</span>
                         </div>
                     </div>
                 </div>
@@ -502,7 +514,6 @@
                 wasmModule = wasm;
                 console.log('WASM 초기화:', wasm.get_version());
                 
-                // 강력한 위치 검증
                 if (!wasm.verify_location()) {
                     document.body.innerHTML = '<div style="color: white; text-align: center; padding: 50px;">⚠️ 인증되지 않은 위치입니다.<br>이 페이지는 허가된 위치에서만 실행할 수 있습니다.</div>';
                     throw new Error('Unauthorized location');
@@ -543,7 +554,9 @@
 
         window.logout = function() {
             if (wasmModule) {
-                wasmModule.clear_all_cookies();
+                wasmModule.delete_cookie('studentName');
+                wasmModule.delete_cookie('studentClass');
+                wasmModule.delete_cookie('studentPassword');
             }
             window.location.href = '../munpup.html';
         };
@@ -611,7 +624,6 @@
         function parseAnswer(answer) {
             const blocks = answer.split('/');
             const correctAnswer = blocks.join('');
-            // 정답을 해시로 저장 (개발자 도구로 볼 수 없음)
             correctAnswerHash = wasmModule.create_answer_hash(correctAnswer);
             return blocks;
         }
@@ -627,7 +639,6 @@
         }
         
         function createBlockSequence(correctBlocks, fakeBlocks) {
-            // WASM에서 블록 시퀀스 생성
             const seed = wasmModule.generate_seed();
             const correctJson = JSON.stringify(correctBlocks);
             const fakeJson = JSON.stringify(fakeBlocks);
@@ -640,7 +651,6 @@
         };
 
         function getBlockColor(blockText) {
-            // WASM에서 색상 계산
             const color = wasmModule.get_block_color(blockText);
             return { bg: color, text: '#000000' };
         }
@@ -664,14 +674,13 @@
             mistakeCount = 0;
             currentLevelBombCount = 0;
             
-            // 되돌리기와 폭탄 카운트 리셋
             wasmModule.reset_undo_count();
             wasmModule.reset_bomb_usage();
             updateStats();
             
             const correctAnswer = blocks.join('');
             document.getElementById('description').textContent = '문장: ' + currentGame.description;
-            document.getElementById('target').textContent = '목표: ' + correctAnswer.split('').map(c => c === " " ? "▢" : c).join('');
+            document.getElementById('target').textContent = '목표: ' + correctAnswer.split('').map(c => c === " " ? "□" : c).join('');
             document.getElementById('target').classList.remove('show');
             document.getElementById('message').textContent = '';
             document.getElementById('buttons').innerHTML = '<button class="btn btn-stop" onclick="stopGameManually()">■ 게임 중단</button>';
@@ -828,7 +837,9 @@
                         char: cell,
                         blockText: block.text,
                         color: block.color,
-                        id: block.id
+                        id: block.id,
+                        blockLength: block.cells.length,
+                        posInBlock: idx
                     };
                 }
             });
@@ -902,10 +913,12 @@
                         cellEl.textContent = fallingBlock.cells[fallingIdx] === " " ? "" : fallingBlock.cells[fallingIdx];
                         cellEl.classList.add('clickable', 'block-cell');
                         
-                        if (fallingIdx < fallingBlock.cells.length - 1) {
-                            cellEl.classList.add('same-block');
-                        } else {
-                            cellEl.classList.add('same-block-last');
+                        if (fallingBlock.cells.length === 1) {
+                            cellEl.classList.add('block-single');
+                        } else if (fallingIdx === 0) {
+                            cellEl.classList.add('block-start');
+                        } else if (fallingIdx === fallingBlock.cells.length - 1) {
+                            cellEl.classList.add('block-end');
                         }
                         
                         cellEl.dataset.blockId = fallingBlock.id;
@@ -919,11 +932,12 @@
                         cellEl.textContent = cell.char === " " ? "" : cell.char;
                         cellEl.classList.add('clickable', 'block-cell');
                         
-                        const isLastInBlock = !grid[row][col + 1] || grid[row][col + 1].id !== cell.id;
-                        if (!isLastInBlock) {
-                            cellEl.classList.add('same-block');
-                        } else {
-                            cellEl.classList.add('same-block-last');
+                        if (cell.blockLength === 1) {
+                            cellEl.classList.add('block-single');
+                        } else if (cell.posInBlock === 0) {
+                            cellEl.classList.add('block-start');
+                        } else if (cell.posInBlock === cell.blockLength - 1) {
+                            cellEl.classList.add('block-end');
                         }
                         
                         cellEl.dataset.blockId = cell.id;
@@ -968,7 +982,6 @@
             
             updateDisplay();
             
-            // 정답 길이만 확인 (정답 자체는 노출 안 함)
             const correctLength = gameData[level].answer.replace(/\//g, '').length;
             if (userAnswer.length >= correctLength) {
                 checkAnswer();
@@ -1006,7 +1019,6 @@
         function handleUndo() {
             if (gameState !== 'playing' || answerHistory.length === 0) return;
 
-            // WASM에서 되돌리기 가능 여부 확인
             if (!wasmModule.can_undo()) {
                 alert('되돌리기는 게임당 20번까지만 가능합니다.');
                 return;
@@ -1039,21 +1051,14 @@
         function handleBomb() {
             if (gameState !== 'playing') return;
             
-            // WASM에서 폭탄 사용 가능 여부 확인
-            if (!wasmModule.can_use_bomb(level)) {
-                alert('폭탄은 레벨당 3번까지만 사용할 수 있습니다.');
-                return;
-            }
-            
+            // 폭탄 무제한 사용 가능
             currentLevelBombCount++;
             updateStats();
             playClickSound();
             
-            // 화면의 모든 블록 제거
             grid = Array(CONFIG.GRID_ROWS).fill(null).map(() => Array(CONFIG.GRID_COLS).fill(null));
             fallingBlocks = [];
             
-            // 현재 입력된 답 분석
             const currentBlocks = parseAnswer(gameData[level].answer);
             const neededBlocks = [];
             let tempAnswer = userAnswer;
@@ -1066,18 +1071,15 @@
                 }
             }
             
-            // WASM을 통해 강화된 블록 시퀀스 생성
             const fakeBlocks = getFakeBlocks(level);
             const enhancedBlocks = [];
             
-            // 필요한 정답 블록을 3번씩 추가
             neededBlocks.forEach(block => {
                 for (let i = 0; i < 3; i++) {
                     enhancedBlocks.push(block);
                 }
             });
             
-            // 나머지 오답 블록 추가
             const remainingCount = Math.max(10, neededBlocks.length * 2);
             for (let i = 0; i < remainingCount && fakeBlocks.length > 0; i++) {
                 const seed = wasmModule.generate_seed();
@@ -1086,7 +1088,6 @@
                 fakeBlocks.splice(fakeIdx, 1);
             }
             
-            // WASM으로 섞기
             const seed = wasmModule.generate_seed();
             const shuffledJson = wasmModule.generate_block_sequence(
                 JSON.stringify(enhancedBlocks.slice(0, Math.ceil(enhancedBlocks.length / 2))),
@@ -1100,14 +1101,14 @@
 
         function updateAnswerDisplay() {
             const display = document.getElementById('answerDisplay');
-            const text = userAnswer.split('').map(c => c === " " ? "▢" : c).join('');
+            const text = userAnswer.split('').map(c => c === " " ? "□" : c).join('');
             display.innerHTML = text + '<span class="blink">|</span>';
             
             const undoBtn = document.getElementById('undoBtn');
             undoBtn.disabled = answerHistory.length === 0 || gameState !== 'playing' || !wasmModule.can_undo();
             
             const bombBtn = document.getElementById('bombBtn');
-            bombBtn.disabled = gameState !== 'playing' || !wasmModule.can_use_bomb(level);
+            bombBtn.disabled = gameState !== 'playing';
         }
 
         function updateStats() {
@@ -1116,11 +1117,9 @@
         }
 
         function checkAnswer() {
-            // WASM을 통한 안전한 정답 검증
             const isCorrect = wasmModule.verify_answer(userAnswer, correctAnswerHash);
 
             if (isCorrect) {
-                // 타이밍 검증
                 const elapsedSeconds = Math.floor((Date.now() - gameStartTime) / 1000);
                 if (!wasmModule.verify_timing(level, elapsedSeconds)) {
                     document.getElementById('message').textContent = '⚠️ 비정상적인 플레이가 감지되었습니다.';
@@ -1131,7 +1130,6 @@
                     return;
                 }
                 
-                // 점수 계산
                 const score = wasmModule.calculate_score(
                     level,
                     elapsedSeconds,
@@ -1139,7 +1137,6 @@
                     wasmModule.get_undo_count()
                 );
                 
-                // 게임 토큰 생성 (치트 방지)
                 const timestamp = Date.now();
                 const token = wasmModule.create_game_token(level, userAnswer, timestamp);
                 console.log('Game token:', token);
@@ -1157,10 +1154,9 @@
                         currentLevelBombCount = 0;
                         startGame();
                     } else {
-                        // 전체 게임 완료 - 성적 암호화
                         const studentName = wasmModule.get_cookie('studentName') || 'Unknown';
                         const studentClass = wasmModule.get_cookie('studentClass') || 'Unknown';
-                        const scores = [score]; // 실제로는 모든 레벨 점수 수집
+                        const scores = [score];
                         const encryptedScore = wasmModule.encrypt_score_data(
                             studentName,
                             studentClass,
@@ -1209,25 +1205,3 @@
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
