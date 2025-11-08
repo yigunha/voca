@@ -156,10 +156,10 @@
                 <label for="classSelect">반 선택</label>
                 <select id="classSelect" required>
                     <option value="">반을 선택하세요</option>
-                    <option value="3A">3A 반</option>
-                    <option value="3B">3B 반</option>
-                    <option value="4A">4A 반</option>
-                    <option value="4B">4B 반</option>
+                    <option value="3-1">3학년 1반</option>
+                    <option value="3-2">3학년 2반</option>
+                    <option value="3-3">3학년 3반</option>
+                    <option value="3-4">3학년 4반</option>
                 </select>
             </div>
             
@@ -169,8 +169,8 @@
             </div>
             
             <div class="form-group">
-                <label for="studentPassword">비밀번호 (학번 뒷 4자리)</label>
-                <input type="password" id="studentPassword" placeholder="학번 뒷 4자리" maxlength="4" required>
+                <label for="studentPassword">비밀번호 (학번 뒤 4자리)</label>
+                <input type="password" id="studentPassword" placeholder="학번 뒤 4자리" maxlength="4" required>
             </div>
             
             <button type="submit" class="login-btn" id="loginBtn">로그인</button>
@@ -183,6 +183,15 @@
     </div>
 
     <script type="module">
+        // 도메인 체크
+        const allowedDomains = ['yigunha.github.io', 'localhost', '127.0.0.1'];
+        const currentDomain = window.location.hostname;
+        
+        if (!allowedDomains.some(domain => currentDomain.includes(domain))) {
+            document.body.innerHTML = '<div style="color: white; text-align: center; padding: 50px;">이 도메인에서는 실행할 수 없습니다.</div>';
+            throw new Error('Unauthorized domain');
+        }
+
         let wasmModule = null;
 
         // WASM 모듈 초기화
@@ -227,21 +236,6 @@
                 loadingEl.classList.remove('show');
                 loginBtn.disabled = false;
             }
-        }
-
-        function setCookie(name, value, days) {
-            const expires = new Date();
-            expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
-            document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
-        }
-
-        function getCookie(name) {
-            const cookies = document.cookie.split(';');
-            for (let cookie of cookies) {
-                const [key, value] = cookie.trim().split('=');
-                if (key === name) return value;
-            }
-            return null;
         }
 
         async function handleLogin(event) {
@@ -296,9 +290,11 @@
             const wasmReady = await initWasm();
             
             if (!wasmReady) {
-                console.warn('Using JavaScript fallback mode');
+                console.warn('WASM module failed to load');
+                return;
             }
 
+            // 이미 로그인되어 있는지 확인
             if (wasmModule) {
                 try {
                     if (wasmModule.check_login_status()) {
@@ -311,15 +307,16 @@
                 }
             }
 
-            const savedName = wasmModule ? 
-                (wasmModule.get_cookie('studentName') || '') : 
-                (getCookie('studentName') || '');
-            const savedClass = wasmModule ? 
-                (wasmModule.get_cookie('studentClass') || '') : 
-                (getCookie('studentClass') || '');
-            
-            if (savedName) document.getElementById('studentName').value = savedName;
-            if (savedClass) document.getElementById('classSelect').value = savedClass;
+            // 저장된 정보 불러오기
+            try {
+                const savedName = wasmModule.get_cookie('studentName');
+                const savedClass = wasmModule.get_cookie('studentClass');
+                
+                if (savedName) document.getElementById('studentName').value = savedName;
+                if (savedClass) document.getElementById('classSelect').value = savedClass;
+            } catch (e) {
+                console.log('No saved credentials');
+            }
 
             document.getElementById('loginForm').addEventListener('submit', handleLogin);
         });
