@@ -4,355 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>한국어 학습 게임</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
-        
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            min-height: 100vh;
-            padding: 10px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        
-        .user-info {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 10px 15px;
-            border-radius: 8px;
-            color: white;
-            font-size: 0.9em;
-            display: flex;
-            gap: 15px;
-            align-items: center;
-            z-index: 100;
-        }
-        
-        .logout-btn {
-            padding: 5px 10px;
-            background: #ef4444;
-            border: none;
-            border-radius: 4px;
-            color: white;
-            cursor: pointer;
-            font-size: 0.85em;
-        }
-        
-        .logout-btn:hover {
-            background: #dc2626;
-        }
-        
-        .container {
-            width: 100%;
-            max-width: 392px;
-        }
-        
-        .game-box {
-            background: #1f2937;
-            border-radius: 12px;
-            padding: 15px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-        }
-
-        .level-selector {
-            background: #374151;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 15px;
-            text-align: center;
-        }
-
-        .level-selector h2 {
-            color: #f3f4f6;
-            margin-bottom: 15px;
-            font-size: 1.2em;
-        }
-
-        .level-buttons {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-        }
-
-        .level-btn {
-            padding: 15px 10px;
-            border: none;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 1em;
-            cursor: pointer;
-            background: #3b82f6;
-            color: white;
-            transition: all 0.3s;
-        }
-
-        .level-btn:hover {
-            background: #2563eb;
-            transform: scale(1.05);
-        }
-
-        .level-btn.selected {
-            background: #22c55e;
-        }
-        
-        .description {
-            font-size: 1em;
-            font-weight: bold;
-            color: #f3f4f6;
-            margin-bottom: 12px;
-            padding: 10px;
-            background: #374151;
-            border-radius: 6px;
-            text-align: center;
-        }
-        
-        .grid-container {
-            position: relative;
-            margin-bottom: 4px;
-            background: #111827;
-            padding: 8px;
-            border-radius: 8px;
-            height: 370px;
-            overflow: hidden;
-        }
-        
-        .grid {
-            position: relative;
-            width: 100%;
-            height: 100%;
-        }
-        
-        .block {
-            position: absolute;
-            display: inline-block;
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 20px;
-            font-weight: bold;
-            cursor: pointer;
-            user-select: none;
-            border: 2px solid rgba(0,0,0,0.2);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-            white-space: nowrap;
-            transition: opacity 0.1s;
-        }
-        
-        .block:hover {
-            opacity: 0.8;
-        }
-
-        .block.exploding {
-            animation: explode 0.5s ease-out forwards;
-        }
-
-        @keyframes explode {
-            0% {
-                transform: scale(1);
-                opacity: 1;
-            }
-            50% {
-                transform: scale(1.5);
-                opacity: 0.5;
-            }
-            100% {
-                transform: scale(0);
-                opacity: 0;
-            }
-        }
-        
-        .start-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(17, 24, 39, 0.85);
-            border-radius: 8px;
-            z-index: 10;
-        }
-        
-        .start-overlay.hidden {
-            display: none;
-        }
-        
-        .message {
-            text-align: center;
-            font-size: 1.1em;
-            font-weight: bold;
-            margin-bottom: 4px;
-            min-height: 24px;
-        }
-        
-        .message.success { color: #10b981; }
-        .message.fail { color: #ef4444; }
-        .message.explode { color: #f59e0b; }
-        
-        .buttons {
-            display: flex;
-            gap: 8px;
-            justify-content: center;
-            margin-bottom: 4px;
-        }
-        
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 0.95em;
-            cursor: pointer;
-        }
-        
-        .btn-start {
-            background: #22c55e;
-            color: white;
-        }
-        
-        .btn-start:hover {
-            background: #16a34a;
-        }
-        
-        .btn-reset {
-            background: #3b82f6;
-            color: white;
-        }
-        
-        .btn-reset:hover {
-            background: #2563eb;
-        }
-        
-        .answer-section {
-            background: #374151;
-            border: 2px solid #6b7280;
-            border-radius: 8px;
-            padding: 12px;
-        }
-        
-        .answer-display {
-            background: #1f2937;
-            padding: 12px;
-            border: 2px solid #4b5563;
-            border-radius: 6px;
-            font-family: monospace;
-            font-size: 1.3em;
-            font-weight: bold;
-            min-height: 45px;
-            color: #f3f4f6;
-        }
-        
-        .blink {
-            animation: blink 1s infinite;
-        }
-        
-        @keyframes blink {
-            0%, 50% { opacity: 1; }
-            51%, 100% { opacity: 0; }
-        }
-        
-        .answer-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-        }
-
-        .answer-header-left {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .answer-header h3 {
-            font-size: 0.85em;
-            color: #f3f4f6;
-        }
-
-        .level {
-            font-size: 0.75em;
-            color: #9ca3af;
-            background: #1f2937;
-            padding: 4px 8px;
-            border-radius: 4px;
-        }
-
-        .button-group {
-            display: flex;
-            gap: 6px;
-        }
-        
-        .undo-btn, .show-target-btn {
-            padding: 6px 12px;
-            background: #f59e0b;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 0.85em;
-        }
-
-        .show-target-btn {
-            background: #6b7280;
-        }
-
-        .show-target-btn:hover {
-            background: #4b5563;
-        }
-        
-        .undo-btn:hover:not(:disabled) {
-            background: #d97706;
-        }
-        
-        .undo-btn:disabled {
-            background: #6b7280;
-            cursor: not-allowed;
-            opacity: 0.5;
-        }
-
-        .target {
-            font-size: 0.75em;
-            color: #9ca3af;
-            margin-top: 6px;
-            display: none;
-        }
-
-        .target.show {
-            display: block;
-        }
-
-        .loading {
-            text-align: center;
-            color: white;
-            padding: 40px;
-        }
-
-        .loading-spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="user-info" id="userInfo" style="display: none;">
@@ -428,14 +80,13 @@
         const CONFIG = {
             GRID_WIDTH: 360,
             GRID_HEIGHT: 354,
-            FALL_SPEED: 2, // 프레임당 2픽셀 (천천히)
-            UPDATE_INTERVAL: 50, // 50ms마다 업데이트
+            FALL_SPEED: 2,
+            UPDATE_INTERVAL: 50,
             SPAWN_DELAY_MIN: 2000,
             SPAWN_DELAY_MAX: 3000,
             WRONG_ANSWERS_PER_CORRECT: 3,
             CHECK_INTERVAL: 5000,
             CORRECT_BLOCK_PROBABILITY: 0.65,
-            BLOCK_HEIGHT: 44, // 블록 높이 (padding 포함)
         };
 
         // 게임 변수
@@ -609,26 +260,60 @@
             checkInterval = setInterval(checkCorrectBlocksOnScreen, CONFIG.CHECK_INTERVAL);
         };
 
-        // 게임 루프
+        // 게임 루프 (수정됨 - 충돌 감지 개선)
         function gameLoop() {
             if (gameState !== 'playing') return;
             
             let needsUpdate = false;
             
             fallingBlocks.forEach(block => {
-                const oldY = block.y;
-                block.y += CONFIG.FALL_SPEED;
+                const blockEl = document.querySelector(`[data-block-id="${block.id}"]`);
+                if (!blockEl) return;
                 
-                // 충돌 체크
-                if (isColliding(block)) {
-                    // 충돌했으면 이전 위치로
-                    block.y = oldY;
-                    
-                    // 쌓인 블록으로 이동
+                const blockHeight = blockEl.offsetHeight;
+                const blockWidth = blockEl.offsetWidth;
+                
+                // 다음 위치 계산
+                const nextY = block.y + CONFIG.FALL_SPEED;
+                const blockBottom = nextY + blockHeight;
+                
+                // 바닥 충돌 확인
+                if (blockBottom >= CONFIG.GRID_HEIGHT) {
+                    // 바닥에 정확히 맞춤
+                    block.y = CONFIG.GRID_HEIGHT - blockHeight;
                     stackedBlocks.push({...block});
                     fallingBlocks = fallingBlocks.filter(b => b.id !== block.id);
                     needsUpdate = true;
-                } else if (block.y !== oldY) {
+                    return;
+                }
+                
+                // 쌓인 블록과 충돌 확인
+                let collided = false;
+                for (let stacked of stackedBlocks) {
+                    const stackedEl = document.querySelector(`[data-block-id="${stacked.id}"]`);
+                    if (!stackedEl) continue;
+                    
+                    const stackedWidth = stackedEl.offsetWidth;
+                    const stackedHeight = stackedEl.offsetHeight;
+                    
+                    // X축 겹침 확인
+                    const xOverlap = !(block.x + blockWidth <= stacked.x || block.x >= stacked.x + stackedWidth);
+                    
+                    // Y축 충돌 확인 (다음 위치 기준)
+                    if (xOverlap && blockBottom >= stacked.y && nextY < stacked.y) {
+                        // 쌓인 블록 바로 위에 정확히 배치
+                        block.y = stacked.y - blockHeight;
+                        stackedBlocks.push({...block});
+                        fallingBlocks = fallingBlocks.filter(b => b.id !== block.id);
+                        collided = true;
+                        needsUpdate = true;
+                        break;
+                    }
+                }
+                
+                // 충돌하지 않았으면 계속 낙하
+                if (!collided) {
+                    block.y = nextY;
                     needsUpdate = true;
                 }
             });
@@ -636,40 +321,6 @@
             if (needsUpdate) {
                 updateDisplay();
             }
-        }
-
-        // 충돌 감지 (간단하고 정확하게)
-        function isColliding(block) {
-            const blockEl = document.querySelector(`[data-block-id="${block.id}"]`);
-            if (!blockEl) return false;
-            
-            const blockWidth = blockEl.offsetWidth;
-            const blockBottom = block.y + CONFIG.BLOCK_HEIGHT;
-            
-            // 바닥 충돌
-            if (blockBottom >= CONFIG.GRID_HEIGHT) {
-                return true;
-            }
-            
-            // 다른 쌓인 블록과 충돌
-            for (let stacked of stackedBlocks) {
-                const stackedEl = document.querySelector(`[data-block-id="${stacked.id}"]`);
-                if (!stackedEl) continue;
-                
-                const stackedWidth = stackedEl.offsetWidth;
-                
-                // x축 겹침
-                const xOverlap = !(block.x + blockWidth <= stacked.x || block.x >= stacked.x + stackedWidth);
-                
-                // y축 겹침 (블록 아래쪽이 쌓인 블록 위쪽에 닿았는지)
-                const yOverlap = blockBottom >= stacked.y && block.y < stacked.y + CONFIG.BLOCK_HEIGHT;
-                
-                if (xOverlap && yOverlap) {
-                    return true;
-                }
-            }
-            
-            return false;
         }
 
         // 화면에 정답 블록 체크
@@ -735,7 +386,7 @@
             const newBlock = {
                 text: blockText,
                 x: Math.random() * maxX,
-                y: -CONFIG.BLOCK_HEIGHT,
+                y: -50,  // 화면 위에서 시작
                 id: blockIdCounter++,
                 color: getBlockColor(blockText),
                 isCorrect: correctBlocks.includes(blockText)
@@ -868,7 +519,7 @@
             const newBlock = {
                 text: lastBlock,
                 x: Math.random() * maxX,
-                y: -CONFIG.BLOCK_HEIGHT,
+                y: -50,
                 id: blockIdCounter++,
                 color: getBlockColor(lastBlock),
                 isCorrect: correctBlocks.includes(lastBlock)
@@ -894,7 +545,7 @@
 
             if (isCorrect) {
                 document.getElementById('message').textContent = '🎉 정답입니다!';
-		document.getElementById('message').className = 'message success';
+                document.getElementById('message').className = 'message success';
                 gameState = 'success';
                 stopGame();
                 
@@ -996,4 +647,3 @@
     </script>
 </body>
 </html>
-
