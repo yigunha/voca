@@ -7,6 +7,9 @@ function initializePaper() {
     teacherData = [];
     errorMarks = [];
     
+    // ★★★ 이 플래그를 초기화하는 코드가 필요합니다. (1_config.js에 넣어도 좋습니다)
+    window.compositionCancelledByClick = false;
+    
     manuscriptPaper.className = 'manuscript-paper';
     if (cols === 20) {
         manuscriptPaper.classList.add('cols-20');
@@ -166,40 +169,46 @@ function clearSelection() {
     isSelecting = false;
 }
 
-// 셀 클릭 핸들러
+// ★★★★★ handleCellClick 함수 수정 ★★★★★
 function handleCellClick(idx, e) {
-    // 1. Composition 중인 경우, 확정 이벤트 발생 (기존 로직 유지)
+    // 1. Composition(조합) 중인 경우 (한글 'ㅁ' 등)
     if (window.inputHandler && window.inputHandler.is_composing()) {
-        window.inputHandler.end_composition();
+        
+        // ★★★ (A) 플래그 설정: 'compositionend' 이벤트 무시
+        window.compositionCancelledByClick = true; 
+        
+        // (B) WASM에 조합 종료 알림
+        window.inputHandler.end_composition(); 
+        
+        // (C) 숨겨진 <input> 값 비우기
         var compositionInput = document.getElementById('compositionInput');
-        if (compositionInput && compositionInput.value) {
-            var result = window.inputHandler.finalize_composition(compositionInput.value);
-            // handleInputResults(result); // 확정 후 처리. 여기서는 클리어 로직을 위해 제거
+        if (compositionInput) {
             compositionInput.value = '';
         }
     }
     
+    // 2. 버퍼(buffer1)에 내용이 있는 경우 (영어 'a' 등)
     if (window.inputHandler) {
         var oldPos = window.inputHandler.get_position(); // 현재 포지션을 저장
         
-        // ★★★ 핵심 수정: finalize_buffer() 대신 clear_all_buffers() 호출 ★★★
-        
-        // 2. 버퍼를 확정(place)하지 않고 강제 클리어 (Rust 함수 사용)
+        // (A) Rust의 버퍼(buffer1, buffer2)를 비웁니다.
         window.inputHandler.clear_all_buffers(); 
         
-        // 3. 기존 위치(oldPos)에 data-temp로 남아있던 임시 문자("ㅁ")를 DOM에서도 지웁니다.
+        // (B) 현재 셀(oldPos)에 'data-temp'로 표시된 
+        //     임시 버퍼 내용("ㅁ" 또는 "a")을 DOM에서 지웁니다.
         if (oldPos >= 0 && oldPos < studentCells.length) {
             var oldCell = studentCells[oldPos];
             if (oldCell.dataset.temp) {
+                studentData[oldPos] = ''; // JS 데이터 클리어
                 var content = oldCell.querySelector('.cell-content');
-                if (content) content.textContent = '';
-                delete oldCell.dataset.temp;
+                if (content) content.textContent = ''; // DOM 클리어
+                delete oldCell.dataset.temp; // 임시 상태 제거
             }
         }
-        
-        // (기존의 finalize_buffer() 호출 및 다음 셀 정리 로직은 제거됨)
     }
     
+    // 3. (이후 로직은 동일)
+    //    새로운 셀로 커서를 이동시킵니다.
     if (e.shiftKey) {
         e.preventDefault();
         
