@@ -4,10 +4,358 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>한국어 학습 게임</title>
-    <link rel="stylesheet" href="style.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .user-info {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 15px;
+            border-radius: 8px;
+            color: white;
+            font-size: 0.9em;
+            display: none;
+            gap: 15px;
+            align-items: center;
+            z-index: 100;
+        }
+        
+        .logout-btn {
+            padding: 5px 10px;
+            background: #ef4444;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            cursor: pointer;
+            font-size: 0.85em;
+        }
+        
+        .logout-btn:hover {
+            background: #dc2626;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 392px;
+        }
+        
+        .game-box {
+            background: #1f2937;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            width: 392px;
+        }
+
+        .level-selector {
+            background: #374151;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .level-selector h2 {
+            color: #f3f4f6;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .level-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .level-btn {
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1.1em;
+            cursor: pointer;
+            background: #3b82f6;
+            color: white;
+            transition: all 0.3s;
+        }
+
+        .level-btn:hover {
+            background: #2563eb;
+            transform: scale(1.05);
+        }
+
+        .level-btn.selected {
+            background: #22c55e;
+        }
+        
+        .description {
+            font-size: 1em;
+            font-weight: bold;
+            color: #f3f4f6;
+            margin-bottom: 12px;
+            padding: 10px;
+            background: #374151;
+            border-radius: 6px;
+            text-align: center;
+            width: 100%;
+        }
+        
+        .grid-container {
+            position: relative;
+            width: 100%;
+            margin-bottom: 12px;
+        }
+        
+        .grid {
+            background: #111827;
+            padding: 8px;
+            border-radius: 8px;
+            width: 100%;
+        }
+        
+        .row {
+            display: flex;
+            gap: 2px;
+            margin-bottom: 2px;
+        }
+        
+        .row:last-child {
+            margin-bottom: 0;
+        }
+        
+        .cell {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #000000;
+            border-radius: 3px;
+            cursor: default;
+            user-select: none;
+            position: relative;
+        }
+        
+        .cell.clickable {
+            cursor: pointer;
+        }
+        
+        .cell.empty {
+            background: #374151;
+            border: 1px solid #4b5563;
+        }
+        
+        .cell.removing {
+            opacity: 0.5;
+            animation: pulse 0.3s ease-in-out;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .message {
+            text-align: center;
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 12px;
+            min-height: 30px;
+        }
+        
+        .message.success { color: #10b981; }
+        .message.fail { color: #ef4444; }
+        
+        .buttons {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 0.95em;
+            cursor: pointer;
+        }
+        
+        .btn-start {
+            background: #22c55e;
+            color: white;
+        }
+        
+        .btn-start:hover {
+            background: #16a34a;
+        }
+        
+        .btn-reset {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .btn-reset:hover {
+            background: #2563eb;
+        }
+        
+        .answer-section {
+            background: #374151;
+            border: 2px solid #6b7280;
+            border-radius: 8px;
+            padding: 12px;
+            width: 100%;
+        }
+        
+        .answer-display {
+            background: #1f2937;
+            padding: 12px;
+            border: 2px solid #4b5563;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 1.3em;
+            font-weight: bold;
+            min-height: 45px;
+            color: #f3f4f6;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            margin-bottom: 8px;
+        }
+        
+        .blink {
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        
+        .answer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .answer-header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .answer-header h3 {
+            font-size: 0.85em;
+            color: #f3f4f6;
+        }
+        
+        .level {
+            font-size: 0.75em;
+            color: #9ca3af;
+            background: #1f2937;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 6px;
+        }
+        
+        .undo-btn, .show-target-btn {
+            background: #6b7280;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.8em;
+        }
+        
+        .undo-btn {
+            background: #f97316;
+        }
+        
+        .undo-btn:hover {
+            background: #ea580c;
+        }
+        
+        .show-target-btn:hover {
+            background: #4b5563;
+        }
+        
+        .undo-btn:disabled {
+            background: #4b5563;
+            color: #9ca3af;
+            cursor: not-allowed;
+        }
+        
+        .target {
+            font-size: 0.75em;
+            color: #9ca3af;
+            margin-top: 6px;
+            display: none;
+        }
+        
+        .target.show {
+            display: block;
+        }
+
+        .block-hover {
+            transform: scale(0.95);
+            opacity: 0.8;
+        }
+
+        .hidden {
+            display: none;
+        }
+        
+        .loading {
+            text-align: center;
+            color: white;
+            padding: 40px;
+        }
+        
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
 </head>
 <body>
-    <div class="user-info" id="userInfo" style="display: none;">
+    <div class="user-info" id="userInfo">
         <span id="studentInfo"></span>
         <button class="logout-btn" onclick="logout()">로그아웃</button>
     </div>
@@ -16,10 +364,10 @@
         <div class="game-box">
             <div class="loading" id="loadingScreen">
                 <div class="loading-spinner"></div>
-                <p>게임 데이터를 로드하는 중...</p>
+                <p>게임을 불러오는 중...</p>
             </div>
 
-            <div id="gameContent" style="display: none;">
+            <div id="gameContent" class="hidden">
                 <div class="level-selector" id="levelSelector">
                     <h2>레벨을 선택하세요</h2>
                     <div class="level-buttons">
@@ -79,7 +427,6 @@
         // WASM 모듈
         let wasmModule = null;
         
-        // 원본 index.html의 CONFIG 그대로 유지
         const CONFIG = {
             GRID_ROWS: 9,
             GRID_COLS: 9,
@@ -100,7 +447,6 @@
             }
         };
 
-        // 게임 변수들 (원본 index.html과 동일)
         let selectedLevel = null;
         let gameData = [];
         let level = 0;
@@ -119,7 +465,7 @@
 
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
-        // WASM 초기화 (로그인/암호화용)
+        // WASM 초기화
         async function initWasm() {
             try {
                 const wasm = await import('./pkg/korean_game_wasm.js');
@@ -170,7 +516,7 @@
             window.location.href = '../munpup.html';
         };
 
-        // 암호화된 데이터 로드 (WASM 복호화 사용)
+        // 암호화된 데이터 로드
         async function loadEncryptedData(levelName) {
             try {
                 const response = await fetch(`./data/${levelName}_encrypted.dat`);
@@ -181,12 +527,12 @@
                 
                 return fullData;
             } catch (error) {
-                console.error('암호화 데이터 로드 실패:', error);
+                console.error('데이터 로드 실패:', error);
                 throw error;
             }
         }
 
-        // 레벨 선택 (원본 index.html 로직)
+        // 레벨 선택
         window.selectLevel = async function(levelName) {
             selectedLevel = levelName;
             
@@ -209,7 +555,6 @@
             }
         };
 
-        // 랜덤 문제 선택 (원본 로직)
         function selectRandomProblems(data) {
             return data.map(group => {
                 const randomIndex = Math.floor(Math.random() * group.problems.length);
@@ -217,7 +562,6 @@
             });
         }
         
-        // 사운드 재생 (원본)
         function playClickSound() {
             try {
                 const oscillator = audioContext.createOscillator();
@@ -233,14 +577,12 @@
             } catch(e) {}
         }
 
-        // 답안 파싱 (원본)
         function parseAnswer(answer) {
             const blocks = answer.split('/');
             correctAnswer = blocks.join('');
             return blocks;
         }
         
-        // 가짜 블록 생성 (원본)
         function getFakeBlocks(currentLevel) {
             const fakeBlocks = [];
             gameData.forEach((game, idx) => {
@@ -251,7 +593,6 @@
             return fakeBlocks;
         }
         
-        // 블록 시퀀스 생성 (원본)
         function createBlockSequence(correctBlocks, fakeBlocks) {
             const sequence = [];
             const fakePool = [...fakeBlocks];
@@ -280,12 +621,10 @@
             return shuffleArray(sequence);
         }
         
-        // 타겟 토글 (원본)
         window.toggleTarget = function() {
             document.getElementById('target').classList.toggle('show');
         };
 
-        // 배열 섞기 (원본)
         function shuffleArray(array) {
             for (let i = array.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -294,7 +633,6 @@
             return array;
         }
 
-        // 블록 색상 (원본)
         function getBlockColor(blockText) {
             if (blockText === " ") return { bg: CONFIG.COLORS.SPACE, text: '#000000' };
             if (blockText.length === 1) return { bg: CONFIG.COLORS.ONE_CHAR, text: '#000000' };
@@ -303,7 +641,6 @@
             return { bg: CONFIG.COLORS.FOUR_PLUS, text: '#000000' };
         }
 
-        // 게임 시작 (원본)
         window.startGame = function() {
             if (gameData.length === 0) return;
             
@@ -334,7 +671,6 @@
             setTimeout(() => scheduleNextBlock(), 1500);
         };
 
-        // 게임 리셋 (원본)
         function resetGame() {
             level = 0;
             gameState = 'ready';
@@ -352,7 +688,6 @@
             updateDisplay();
         }
 
-        // 레벨 선택으로 돌아가기 (원본)
         window.backToLevelSelect = function() {
             document.getElementById('gameArea').classList.add('hidden');
             document.getElementById('levelSelector').classList.remove('hidden');
@@ -364,7 +699,6 @@
             resetGame();
         };
 
-        // 블록 생성 (원본)
         function spawnBlock() {
             if (gameState !== 'playing' || availableBlocks.length === 0) return;
             
@@ -391,7 +725,6 @@
             }
         }
 
-        // 다음 블록 스케줄 (원본)
         function scheduleNextBlock() {
             if (gameState !== 'playing' || availableBlocks.length === 0) return;
             
@@ -402,7 +735,6 @@
             }, delay);
         }
 
-        // 낙하 시작 (원본)
         function startFalling() {
             fallInterval = setInterval(() => {
                 if (gameState !== 'playing') return;
@@ -422,7 +754,6 @@
             }, speed);
         }
 
-        // 중력 시작 (원본)
         function startGravity() {
             gravityInterval = setInterval(() => {
                 if (gameState !== 'playing') return;
@@ -430,7 +761,6 @@
             }, CONFIG.GRAVITY_SPEED);
         }
 
-        // 게임 중지 (원본)
         function stopGame() {
             if (fallInterval) {
                 clearInterval(fallInterval);
@@ -446,7 +776,6 @@
             }
         }
 
-        // 충돌 감지 (원본)
         function checkCollision(block) {
             const row = block.position;
             if (row < 0) return false;
@@ -463,7 +792,6 @@
             return false;
         }
 
-        // 블록 쌓기 (원본)
         function stackBlock(block) {
             block.cells.forEach((cell, idx) => {
                 const row = block.position;
@@ -479,7 +807,6 @@
             });
         }
 
-        // 중력 적용 (원본)
         function applyGravityStep() {
             const blockIds = new Set();
             for (let row = 0; row < CONFIG.GRID_ROWS; row++) {
@@ -525,7 +852,6 @@
             if (moved) updateDisplay();
         }
 
-        // 화면 업데이트 (원본)
         function updateDisplay() {
             const gridEl = document.getElementById('grid');
             gridEl.innerHTML = '';
@@ -579,7 +905,6 @@
             updateAnswerDisplay();
         }
 
-        // 블록 하이라이트 (원본)
         function highlightBlock(blockId, highlight) {
             const cells = document.querySelectorAll(`[data-block-id="${blockId}"]`);
             cells.forEach(cell => {
@@ -591,7 +916,6 @@
             });
         }
 
-        // 블록 클릭 처리 (원본)
         function handleBlockClick(blockId) {
             if (gameState !== 'playing') return;
             
@@ -611,7 +935,6 @@
             }
         }
 
-        // 셀 클릭 처리 (원본)
         function handleCellClick(row, col) {
             if (gameState !== 'playing') return;
             
@@ -639,7 +962,6 @@
             }
         }
 
-        // 실행취소 (원본)
         function handleUndo() {
             if (gameState !== 'playing' || answerHistory.length === 0) return;
 
@@ -663,7 +985,6 @@
             updateDisplay();
         }
 
-        // 답안 표시 업데이트 (원본)
         function updateAnswerDisplay() {
             const display = document.getElementById('answerDisplay');
             const text = userAnswer.split('').map(c => c === " " ? "▢" : c).join('');
@@ -673,7 +994,6 @@
             undoBtn.disabled = answerHistory.length === 0 || gameState !== 'playing';
         }
 
-        // 정답 확인 (원본)
         function checkAnswer() {
             const isCorrect = userAnswer === correctAnswer;
 
@@ -704,7 +1024,6 @@
             }
         }
 
-        // 버튼 표시 (원본)
         function showButtons() {
             const buttonsEl = document.getElementById('buttons');
             buttonsEl.innerHTML = `
@@ -713,7 +1032,6 @@
             `;
         }
 
-        // 페이지 로드
         window.addEventListener('load', async () => {
             const wasmReady = await initWasm();
             if (!wasmReady) return;
