@@ -287,39 +287,61 @@
         }
 
         window.addEventListener('load', async () => {
-            const wasmReady = await initWasm();
+    const wasmReady = await initWasm();
+    
+    if (!wasmReady) {
+        console.warn('WASM module failed to load');
+        return;
+    }
+
+    // URL 파라미터로 로그아웃 확인 (추가)
+    const urlParams = new URLSearchParams(window.location.search);
+    const isLogout = urlParams.get('logout') === 'true';
+    
+    if (isLogout) {
+        // 강제로 쿠키 삭제 확인
+        wasmModule.delete_cookie('studentName');
+        wasmModule.delete_cookie('studentClass');
+        wasmModule.delete_cookie('studentPassword');
+        console.log('Logged out successfully');
+        // URL에서 logout 파라미터 제거
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
+    // 로그인 상태 확인 (수정: 더 엄격한 검증)
+    if (wasmModule && !isLogout) {
+        try {
+            const hasName = wasmModule.get_cookie('studentName');
+            const hasClass = wasmModule.get_cookie('studentClass');
             
-            if (!wasmReady) {
-                console.warn('WASM module failed to load');
+            if (hasName && hasClass) {
+                // 실제로 쿠키가 존재하는 경우에만 리다이렉트
+                wasmModule.refresh_cookies();
+                window.location.href = './tetris/game_wasm.html';
                 return;
             }
+        } catch (e) {
+            console.log('Not logged in yet');
+        }
+    }
 
-            // 이미 로그인되어 있는지 확인
-            if (wasmModule) {
-                try {
-                    if (wasmModule.check_login_status()) {
-                        wasmModule.refresh_cookies();
-                        window.location.href = './tetris/game_wasm.html';
-                        return;
-                    }
-                } catch (e) {
-                    console.log('Not logged in yet');
-                }
-            }
+    // 저장된 정보 불러오기 (로그아웃이 아닌 경우에만)
+    if (!isLogout) {
+        try {
+            const savedName = wasmModule.get_cookie('studentName');
+            const savedClass = wasmModule.get_cookie('studentClass');
+            
+            if (savedName) document.getElementById('studentName').value = savedName;
+            if (savedClass) document.getElementById('classSelect').value = savedClass;
+        } catch (e) {
+            console.log('No saved credentials');
+        }
+    }
 
-            // 저장된 정보 불러오기
-            try {
-                const savedName = wasmModule.get_cookie('studentName');
-                const savedClass = wasmModule.get_cookie('studentClass');
-                
-                if (savedName) document.getElementById('studentName').value = savedName;
-                if (savedClass) document.getElementById('classSelect').value = savedClass;
-            } catch (e) {
-                console.log('No saved credentials');
-            }
+    document.getElementById('loginForm').addEventListener('submit', handleLogin);
+});
 
-            document.getElementById('loginForm').addEventListener('submit', handleLogin);
-        });
+
     </script>
 </body>
 </html>
