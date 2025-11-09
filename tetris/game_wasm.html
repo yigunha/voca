@@ -432,6 +432,7 @@
 
 
 /* 고정 조사 행 스타일 */
+/* 기존 고정 조사 스타일 교체 */
 .fixed-josa-row {
     margin-top: 8px;
     padding-top: 8px;
@@ -440,6 +441,7 @@
 
 .fixed-josa {
     background: linear-gradient(135deg, #374151 0%, #1f2937 100%) !important;
+    color: #ffffff !important;
     cursor: pointer;
     transition: all 0.2s;
     border: 1px solid #6b7280 !important;
@@ -539,7 +541,7 @@
         };
 
         // 고정 조사 블록 (화면 아래 고정)
-        const FIXED_JOSA_BLOCKS = ['은', '는', '이', '가', '을', '를', ' ', ''];
+const FIXED_JOSA_BLOCKS = ['은', '는', '이', '가', '을', '를', '에', '만', ' '];
         
         let selectedLevel = null;
         let gameData = [];
