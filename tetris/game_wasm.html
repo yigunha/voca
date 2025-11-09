@@ -711,6 +711,8 @@ function checkLogin() {
             } catch(e) {}
         }
 
+
+
 function parseAnswer(answer) {
     // '/'로 분리
     const blocks = answer.split('/').flatMap(block => {
@@ -727,7 +729,16 @@ function parseAnswer(answer) {
         return block.split(' ').filter(part => part !== '');
     });
     
-    correctAnswer = answer.split('/').join('');
+    // 정답도 같은 방식으로 처리 (조사 뒤 공백 추가)
+    correctAnswer = answer.split('/').flatMap(block => {
+        if (block === '') return [];
+        const josaMatch = block.match(/^(.+?)(은|는|이|가|을|를|에|만)$/);
+        if (josaMatch && !FIXED_JOSA_BLOCKS.includes(block)) {
+            return [josaMatch[1], josaMatch[2] + ' '];
+        }
+        return block.split(' ').filter(part => part !== '');
+    }).join('');
+    
     return blocks;
 }
 
