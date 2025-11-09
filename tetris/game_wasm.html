@@ -1073,54 +1073,74 @@
         }
 
         function handleBomb() {
-            if (gameState !== 'playing') return;
-            
-            currentLevelBombCount++;
-            updateStats();
-            playClickSound();
-            
-            grid = Array(CONFIG.GRID_ROWS).fill(null).map(() => Array(CONFIG.GRID_COLS).fill(null));
-            fallingBlocks = [];
-            
-            const currentBlocks = parseAnswer(gameData[level].answer);
-            const neededBlocks = [];
-            let tempAnswer = userAnswer;
-            
-            for (const block of currentBlocks) {
-                if (!tempAnswer.startsWith(block)) {
-                    neededBlocks.push(block);
-                } else {
-                    tempAnswer = tempAnswer.slice(block.length);
-                }
-            }
-            
-            const fakeBlocks = getFakeBlocks(level);
-            const enhancedBlocks = [];
-            
-            neededBlocks.forEach(block => {
-                for (let i = 0; i < 3; i++) {
-                    enhancedBlocks.push(block);
-                }
-            });
-            
-            const remainingCount = Math.max(10, neededBlocks.length * 2);
-            for (let i = 0; i < remainingCount && fakeBlocks.length > 0; i++) {
-                const seed = wasmModule.generate_seed();
-                const fakeIdx = seed % fakeBlocks.length;
-                enhancedBlocks.push(fakeBlocks[fakeIdx]);
-                fakeBlocks.splice(fakeIdx, 1);
-            }
-            
-            const seed = wasmModule.generate_seed();
-            const shuffledJson = wasmModule.generate_block_sequence(
-                JSON.stringify(enhancedBlocks.slice(0, Math.ceil(enhancedBlocks.length / 2))),
-                JSON.stringify(enhancedBlocks.slice(Math.ceil(enhancedBlocks.length / 2))),
-                seed
-            );
-            availableBlocks = JSON.parse(shuffledJson);
-            
-            updateDisplay();
+    if (gameState !== 'playing') return;
+    
+    currentLevelBombCount++;
+    updateStats();
+    playClickSound();
+    
+    // 화면의 모든 블록 제거
+    grid = Array(CONFIG.GRID_ROWS).fill(null).map(() => Array(CONFIG.GRID_COLS).fill(null));
+    fallingBlocks = [];
+    
+    // 현재 레벨의 정답 블록들 파싱
+    const currentBlocks = parseAnswer(gameData[level].answer);
+    const neededBlocks = [];
+    let tempAnswer = userAnswer;
+    
+    // 아직 입력하지 않은 정답 블록들 찾기
+    for (const block of currentBlocks) {
+        if (!tempAnswer.startsWith(block)) {
+            neededBlocks.push(block);
+        } else {
+            tempAnswer = tempAnswer.slice(block.length);
         }
+    }
+    
+    const fakeBlocks = getFakeBlocks(level);
+    const enhancedBlocks = [];
+    
+    // 필요한 정답 블록을 3개씩 복제
+    neededBlocks.forEach(block => {
+        for (let i = 0; i < 3; i++) {
+            enhancedBlocks.push(block);
+        }
+    });
+    
+    // 오답 블록 추가
+    const remainingCount = Math.max(10, neededBlocks.length * 2);
+    for (let i = 0; i < remainingCount && fakeBlocks.length > 0; i++) {
+        const seed = wasmModule.generate_seed();
+        const fakeIdx = seed % fakeBlocks.length;
+        enhancedBlocks.push(fakeBlocks[fakeIdx]);
+        fakeBlocks.splice(fakeIdx, 1);
+    }
+    
+    // 블록 섞기
+    const seed = wasmModule.generate_seed();
+    const shuffledJson = wasmModule.generate_block_sequence(
+        JSON.stringify(enhancedBlocks.slice(0, Math.ceil(enhancedBlocks.length / 2))),
+        JSON.stringify(enhancedBlocks.slice(Math.ceil(enhancedBlocks.length / 2))),
+        seed
+    );
+    availableBlocks = JSON.parse(shuffledJson);
+    
+    // 화면 업데이트
+    updateDisplay();
+    
+    // ⭐ 핵심: 기존 스폰 스케줄 취소하고 즉시 새 블록 생성 시작
+    if (spawnTimeout) {
+        clearTimeout(spawnTimeout);
+        spawnTimeout = null;
+    }
+    
+    // 첫 블록 즉시 생성
+    setTimeout(() => {
+        spawnBlock();
+        // 이후 블록들 자동 스폰 재시작
+        scheduleNextBlock();
+    }, 300);
+}
 
         function updateAnswerDisplay() {
             const display = document.getElementById('answerDisplay');
