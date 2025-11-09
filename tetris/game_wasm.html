@@ -1226,6 +1226,8 @@ function handleUndo() {
 
 
 
+
+
 function handleBomb() {
     if (gameState !== 'playing') return;
     
@@ -1237,15 +1239,20 @@ function handleBomb() {
     
     const currentBlocks = parseAnswer(gameData[level].answer);
     const neededBlocks = [];
-    let tempAnswer = userAnswer;
     
+    // correctAnswer와 userAnswer를 비교하여 필요한 블록 찾기
+    let remainingAnswer = correctAnswer.slice(userAnswer.length);
+    
+    // 남은 정답에서 필요한 블록들 찾기
     for (const block of currentBlocks) {
-        if (!tempAnswer.startsWith(block)) {
+        if (remainingAnswer.includes(block) && !userAnswer.includes(block)) {
             neededBlocks.push(block);
-        } else {
-            tempAnswer = tempAnswer.slice(block.length);
         }
     }
+    
+    console.log('필요한 블록들:', neededBlocks);
+    console.log('현재 답:', userAnswer);
+    console.log('정답:', correctAnswer);
     
     // 조사 제거
     const filteredNeeded = neededBlocks.filter(block => !FIXED_JOSA_BLOCKS.includes(block));
@@ -1253,13 +1260,15 @@ function handleBomb() {
     const fakeBlocks = getFakeBlocks(level);
     const enhancedBlocks = [];
     
+    // 필요한 블록을 5번씩 추가 (확률 대폭 증가)
     filteredNeeded.forEach(block => {
-        for (let i = 0; i < 3; i++) {
+        for (let i = 0; i < 5; i++) {
             enhancedBlocks.push(block);
         }
     });
     
-    const remainingCount = Math.max(10, filteredNeeded.length * 2);
+    // 오답 블록은 적게 추가
+    const remainingCount = Math.max(5, filteredNeeded.length);
     for (let i = 0; i < remainingCount && fakeBlocks.length > 0; i++) {
         const seed = wasmModule.generate_seed();
         const fakeIdx = seed % fakeBlocks.length;
@@ -1287,6 +1296,15 @@ function handleBomb() {
         scheduleNextBlock();
     }, 300);
 }
+
+
+
+
+
+
+
+
+
 
 
 
