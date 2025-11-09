@@ -7,7 +7,6 @@ export const verify_answer: (a: number, b: number, c: number, d: number) => numb
 export const create_answer_hash: (a: number, b: number) => [number, number];
 export const generate_block_sequence: (a: number, b: number, c: number, d: number, e: number) => [number, number];
 export const get_block_color: (a: number, b: number) => [number, number];
-export const calculate_score: (a: number, b: number, c: number, d: number) => number;
 export const create_game_token: (a: number, b: number, c: number, d: bigint) => [number, number];
 export const verify_game_token: (a: number, b: number, c: number, d: bigint, e: number, f: number) => number;
 export const verify_timing: (a: number, b: number) => number;

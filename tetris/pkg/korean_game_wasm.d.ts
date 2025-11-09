@@ -7,7 +7,6 @@ export function verify_answer(user_answer: string, correct_hash: string): boolea
 export function create_answer_hash(answer: string): string;
 export function generate_block_sequence(correct_blocks_json: string, fake_blocks_json: string, seed: number): string;
 export function get_block_color(block_text: string): string;
-export function calculate_score(level: number, time_seconds: number, mistakes: number, undos: number): number;
 export function create_game_token(level: number, user_answer: string, timestamp: bigint): string;
 export function verify_game_token(level: number, user_answer: string, timestamp: bigint, token: string): boolean;
 export function verify_timing(_level: number, elapsed_seconds: number): boolean;
@@ -68,7 +67,6 @@ export interface InitOutput {
   readonly create_answer_hash: (a: number, b: number) => [number, number];
   readonly generate_block_sequence: (a: number, b: number, c: number, d: number, e: number) => [number, number];
   readonly get_block_color: (a: number, b: number) => [number, number];
-  readonly calculate_score: (a: number, b: number, c: number, d: number) => number;
   readonly create_game_token: (a: number, b: number, c: number, d: bigint) => [number, number];
   readonly verify_game_token: (a: number, b: number, c: number, d: bigint, e: number, f: number) => number;
   readonly verify_timing: (a: number, b: number) => number;

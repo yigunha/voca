@@ -328,18 +328,6 @@ export function get_block_color(block_text) {
 
 /**
  * @param {number} level
- * @param {number} time_seconds
- * @param {number} mistakes
- * @param {number} undos
- * @returns {number}
- */
-export function calculate_score(level, time_seconds, mistakes, undos) {
-    const ret = wasm.calculate_score(level, time_seconds, mistakes, undos);
-    return ret >>> 0;
-}
-
-/**
- * @param {number} level
  * @param {string} user_answer
  * @param {bigint} timestamp
  * @returns {string}
