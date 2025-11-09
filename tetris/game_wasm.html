@@ -310,62 +310,75 @@
             51%, 100% { opacity: 0; }
         }
         
-
-/* 기존 .answer-header 스타일 교체 */
+/* 컨테이너 스타일 (다크 모드 배경 및 테두리) */
 .answer-header {
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    padding: 10px 15px; 
+    background-color: #363a40; 
+    border-radius: 8px; 
+}
+
+/* 좌측 그룹 스타일 */
+.header-left-group {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 8px;
+    gap: 10px; 
 }
 
-.answer-header-left {
+.answer-label h3 {
+    color: #f0f0f0; 
+    font-size: 16px;
+    margin: 0;
+}
+
+/* 우측 그룹 스타일 */
+.header-right-group {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px; 
 }
 
-.answer-header-center {
-    flex: 1;
-    display: flex;
-    justify-content: center;
-}
-
-.answer-header h3 {
-    font-size: 0.85em;
-    color: #f3f4f6;
-}
-
-.level {
-    font-size: 0.85em;
-    color: #f3f4f6;
-    background: #1f2937;
-    padding: 6px 12px;
-    border-radius: 4px;
+.level-display {
+    background-color: #2b2f34; 
+    padding: 8px 12px;
+    border-radius: 6px;
+    color: #e0e0e0;
     font-weight: bold;
 }
 
-.button-group {
+.show-target-btn, .bomb-btn, .undo-btn {
+    padding: 8px 12px;
+    border: none;
+    cursor: pointer;
+    border-radius: 6px;
+    font-size: 18px;
+    transition: background-color 0.2s;
+}
+
+.show-target-btn {
+    background-color: #555c66;
+}
+
+.bomb-btn {
+    background-color: #d83a3a; 
+}
+
+.undo-btn {
+    background-color: #555c66; 
+    width: 40px; 
+    height: 40px;
     display: flex;
-    gap: 6px;
+    justify-content: center;
+    align-items: center;
+    font-size: 20px;
 }
 
 
-        
-        .undo-btn, .show-target-btn, .bomb-btn {
-            background: #6b7280;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 0.8em;
-        }
-        
-        .undo-btn {
-            background: #f97316;
-        }
+
+
+
         
         .undo-btn:hover {
             background: #ea580c;
@@ -515,23 +528,18 @@
                         </div>
                         
 <div class="answer-header">
-    <div class="answer-header-left">
-        <h3>정답칸:</h3>
-    </div>
-
-    <div class="button-group">
+    <div class="header-left-group">
+        <div class="answer-label">
+            <h3>정답칸:</h3>
+        </div>
         <button class="show-target-btn" onclick="toggleTarget()">👁️</button>
     </div>
-    
-    <div class="button-group">
-        <button class="bomb-btn" id="bombBtn" disabled>💣</button>
-    </div>
 
-    <div class="answer-header-center">
-        <div class="level">레벨 <span id="levelNum">1</span> / 12</div>
-    </div>
-    
-    <div class="button-group">
+    <div class="header-right-group">
+        <button class="bomb-btn" id="bombBtn" disabled>💣</button>
+        <div class="level-display">
+            <div class="level">레벨 <span id="levelNum">1</span> / 12</div>
+        </div>
         <button class="undo-btn" id="undoBtn" disabled>↶</button>
     </div>
 </div>
