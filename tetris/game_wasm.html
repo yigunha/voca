@@ -140,59 +140,79 @@
             margin-bottom: 0;
         }
         
-        .cell {
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            font-weight: bold;
-            color: #000000;
-            border-radius: 0;
-            cursor: default;
-            user-select: none;
-            position: relative;
-            border: 1px solid #111827;
-        }
-        
-        .cell.clickable {
-            cursor: pointer;
-        }
-        
-        .cell.empty {
-            background: #374151;
-            border: 1px solid #4b5563;
-            border-radius: 3px;
-            margin: 1px;
-        }
-        
-        .cell.block-cell {
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-            margin: 1px 0;
-        }
-        
-        .cell.block-cell.block-start {
-            border-top-left-radius: 3px;
-            border-bottom-left-radius: 3px;
-            margin-left: 1px;
-        }
-        
-        .cell.block-cell.block-end {
-            border-top-right-radius: 3px;
-            border-bottom-right-radius: 3px;
-            margin-right: 1px;
-        }
-        
-        .cell.block-cell.block-single {
-            border-radius: 3px;
-            margin: 1px;
-        }
-        
-        .cell.removing {
-            opacity: 0.5;
-            animation: pulse 0.3s ease-in-out;
-        }
+      
+.cell {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: bold;
+    color: #000000;
+    cursor: default;
+    user-select: none;
+    position: relative;
+    border: 1px solid #111827;
+}
+
+.cell.clickable {
+    cursor: pointer;
+}
+
+.cell.empty {
+    background: #374151;
+    border: 1px solid #4b5563;
+    border-radius: 3px;
+    margin: 1px;
+}
+
+.cell.block-cell {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    margin: 1px 0;
+    border: none;
+}
+
+.cell.block-cell.block-start {
+    border-top-left-radius: 6px;
+    border-bottom-left-radius: 6px;
+    margin-left: 1px;
+    border-left: 2px solid rgba(0,0,0,0.2);
+    border-top: 2px solid rgba(0,0,0,0.2);
+    border-bottom: 2px solid rgba(0,0,0,0.2);
+}
+
+.cell.block-cell.block-middle {
+    border-radius: 0;
+    margin: 1px 0;
+    border-top: 2px solid rgba(0,0,0,0.2);
+    border-bottom: 2px solid rgba(0,0,0,0.2);
+}
+
+.cell.block-cell.block-end {
+    border-top-right-radius: 6px;
+    border-bottom-right-radius: 6px;
+    margin-right: 1px;
+    border-right: 2px solid rgba(0,0,0,0.2);
+    border-top: 2px solid rgba(0,0,0,0.2);
+    border-bottom: 2px solid rgba(0,0,0,0.2);
+}
+
+.cell.block-cell.block-single {
+    border-radius: 6px;
+    margin: 1px;
+    border: 2px solid rgba(0,0,0,0.2);
+}
+
+.cell.removing {
+    opacity: 0.5;
+    animation: pulse 0.3s ease-in-out;
+}
+ 
+
+
+
+
         
         @keyframes pulse {
             0%, 100% { transform: scale(1); }
@@ -621,12 +641,11 @@
             } catch(e) {}
         }
 
-        function parseAnswer(answer) {
-            const blocks = answer.split('/');
-            const correctAnswer = blocks.join('');
-            correctAnswerHash = wasmModule.create_answer_hash(correctAnswer);
-            return blocks;
-        }
+function parseAnswer(answer) {
+    const blocks = answer.split('/');
+    correctAnswer = blocks.join('');
+    return blocks;
+}
         
         function getFakeBlocks(currentLevel) {
             const fakeBlocks = [];
@@ -828,22 +847,22 @@
             return false;
         }
 
-        function stackBlock(block) {
-            block.cells.forEach((cell, idx) => {
-                const row = block.position;
-                const col = block.lane + idx;
-                if (row >= 0 && row < CONFIG.GRID_ROWS && col < CONFIG.GRID_COLS) {
-                    grid[row][col] = {
-                        char: cell,
-                        blockText: block.text,
-                        color: block.color,
-                        id: block.id,
-                        blockLength: block.cells.length,
-                        posInBlock: idx
-                    };
-                }
-            });
+function stackBlock(block) {
+    block.cells.forEach((cell, idx) => {
+        const row = block.position;
+        const col = block.lane + idx;
+        if (row >= 0 && row < CONFIG.GRID_ROWS && col < CONFIG.GRID_COLS) {
+            grid[row][col] = {
+                char: cell,
+                blockText: block.text,
+                color: block.color,
+                id: block.id,
+                blockLength: block.cells.length,
+                posInBlock: idx
+            };
         }
+    });
+}
 
         function applyGravityStep() {
             const blockIds = new Set();
@@ -890,72 +909,78 @@
             if (moved) updateDisplay();
         }
 
-        function updateDisplay() {
-            const gridEl = document.getElementById('grid');
-            gridEl.innerHTML = '';
+       function updateDisplay() {
+    const gridEl = document.getElementById('grid');
+    gridEl.innerHTML = '';
+    
+    for (let row = 0; row < CONFIG.GRID_ROWS; row++) {
+        const rowEl = document.createElement('div');
+        rowEl.className = 'row';
+        
+        for (let col = 0; col < CONFIG.GRID_COLS; col++) {
+            const cellEl = document.createElement('div');
+            cellEl.className = 'cell';
             
-            for (let row = 0; row < CONFIG.GRID_ROWS; row++) {
-                const rowEl = document.createElement('div');
-                rowEl.className = 'row';
+            const fallingBlock = fallingBlocks.find(fb => 
+                fb.position === row && col >= fb.lane && col < fb.lane + fb.cells.length
+            );
+            
+            if (fallingBlock) {
+                const fallingIdx = col - fallingBlock.lane;
+                cellEl.style.backgroundColor = fallingBlock.color.bg;
+                cellEl.style.color = fallingBlock.color.text;
+                cellEl.textContent = fallingBlock.cells[fallingIdx] === " " ? "" : fallingBlock.cells[fallingIdx];
+                cellEl.classList.add('clickable', 'block-cell');
                 
-                for (let col = 0; col < CONFIG.GRID_COLS; col++) {
-                    const cellEl = document.createElement('div');
-                    cellEl.className = 'cell';
-                    
-                    const fallingBlock = fallingBlocks.find(fb => 
-                        fb.position === row && col >= fb.lane && col < fb.lane + fb.cells.length
-                    );
-                    
-                    if (fallingBlock) {
-                        const fallingIdx = col - fallingBlock.lane;
-                        cellEl.style.backgroundColor = fallingBlock.color.bg;
-                        cellEl.style.color = fallingBlock.color.text;
-                        cellEl.textContent = fallingBlock.cells[fallingIdx] === " " ? "" : fallingBlock.cells[fallingIdx];
-                        cellEl.classList.add('clickable', 'block-cell');
-                        
-                        if (fallingBlock.cells.length === 1) {
-                            cellEl.classList.add('block-single');
-                        } else if (fallingIdx === 0) {
-                            cellEl.classList.add('block-start');
-                        } else if (fallingIdx === fallingBlock.cells.length - 1) {
-                            cellEl.classList.add('block-end');
-                        }
-                        
-                        cellEl.dataset.blockId = fallingBlock.id;
-                        cellEl.onclick = () => handleBlockClick(fallingBlock.id);
-                        cellEl.onmouseenter = () => highlightBlock(fallingBlock.id, true);
-                        cellEl.onmouseleave = () => highlightBlock(fallingBlock.id, false);
-                    } else if (grid[row][col]) {
-                        const cell = grid[row][col];
-                        cellEl.style.backgroundColor = cell.color.bg;
-                        cellEl.style.color = cell.color.text;
-                        cellEl.textContent = cell.char === " " ? "" : cell.char;
-                        cellEl.classList.add('clickable', 'block-cell');
-                        
-                        if (cell.blockLength === 1) {
-                            cellEl.classList.add('block-single');
-                        } else if (cell.posInBlock === 0) {
-                            cellEl.classList.add('block-start');
-                        } else if (cell.posInBlock === cell.blockLength - 1) {
-                            cellEl.classList.add('block-end');
-                        }
-                        
-                        cellEl.dataset.blockId = cell.id;
-                        cellEl.onclick = () => handleCellClick(row, col);
-                        cellEl.onmouseenter = () => highlightBlock(cell.id, true);
-                        cellEl.onmouseleave = () => highlightBlock(cell.id, false);
-                    } else {
-                        cellEl.classList.add('empty');
-                    }
-                    
-                    rowEl.appendChild(cellEl);
+                // 블록 위치에 따라 클래스 추가
+                if (fallingBlock.cells.length === 1) {
+                    cellEl.classList.add('block-single');
+                } else if (fallingIdx === 0) {
+                    cellEl.classList.add('block-start');
+                } else if (fallingIdx === fallingBlock.cells.length - 1) {
+                    cellEl.classList.add('block-end');
+                } else {
+                    cellEl.classList.add('block-middle');
                 }
                 
-                gridEl.appendChild(rowEl);
+                cellEl.dataset.blockId = fallingBlock.id;
+                cellEl.onclick = () => handleBlockClick(fallingBlock.id);
+                cellEl.onmouseenter = () => highlightBlock(fallingBlock.id, true);
+                cellEl.onmouseleave = () => highlightBlock(fallingBlock.id, false);
+            } else if (grid[row][col]) {
+                const cell = grid[row][col];
+                cellEl.style.backgroundColor = cell.color.bg;
+                cellEl.style.color = cell.color.text;
+                cellEl.textContent = cell.char === " " ? "" : cell.char;
+                cellEl.classList.add('clickable', 'block-cell');
+                
+                // 블록 위치에 따라 클래스 추가
+                if (cell.blockLength === 1) {
+                    cellEl.classList.add('block-single');
+                } else if (cell.posInBlock === 0) {
+                    cellEl.classList.add('block-start');
+                } else if (cell.posInBlock === cell.blockLength - 1) {
+                    cellEl.classList.add('block-end');
+                } else {
+                    cellEl.classList.add('block-middle');
+                }
+                
+                cellEl.dataset.blockId = cell.id;
+                cellEl.onclick = () => handleCellClick(row, col);
+                cellEl.onmouseenter = () => highlightBlock(cell.id, true);
+                cellEl.onmouseleave = () => highlightBlock(cell.id, false);
+            } else {
+                cellEl.classList.add('empty');
             }
             
-            updateAnswerDisplay();
+            rowEl.appendChild(cellEl);
         }
+        
+        gridEl.appendChild(rowEl);
+    }
+    
+    updateAnswerDisplay();
+}
 
         function highlightBlock(blockId, highlight) {
             const cells = document.querySelectorAll(`[data-block-id="${blockId}"]`);
@@ -1117,7 +1142,7 @@ function handleCellClick(row, col) {
         }
 
 function checkAnswer() {
-    const isCorrect = wasmModule.verify_answer(userAnswer, correctAnswerHash);
+    const isCorrect = userAnswer === correctAnswer;
 
     if (isCorrect) {
         const elapsedSeconds = Math.floor((Date.now() - gameStartTime) / 1000);
@@ -1137,10 +1162,6 @@ function checkAnswer() {
             wasmModule.get_undo_count()
         );
         
-        const timestamp = Date.now();
-        const token = wasmModule.create_game_token(level, userAnswer, timestamp);
-        console.log('Game token:', token);
-        
         document.getElementById('message').textContent = `🎉 정답입니다! (점수: ${score})`;
         document.getElementById('message').className = 'message success';
         gameState = 'success';
@@ -1154,18 +1175,6 @@ function checkAnswer() {
                 currentLevelBombCount = 0;
                 startGame();
             } else {
-                const studentName = wasmModule.get_cookie('studentName') || 'Unknown';
-                const studentClass = wasmModule.get_cookie('studentClass') || 'Unknown';
-                const scores = [score];
-                const encryptedScore = wasmModule.encrypt_score_data(
-                    studentName,
-                    studentClass,
-                    selectedLevel,
-                    new Uint32Array(scores),
-                    timestamp
-                );
-                console.log('Encrypted score:', encryptedScore);
-                
                 document.getElementById('message').textContent = '🏆 모든 레벨을 클리어했습니다!';
                 gameState = 'complete';
                 showButtons();
@@ -1180,6 +1189,7 @@ function checkAnswer() {
         showButtons();
     }
 }
+
 
 
 
