@@ -1202,69 +1202,70 @@ function handleUndo() {
 }
 
 
-
-        function handleBomb() {
-            if (gameState !== 'playing') return;
-            
-            currentLevelBombCount++;
-            updateStats();
-            playClickSound();
-            
-            grid = Array(CONFIG.GRID_ROWS).fill(null).map(() => Array(CONFIG.GRID_COLS).fill(null));
-            fallingBlocks = [];
-            
-            const currentBlocks = parseAnswer(gameData[level].answer);
-            const neededBlocks = [];
-            let tempAnswer = userAnswer;
-            
-            for (const block of currentBlocks) {
-                if (!tempAnswer.startsWith(block)) {
-                    neededBlocks.push(block);
-                } else {
-                    tempAnswer = tempAnswer.slice(block.length);
-                }
-            }
-            
-            // 조사 제거
-            const filteredNeeded = neededBlocks.filter(block => !FIXED_JOSA_BLOCKS.includes(block));
-            
-            const fakeBlocks = getFakeBlocks(level);
-            const enhancedBlocks = [];
-            
-            filteredNeeded.forEach(block => {
-                for (let i = 0; i < 3; i++) {
-                    enhancedBlocks.push(block);
-                }
-            });
-            
-            const remainingCount = Math.max(10, filteredNeeded.length * 2);
-            for (let i = 0; i < remainingCount && fakeBlocks.length > 0; i++) {
-                const seed = wasmModule.generate_seed();
-                const fakeIdx = seed % fakeBlocks.length;
-                enhancedBlocks.push(fakeBlocks[fakeIdx]);
-                fakeBlocks.splice(fakeIdx, 1);
-            }
-            
-            const seed = wasmModule.generate_seed();
-            const shuffledJson = wasmModule.generate_block_sequence(
-                JSON.stringify(enhancedBlocks.slice(0, Math.ceil(enhancedBlocks.length / 2))),
-                JSON.stringify(enhancedBlocks.slice(Math.ceil(enhancedBlocks.length / 2))),
-                seed
-            );
-            availableBlocks = JSON.parse(shuffledJson);
-            
-            updateDisplay();
-            
-            if (spawnTimeout) {
-                clearTimeout(spawnTimeout);
-                spawnTimeout = null;
-            }
-            
-            setTimeout(() => {
-                spawnBlock();
-                scheduleNextBlock();
-            }, 300);
+function handleBomb() {
+    if (gameState !== 'playing') return;
+    
+    currentLevelBombCount++;
+    playClickSound();
+    
+    grid = Array(CONFIG.GRID_ROWS).fill(null).map(() => Array(CONFIG.GRID_COLS).fill(null));
+    fallingBlocks = [];
+    
+    const currentBlocks = parseAnswer(gameData[level].answer);
+    const neededBlocks = [];
+    let tempAnswer = userAnswer;
+    
+    for (const block of currentBlocks) {
+        if (!tempAnswer.startsWith(block)) {
+            neededBlocks.push(block);
+        } else {
+            tempAnswer = tempAnswer.slice(block.length);
         }
+    }
+    
+    // 조사 제거
+    const filteredNeeded = neededBlocks.filter(block => !FIXED_JOSA_BLOCKS.includes(block));
+    
+    const fakeBlocks = getFakeBlocks(level);
+    const enhancedBlocks = [];
+    
+    filteredNeeded.forEach(block => {
+        for (let i = 0; i < 3; i++) {
+            enhancedBlocks.push(block);
+        }
+    });
+    
+    const remainingCount = Math.max(10, filteredNeeded.length * 2);
+    for (let i = 0; i < remainingCount && fakeBlocks.length > 0; i++) {
+        const seed = wasmModule.generate_seed();
+        const fakeIdx = seed % fakeBlocks.length;
+        enhancedBlocks.push(fakeBlocks[fakeIdx]);
+        fakeBlocks.splice(fakeIdx, 1);
+    }
+    
+    const seed = wasmModule.generate_seed();
+    const shuffledJson = wasmModule.generate_block_sequence(
+        JSON.stringify(enhancedBlocks.slice(0, Math.ceil(enhancedBlocks.length / 2))),
+        JSON.stringify(enhancedBlocks.slice(Math.ceil(enhancedBlocks.length / 2))),
+        seed
+    );
+    availableBlocks = JSON.parse(shuffledJson);
+    
+    updateDisplay();
+    
+    if (spawnTimeout) {
+        clearTimeout(spawnTimeout);
+        spawnTimeout = null;
+    }
+    
+    setTimeout(() => {
+        spawnBlock();
+        scheduleNextBlock();
+    }, 300);
+}
+
+
+
 
         function updateAnswerDisplay() {
             const display = document.getElementById('answerDisplay');
