@@ -1101,24 +1101,6 @@ function parseAnswer(answer) {
         }
 
 
-function handleFixedJosaClick(josaText) {
-    if (gameState !== 'playing') return;
-    
-    playClickSound();
-    
-    // 빈칸이 아닌 조사는 뒤에 자동으로 공백 추가
-    const textToAdd = (josaText !== ' ') ? josaText + ' ' : josaText;
-    
-    answerHistory.push(textToAdd);
-    userAnswer += textToAdd;
-    
-    updateDisplay();
-    
-    const correctLength = correctAnswer.length;
-    if (userAnswer.length >= correctLength) {
-        checkAnswer();
-    }
-}
 
         function highlightBlock(blockId, highlight) {
             const cells = document.querySelectorAll(`[data-block-id="${blockId}"]`);
@@ -1187,7 +1169,6 @@ function handleFixedJosaClick(josaText) {
     
     playClickSound();
     
-    // 빈칸이 아닌 조사는 뒤에 자동으로 공백 추가
     const textToAdd = (josaText !== ' ') ? josaText + ' ' : josaText;
     
     answerHistory.push(textToAdd);
