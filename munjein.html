@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>한국어 학습 게임 로그인</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .login-container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 400px;
+            width: 100%;
+        }
+        
+        .login-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .login-header h1 {
+            color: #333;
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        
+        .login-header p {
+            color: #666;
+            font-size: 0.95em;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .form-group select,
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group select:focus,
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .login-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .login-btn:active {
+            transform: translateY(0);
+        }
+        
+        .login-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            text-align: center;
+        }
+        
+        .error-message.show {
+            display: block;
+        }
+        
+        .loading {
+            text-align: center;
+            color: #667eea;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .loading.show {
+            display: block;
+        }
+        
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <h1>🎓 한국어 학습 게임</h1>
+            <p>형태소 분석 학습</p>
+        </div>
+        
+        <div class="error-message" id="errorMessage"></div>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="classSelect">반 선택</label>
+                <select id="classSelect" required>
+                    <option value="">반을 선택하세요</option>
+                    <option value="3A">3A반</option>
+                    <option value="3B">3B반</option>
+                    <option value="4A">4A반</option>
+                    <option value="4B">4B반</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="studentName">이름</label>
+                <input type="text" id="studentName" placeholder="이름을 입력하세요" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="studentPassword">비밀번호 (학번 뒤 4자리)</label>
+                <input type="password" id="studentPassword" placeholder="학번 뒤 4자리" maxlength="4" required>
+            </div>
+            
+            <button type="submit" class="login-btn" id="loginBtn">로그인</button>
+        </form>
+        
+        <div class="loading" id="loading">
+            <div class="loading-spinner"></div>
+            <p>로그인 중...</p>
+        </div>
+    </div>
+
+    <script type="module">
+        // 도메인 체크
+        const allowedDomains = ['yigunha.github.io', 'localhost', '127.0.0.1'];
+        const currentDomain = window.location.hostname;
+        
+        if (!allowedDomains.some(domain => currentDomain.includes(domain))) {
+            document.body.innerHTML = '<div style="color: white; text-align: center; padding: 50px;">이 도메인에서는 실행할 수 없습니다.</div>';
+            throw new Error('Unauthorized domain');
+        }
+
+        let wasmModule = null;
+
+        // WASM 모듈 초기화
+        async function initWasm() {
+            try {
+                console.log('Initializing WASM module...');
+                
+                const wasm = await import('./munjein/pkg/korean_game_wasm.js');
+                await wasm.default();
+                
+                wasmModule = wasm;
+                console.log('WASM module loaded successfully!');
+                console.log('Version:', wasm.get_version());
+                
+                return true;
+            } catch (error) {
+                console.error('Failed to load WASM module:', error);
+                showError('WASM 모듈을 로드하는데 실패했습니다.');
+                return false;
+            }
+        }
+
+        function showError(message) {
+            const errorEl = document.getElementById('errorMessage');
+            errorEl.textContent = message;
+            errorEl.classList.add('show');
+        }
+
+        function hideError() {
+            const errorEl = document.getElementById('errorMessage');
+            errorEl.classList.remove('show');
+        }
+
+        function showLoading(show) {
+            const loadingEl = document.getElementById('loading');
+            const loginBtn = document.getElementById('loginBtn');
+            
+            if (show) {
+                loadingEl.classList.add('show');
+                loginBtn.disabled = true;
+            } else {
+                loadingEl.classList.remove('show');
+                loginBtn.disabled = false;
+            }
+        }
+
+        async function handleLogin(event) {
+            event.preventDefault();
+            hideError();
+            showLoading(true);
+
+            const studentClass = document.getElementById('classSelect').value;
+            const studentName = document.getElementById('studentName').value.trim();
+            const studentPassword = document.getElementById('studentPassword').value.trim();
+
+            if (!studentClass || !studentName || !studentPassword) {
+                showError('모든 필드를 입력해주세요.');
+                showLoading(false);
+                return;
+            }
+
+            try {
+                const result = await wasmModule.authenticate_student(
+                    studentName,
+                    studentClass,
+                    studentPassword
+                );
+
+                console.log('Authentication successful:', result);
+
+                wasmModule.set_cookie('studentName', studentName, 30);
+                wasmModule.set_cookie('studentClass', studentClass, 30);
+                wasmModule.set_cookie('studentPassword', studentPassword, 30);
+
+                window.location.href = './munjein/game_wasm.html';
+
+            } catch (error) {
+                console.error('Login error:', error);
+                
+                const errorMsg = error.toString();
+                if (errorMsg.includes('Student not found')) {
+                    showError('등록되지 않은 학생입니다. 이름과 반을 확인해주세요.');
+                } else if (errorMsg.includes('Invalid password')) {
+                    showError('비밀번호가 일치하지 않습니다.');
+                } else if (errorMsg.includes('Network error')) {
+                    showError('네트워크 오류가 발생했습니다. 인터넷 연결을 확인해주세요.');
+                } else {
+                    showError('로그인 중 오류가 발생했습니다.');
+                }
+                
+                showLoading(false);
+            }
+        }
+
+        window.addEventListener('load', async () => {
+            const wasmReady = await initWasm();
+            
+            if (!wasmReady) {
+                console.warn('WASM module failed to load');
+                return;
+            }
+
+            // URL 파라미터로 로그아웃 확인
+            const urlParams = new URLSearchParams(window.location.search);
+            const isLogout = urlParams.get('logout') === 'true';
+            
+            if (isLogout) {
+                // 강제로 쿠키 삭제 확인
+                wasmModule.delete_cookie('studentName');
+                wasmModule.delete_cookie('studentClass');
+                wasmModule.delete_cookie('studentPassword');
+                console.log('Logged out successfully');
+                // URL에서 logout 파라미터 제거
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+
+            // 로그인 상태 확인
+            if (wasmModule && !isLogout) {
+                try {
+                    const hasName = wasmModule.get_cookie('studentName');
+                    const hasClass = wasmModule.get_cookie('studentClass');
+                    
+                    if (hasName && hasClass) {
+                        // 실제로 쿠키가 존재하는 경우에만 리다이렉트
+                        wasmModule.refresh_cookies();
+                        window.location.href = './munjein/game_wasm.html';
+                        return;
+                    }
+                } catch (e) {
+                    console.log('Not logged in yet');
+                }
+            }
+
+            // 저장된 정보 불러오기 (로그아웃이 아닌 경우에만)
+            if (!isLogout) {
+                try {
+                    const savedName = wasmModule.get_cookie('studentName');
+                    const savedClass = wasmModule.get_cookie('studentClass');
+                    
+                    if (savedName) document.getElementById('studentName').value = savedName;
+                    if (savedClass) document.getElementById('classSelect').value = savedClass;
+                } catch (e) {
+                    console.log('No saved credentials');
+                }
+            }
+
+            document.getElementById('loginForm').addEventListener('submit', handleLogin);
+        });
+    </script>
+</body>
+</html>
