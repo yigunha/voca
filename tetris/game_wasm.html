@@ -714,32 +714,10 @@ function checkLogin() {
 
 
 function parseAnswer(answer) {
-    // '/'로 분리
-    const blocks = answer.split('/').flatMap(block => {
-        if (block === '') return [];
-        
-        // 🔴 조사를 자동 분리
-        const josaMatch = block.match(/^(.+?)(은|는|이|가|을|를|에|만)$/);
-        if (josaMatch && !FIXED_JOSA_BLOCKS.includes(block)) {
-            // 단어와 조사가 붙어있으면 분리
-            return [josaMatch[1], josaMatch[2] + ' '];
-        }
-        
-        // 블록 내 공백도 분리
-        return block.split(' ').filter(part => part !== '');
-    });
-    
-    // 정답도 같은 방식으로 처리 (조사 뒤 공백 추가)
-    correctAnswer = answer.split('/').flatMap(block => {
-        if (block === '') return [];
-        const josaMatch = block.match(/^(.+?)(은|는|이|가|을|를|에|만)$/);
-        if (josaMatch && !FIXED_JOSA_BLOCKS.includes(block)) {
-            return [josaMatch[1], josaMatch[2] + ' '];
-        }
-        return block.split(' ').filter(part => part !== '');
-    }).join('');
-    
-    return blocks;
+    // '/'와 공백으로 분리하여 블록 생성
+    const blocks = answer.split(/[\/\s]+/).filter(block => block !== '');
+     correctAnswer = answer.split('/').join('');
+     return blocks;
 }
 
 
