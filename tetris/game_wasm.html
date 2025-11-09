@@ -312,40 +312,45 @@
         
 /* 컨테이너 스타일 (다크 모드 배경 및 테두리) */
 .answer-header {
-    display: flex; 
-    justify-content: space-between; 
-    align-items: center; 
-    padding: 10px 15px; 
-    background-color: #363a40; 
-    border-radius: 8px; 
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    background-color: #363a40;
+    border-radius: 8px;
+    flex-wrap: nowrap;
+    min-width: 400px;
 }
 
-/* 좌측 그룹 스타일 */
 .header-left-group {
     display: flex;
     align-items: center;
-    gap: 10px; 
+    gap: 10px;
+    flex-shrink: 0;
 }
 
 .answer-label h3 {
-    color: #f0f0f0; 
+    color: #f0f0f0;
     font-size: 16px;
     margin: 0;
+    white-space: nowrap;
 }
 
-/* 우측 그룹 스타일 */
 .header-right-group {
     display: flex;
     align-items: center;
-    gap: 8px; 
+    gap: 8px;
+    flex-shrink: 0;
 }
 
-.level-display {
-    background-color: #2b2f34; 
+.level {
+    background-color: #2b2f34;
     padding: 8px 12px;
     border-radius: 6px;
     color: #e0e0e0;
     font-weight: bold;
+    font-size: 16px;
+    white-space: nowrap;
 }
 
 .show-target-btn, .bomb-btn, .undo-btn {
@@ -355,6 +360,12 @@
     border-radius: 6px;
     font-size: 18px;
     transition: background-color 0.2s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 40px;
+    min-width: 40px;
+    color: white;
 }
 
 .show-target-btn {
@@ -362,19 +373,15 @@
 }
 
 .bomb-btn {
-    background-color: #d83a3a; 
+    background-color: #d83a3a;
+    font-size: 20px;
+    line-height: 1;
 }
 
 .undo-btn {
-    background-color: #555c66; 
-    width: 40px; 
-    height: 40px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    background-color: #555c66;
     font-size: 20px;
 }
-
 
 
 
@@ -537,9 +544,7 @@
 
     <div class="header-right-group">
         <button class="bomb-btn" id="bombBtn" disabled>💣</button>
-        <div class="level-display">
-            <div class="level">레벨 <span id="levelNum">1</span> / 12</div>
-        </div>
+        <div class="level">레벨 <span id="levelNum">1</span> / 12</div>
         <button class="undo-btn" id="undoBtn" disabled>↶</button>
     </div>
 </div>
