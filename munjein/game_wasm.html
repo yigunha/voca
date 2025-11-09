@@ -24,7 +24,7 @@
          
         .container {
             width: 100%;
-            max-width: 392px;
+            max-width: 500px;
         }
         
         .game-box {
@@ -32,7 +32,6 @@
             border-radius: 12px;
             padding: 15px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-            width: 392px;
         }
 
         .level-selector {
@@ -75,183 +74,228 @@
         .level-btn.selected {
             background: #22c55e;
         }
-        
-        .description {
-            font-size: 1em;
-            font-weight: bold;
-            color: #f3f4f6;
-            margin-bottom: 12px;
-            padding: 10px;
-            background: #374151;
-            border-radius: 6px;
-            text-align: center;
-            width: 100%;
-        }
-        
-        .grid-container {
+
+        .game-area {
             position: relative;
-            width: 100%;
-            margin-bottom: 8px;
         }
-        
-        .grid {
-            background: #111827;
-            padding: 8px;
+
+        .content-section {
+            background: #374151;
             border-radius: 8px;
-            width: 100%;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
         }
-        
-        .row {
+
+        .content-section.hidden {
+            display: none;
+        }
+
+        .sentence {
+            color: #f3f4f6;
+            font-size: 1.2em;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            white-space: pre-line;
+        }
+
+        .sentence .blank {
+            display: inline-block;
+            min-width: 100px;
+            border-bottom: 2px solid #60a5fa;
+            color: #60a5fa;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .option-btn {
+            padding: 12px;
+            border: 2px solid #4b5563;
+            border-radius: 8px;
+            background: #1f2937;
+            color: #f3f4f6;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .option-btn:hover {
+            background: #374151;
+            border-color: #60a5fa;
+        }
+
+        .option-btn:active {
+            transform: scale(0.95);
+        }
+
+        .answer-section {
+            background: #374151;
+            border: 2px solid #6b7280;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .answer-controls {
             display: flex;
-            gap: 0;
-            margin-bottom: 0;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
         }
-        
-        .row:last-child {
-            margin-bottom: 0;
+
+        .level-display {
+            background-color: #2b2f34;
+            padding: 6px 10px;
+            border-radius: 5px;
+            color: #e0e0e0;
+            font-weight: bold;
+            font-size: 14px;
         }
-        
-      
-.cell {
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-    font-weight: bold;
-    color: #000000;
-    cursor: default;
-    user-select: none;
-    position: relative;
-    border: 1px solid #111827;
-}
 
-.cell.clickable {
-    cursor: pointer;
-}
-
-.cell.empty {
-    background: #374151;
-    border: 1px solid #4b5563;
-    border-radius: 3px;
-    margin: 1px;
-}
-
-.cell.block-cell {
-    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-    margin: 1px 0;
-    border: none;
-}
-
-.cell.block-cell.block-start {
-    border-top-left-radius: 6px;
-    border-bottom-left-radius: 6px;
-    margin-left: 1px;
-    border-left: 2px solid rgba(0,0,0,0.2);
-    border-top: 2px solid rgba(0,0,0,0.2);
-    border-bottom: 2px solid rgba(0,0,0,0.2);
-}
-
-.cell.block-cell.block-middle {
-    border-radius: 0;
-    margin: 1px 0;
-    border-top: 2px solid rgba(0,0,0,0.2);
-    border-bottom: 2px solid rgba(0,0,0,0.2);
-}
-
-.cell.block-cell.block-end {
-    border-top-right-radius: 6px;
-    border-bottom-right-radius: 6px;
-    margin-right: 1px;
-    border-right: 2px solid rgba(0,0,0,0.2);
-    border-top: 2px solid rgba(0,0,0,0.2);
-    border-bottom: 2px solid rgba(0,0,0,0.2);
-}
-
-.cell.block-cell.block-single {
-    border-radius: 6px;
-    margin: 1px;
-    border: 2px solid rgba(0,0,0,0.2);
-}
-
-.cell.removing {
-    opacity: 0.5;
-    animation: pulse 0.3s ease-in-out;
-}
- 
-
-
-
-
-        
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
+        .control-buttons {
+            display: flex;
+            gap: 6px;
         }
-        
-.message {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    text-align: center;
-    font-size: 1.5em;
-    font-weight: bold;
-    background: rgba(31, 41, 55, 0.95);
-    padding: 30px 50px;
-    border-radius: 12px;
-    border: 3px solid;
-    min-height: auto;
-    z-index: 1000;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.3s ease-in-out;
-}
 
-.message.show {
-    opacity: 1;
-}
+        .control-btn {
+            padding: 6px 10px;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.2s;
+            color: white;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
 
+        .hint-btn {
+            background-color: #3b82f6;
+        }
 
-.message.success { 
-    color: #10b981;
-    border-color: #10b981;
-    box-shadow: 0 0 30px rgba(16, 185, 129, 0.3);
-}
+        .hint-btn:hover {
+            background-color: #2563eb;
+        }
 
-.message.fail { 
-    color: #ef4444;
-    border-color: #ef4444;
-    box-shadow: 0 0 30px rgba(239, 68, 68, 0.3);
-}
+        .answer-btn {
+            background-color: #10b981;
+        }
 
-        
-.buttons {
-    display: flex;
-    gap: 6px;
-    justify-content: center;
-    flex-wrap: nowrap;
-    margin-bottom: 12px;
-}
+        .answer-btn:hover {
+            background-color: #059669;
+        }
 
-.btn {
-    padding: 10px 15px;
-    border: none;
-    border-radius: 8px;
-    font-weight: bold;
-    font-size: 0.85em;
-    cursor: pointer;
-    white-space: nowrap;
-    flex: 1;
-    min-width: 0;
-}
+        .toggle-btn {
+            background-color: #6b7280;
+        }
 
+        .toggle-btn:hover {
+            background-color: #4b5563;
+        }
+
+        .answer-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #4b5563;
+            border-radius: 6px;
+            background: #1f2937;
+            color: #f3f4f6;
+            font-size: 1.1em;
+            font-family: inherit;
+        }
+
+        .answer-input:focus {
+            outline: none;
+            border-color: #60a5fa;
+        }
+
+        .hint-display {
+            background: #1f2937;
+            padding: 10px;
+            border-radius: 6px;
+            color: #fbbf24;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .hint-display.show {
+            display: block;
+        }
+
+        .correct-answer-display {
+            background: #1f2937;
+            padding: 10px;
+            border-radius: 6px;
+            color: #10b981;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .correct-answer-display.show {
+            display: block;
+        }
+
+        .message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            background: rgba(31, 41, 55, 0.98);
+            padding: 30px 50px;
+            border-radius: 12px;
+            border: 3px solid;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease-in-out;
+        }
+
+        .message.show {
+            opacity: 1;
+            pointer-events: auto;
+            cursor: pointer;
+        }
+
+        .message.success { 
+            color: #10b981;
+            border-color: #10b981;
+            box-shadow: 0 0 30px rgba(16, 185, 129, 0.3);
+        }
+
+        .message.fail { 
+            color: #ef4444;
+            border-color: #ef4444;
+            box-shadow: 0 0 30px rgba(239, 68, 68, 0.3);
+        }
+
+        .buttons {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 0.9em;
+            cursor: pointer;
+            white-space: nowrap;
+            flex: 1;
+            min-width: 100px;
+        }
         
         .btn-start {
             background: #22c55e;
             color: white;
-            flex: 1;
         }
         
         .btn-start:hover {
@@ -261,7 +305,6 @@
         .btn-stop {
             background: #ef4444;
             color: white;
-            flex: 1;
         }
         
         .btn-stop:hover {
@@ -271,162 +314,19 @@
         .btn-reset {
             background: #3b82f6;
             color: white;
-            flex: 1;
         }
         
         .btn-reset:hover {
             background: #2563eb;
         }
-        
-        .answer-section {
-            background: #374151;
-            border: 2px solid #6b7280;
-            border-radius: 8px;
-            padding: 12px;
-            width: 100%;
-        }
-        
-        .answer-display {
-            background: #1f2937;
-            padding: 12px;
-            border: 2px solid #4b5563;
-            border-radius: 6px;
-            font-family: monospace;
-            font-size: 1.3em;
-            font-weight: bold;
-            min-height: 45px;
-            color: #f3f4f6;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-            margin-bottom: 8px;
-        }
-        
-        .blink {
-            animation: blink 1s infinite;
-        }
-        
-        @keyframes blink {
-            0%, 50% { opacity: 1; }
-            51%, 100% { opacity: 0; }
-        }
-        
-/* 컨테이너 스타일 (다크 모드 배경 및 테두리) */
-.answer-header {
-    display: flex;
-    justify-content: space-between; /* 좌우 끝으로 정렬 */
-    align-items: center;
-    padding: 8px 12px;
-    background-color: #363a40;
-    border-radius: 8px;
-    flex-wrap: nowrap; /* 한 줄 유지 */
-    /* min-width: 350px; /* 벗어남 문제의 원인일 수 있어 제거 */
-    width: 100%; /* 부모 컨테이너의 100% 너비를 사용 */
-    box-sizing: border-box; /* 패딩과 보더가 너비에 포함되도록 */
-}
 
-.header-left-group {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    flex-shrink: 0; /* 공간 부족해도 줄어들지 않음 */
-}
-
-.answer-label h3 {
-    color: #f0f0f0;
-    font-size: 15px;
-    margin: 0;
-    white-space: nowrap;
-}
-
-.header-right-group {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex-shrink: 0; /* 공간 부족해도 줄어들지 않음 */
-    /* flex-grow: 1; /* 이 그룹이 남은 공간을 채우지 않도록 */
-    justify-content: flex-end; /* 이 그룹 내 요소들을 오른쪽으로 정렬 */
-}
-
-.level {
-    background-color: #2b2f34;
-    padding: 6px 10px;
-    border-radius: 5px;
-    color: #e0e0e0;
-    font-weight: bold;
-    font-size: 14px;
-    white-space: nowrap;
-}
-
-.show-target-btn, .bomb-btn, .undo-btn {
-    padding: 6px 8px;
-    border: none;
-    cursor: pointer;
-    border-radius: 5px;
-    transition: background-color 0.2s;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 32px;
-    min-width: 32px; /* 버튼의 최소 너비는 유지하여 아이콘이 찌그러지지 않게 */
-    color: white;
-}
-
-.show-target-btn {
-    background-color: #555c66;
-    font-size: 16px;
-}
-
-.bomb-btn {
-    background-color: #d83a3a;
-    font-size: 18px;
-    line-height: 1;
-}
-
-.undo-btn {
-    background-color: #555c66;
-    font-size: 18px;
-}
-
-
-
-
-        
-        .undo-btn:hover {
-            background: #ea580c;
-        }
-        
-        .bomb-btn {
-            background: #dc2626;
-        }
-        
-        .bomb-btn:hover {
-            background: #b91c1c;
-        }
-        
-        .show-target-btn:hover {
-            background: #4b5563;
-        }
-        
-        .undo-btn:disabled {
-            background: #4b5563;
-            color: #9ca3af;
-            cursor: not-allowed;
-        }
-        
-        .target {
-            font-size: 0.75em;
-            color: #9ca3af;
-            margin-top: 6px;
-            display: none;
-        }
-        
-        .target.show {
-            display: block;
+        .btn-submit {
+            background: #8b5cf6;
+            color: white;
         }
 
-        .block-hover {
-            transform: scale(0.95);
-            opacity: 0.8;
+        .btn-submit:hover {
+            background: #7c3aed;
         }
 
         .hidden {
@@ -453,55 +353,9 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-
-        .stats {
-            font-size: 0.75em;
-            color: #9ca3af;
-            margin-top: 6px;
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-        }
-
-
-
-
-/* 고정 조사 행 스타일 */
-/* 기존 고정 조사 스타일 교체 */
-.fixed-josa-row {
-    margin-top: 8px;
-    padding-top: 8px;
-    border-top: 2px solid #4b5563;
-}
-
-.fixed-josa {
-    background: linear-gradient(135deg, #374151 0%, #1f2937 100%) !important;
-    color: #ffffff !important;
-    cursor: pointer;
-    transition: all 0.2s;
-    border: 1px solid #6b7280 !important;
-}
-
-.fixed-josa:hover {
-    transform: scale(1.08);
-    box-shadow: 0 4px 8px rgba(107, 114, 128, 0.5);
-    background: linear-gradient(135deg, #4b5563 0%, #374151 100%) !important;
-}
-
-.fixed-josa:active {
-    transform: scale(0.95);
-}
-
-
-
-
-
-
     </style>
 </head>
 <body>
-    
-
     <div class="container">
         <div class="game-box">
             <div class="loading" id="loadingScreen">
@@ -520,83 +374,46 @@
                     </div>
                 </div>
 
-                <div id="gameArea" class="hidden">
-                    <div class="description" id="description">문장을 완성하세요</div>
-                    
-                    <div class="grid-container">
-                        <div class="grid" id="grid"></div>
-                    </div>
-                    
-                    <div class="message" id="message"></div>
-                    
-                    <div class="buttons" id="buttons">
-                        <button class="btn btn-start" onclick="startGame()">▶ 게임 시작</button>
+                <div id="gameArea" class="hidden game-area">
+                    <div class="content-section" id="contentSection">
+                        <div class="sentence" id="sentence"></div>
+                        <div class="options-grid" id="optionsGrid"></div>
                     </div>
                     
                     <div class="answer-section">
-                        <div class="answer-display" id="answerDisplay">
-                            <span class="blink">|</span>
+                        <div class="answer-controls">
+                            <div class="level-display">레벨 <span id="levelNum">1</span> / 12</div>
+                            <div class="control-buttons">
+                                <button class="control-btn hint-btn" onclick="toggleHint()">힌트</button>
+                                <button class="control-btn answer-btn" onclick="toggleCorrectAnswer()">정답</button>
+                                <button class="control-btn toggle-btn" onclick="toggleContent()">화면 OFF</button>
+                            </div>
                         </div>
                         
-<div class="answer-header">
-    <div class="header-left-group">
-        <div class="answer-label">
-            <h3>정답칸:</h3>
-        </div>
-        <button class="show-target-btn" onclick="toggleTarget()">👁️</button>
-    </div>
-    <div class="header-right-group">
-        <button class="bomb-btn" id="bombBtn" disabled onclick="handleBomb()">💣</button>
-        <div class="level">레벨 <span id="levelNum">1</span> / 12</div>
-        <button class="undo-btn" id="undoBtn" disabled onclick="handleUndo()">↶</button>
-    </div>
-</div>
+                        <input type="text" class="answer-input" id="answerInput" placeholder="정답을 입력하세요...">
                         
-                        <div class="target" id="target"></div>
-                     </div>
+                        <div class="hint-display" id="hintDisplay"></div>
+                        <div class="correct-answer-display" id="correctAnswerDisplay"></div>
+                    </div>
+
+                    <div class="buttons" id="buttons">
+                        <button class="btn btn-start" onclick="startGame()">▶ 게임 시작</button>
+                    </div>
                 </div>
             </div>
+
+            <div class="message" id="message"></div>
         </div>
     </div>
 
-
-<script type="module">
+    <script type="module">
         let wasmModule = null;
-        
-        const CONFIG = {
-            GRID_ROWS: 8,  // ← 9 → 8로 변경
-            GRID_COLS: 9,
-            FALL_SPEED: 600,
-            GRAVITY_SPEED: 150,
-            SPAWN_DELAY_MIN: 800,
-            SPAWN_DELAY_MAX: 1500,
-            WRONG_ANSWERS_PER_CORRECT: 3,
-        };
-
-        // 고정 조사 블록 (화면 아래 고정)
-const FIXED_JOSA_BLOCKS = ['은', '는', '이', '가', '을', '를', '에', '만', ' '];
-        
         let selectedLevel = null;
         let gameData = [];
         let level = 0;
-        let grid = [];
-        let fallingBlocks = [];
-        let availableBlocks = [];
-        let userAnswer = "";
-        let answerHistory = [];
-        let correctAnswer = "";
+        let currentProblem = null;
         let gameState = 'ready';
-        let speed = CONFIG.FALL_SPEED;
-        let fallInterval = null;
-        let spawnTimeout = null;
-        let correctAnswerHash = "";
-        let blockIdCounter = 0;
-        let gravityInterval = null;
         let gameStartTime = 0;
-        let mistakeCount = 0;
-        let currentLevelBombCount = 0;
-
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
         async function initWasm() {
             try {
@@ -618,29 +435,23 @@ const FIXED_JOSA_BLOCKS = ['은', '는', '이', '가', '을', '를', '에', '만
             }
         }
 
-
-
-function checkLogin() {
-    if (!wasmModule) return false;
-    
-    try {
-        if (!wasmModule.check_login_status()) {
-            window.location.href = '../munpup.html';
-            return false;
+        function checkLogin() {
+            if (!wasmModule) return false;
+            
+            try {
+                if (!wasmModule.check_login_status()) {
+                    window.location.href = '../munpup.html';
+                    return false;
+                }
+                
+                wasmModule.refresh_cookies();
+                return true;
+            } catch (error) {
+                console.error('로그인 확인 실패:', error);
+                window.location.href = '../munpup.html';
+                return false;
+            }
         }
-        
-        wasmModule.refresh_cookies();
-        // 학생 정보 표시 제거
-        
-        return true;
-    } catch (error) {
-        console.error('로그인 확인 실패:', error);
-        window.location.href = '../munpup.html';
-        return false;
-    }
-}
-
-
 
         window.logout = function() {
             if (wasmModule) {
@@ -695,129 +506,163 @@ function checkLogin() {
                 return group.problems[randomIndex];
             });
         }
-        
-        function playClickSound() {
-            try {
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                oscillator.frequency.value = 800;
-                oscillator.type = 'sine';
-                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
-                oscillator.start(audioContext.currentTime);
-                oscillator.stop(audioContext.currentTime + 0.1);
-            } catch(e) {}
-        }
-
-
-
-function parseAnswer(answer) {
-    // '/'와 공백으로 분리하여 블록 생성
-    const blocks = answer.split(/[\/\s]+/).filter(block => block !== '');
-     correctAnswer = answer.split('/').join('');
-     return blocks;
-}
-
-
-
-        
-        function getFakeBlocks(currentLevel) {
-            const fakeBlocks = [];
-            gameData.forEach((game, idx) => {
-                if (idx !== currentLevel) {
-                    fakeBlocks.push(...game.answer.split('/'));
-                }
-            });
-            // 조사 제거
-            return fakeBlocks.filter(block => !FIXED_JOSA_BLOCKS.includes(block));
-        }
-        
-        function createBlockSequence(correctBlocks, fakeBlocks) {
-            // 조사 제거
-            const filteredCorrect = correctBlocks.filter(block => !FIXED_JOSA_BLOCKS.includes(block));
-            const filteredFake = fakeBlocks.filter(block => !FIXED_JOSA_BLOCKS.includes(block));
-            
-            const seed = wasmModule.generate_seed();
-            const correctJson = JSON.stringify(filteredCorrect);
-            const fakeJson = JSON.stringify(filteredFake);
-            const sequenceJson = wasmModule.generate_block_sequence(correctJson, fakeJson, seed);
-            return JSON.parse(sequenceJson);
-        }
-        
-        window.toggleTarget = function() {
-            document.getElementById('target').classList.toggle('show');
-        };
-
-        function getBlockColor(blockText) {
-            const color = wasmModule.get_block_color(blockText);
-            return { bg: color, text: '#000000' };
-        }
 
         window.startGame = function() {
             if (gameData.length === 0) return;
             
-            const currentGame = gameData[level];
-            const blocks = parseAnswer(currentGame.answer);
-            const fakeBlocks = getFakeBlocks(level);
-            const sequence = createBlockSequence(blocks, fakeBlocks);
-            
-            availableBlocks = sequence;
-            grid = Array(CONFIG.GRID_ROWS).fill(null).map(() => Array(CONFIG.GRID_COLS).fill(null));
-            fallingBlocks = [];
-            userAnswer = "";
-            answerHistory = [];
             gameState = 'playing';
-            blockIdCounter = 0;
             gameStartTime = Date.now();
-            mistakeCount = 0;
-            currentLevelBombCount = 0;
             
-            wasmModule.reset_undo_count();
-            wasmModule.reset_bomb_usage();
+            loadProblem();
             
-            document.getElementById('description').textContent = '문장: ' + currentGame.description;
-            document.getElementById('target').textContent = '목표: ' + correctAnswer.split('').map(c => c === " " ? "□" : c).join('');
-            document.getElementById('target').classList.remove('show');
-            document.getElementById('message').textContent = '';
-            document.getElementById('buttons').innerHTML = '<button class="btn btn-stop" onclick="stopGameManually()">■ 게임 중단</button>';
+            document.getElementById('buttons').innerHTML = '<button class="btn btn-submit" onclick="checkAnswer()">정답 확인</button><button class="btn btn-stop" onclick="stopGameManually()">■ 게임 중단</button>';
+        };
+
+        function loadProblem() {
+            currentProblem = gameData[level];
             
-            stopGame();
-            updateDisplay();
-            spawnBlock();
-            startFalling();
-            startGravity();
-            setTimeout(() => scheduleNextBlock(), 1500);
+            document.getElementById('sentence').innerHTML = currentProblem.sentence.replace(/\(_+\)/g, '<span class="blank">(_____)</span>');
+            
+            const optionsGrid = document.getElementById('optionsGrid');
+            optionsGrid.innerHTML = '';
+            currentProblem.options.forEach(option => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.textContent = option;
+                btn.onclick = () => {
+                    const input = document.getElementById('answerInput');
+                    input.value = option;
+                    input.focus();
+                };
+                optionsGrid.appendChild(btn);
+            });
+            
+            document.getElementById('answerInput').value = '';
+            document.getElementById('hintDisplay').classList.remove('show');
+            document.getElementById('correctAnswerDisplay').classList.remove('show');
+            document.getElementById('levelNum').textContent = level + 1;
+        }
+
+        window.toggleHint = function() {
+            const hintDisplay = document.getElementById('hintDisplay');
+            const correctDisplay = document.getElementById('correctAnswerDisplay');
+            
+            correctDisplay.classList.remove('show');
+            
+            if (hintDisplay.classList.contains('show')) {
+                hintDisplay.classList.remove('show');
+            } else {
+                hintDisplay.textContent = `💡 힌트: ${currentProblem.hint} (${currentProblem.condition})`;
+                hintDisplay.classList.add('show');
+            }
+        };
+
+        window.toggleCorrectAnswer = function() {
+            const correctDisplay = document.getElementById('correctAnswerDisplay');
+            const hintDisplay = document.getElementById('hintDisplay');
+            
+            hintDisplay.classList.remove('show');
+            
+            if (correctDisplay.classList.contains('show')) {
+                correctDisplay.classList.remove('show');
+            } else {
+                correctDisplay.textContent = `✅ 정답: ${currentProblem.answer.join(' 또는 ')}`;
+                correctDisplay.classList.add('show');
+            }
+        };
+
+        window.toggleContent = function() {
+            const contentSection = document.getElementById('contentSection');
+            const btn = event.target;
+            
+            if (contentSection.classList.contains('hidden')) {
+                contentSection.classList.remove('hidden');
+                btn.textContent = '화면 OFF';
+            } else {
+                contentSection.classList.add('hidden');
+                btn.textContent = '화면 ON';
+            }
+        };
+
+        window.checkAnswer = function() {
+            if (gameState !== 'playing') return;
+            
+            const userAnswer = document.getElementById('answerInput').value.trim();
+            
+            if (!userAnswer) {
+                alert('답을 입력해주세요.');
+                return;
+            }
+            
+            const isCorrect = currentProblem.answer.some(ans => 
+                userAnswer.toLowerCase() === ans.toLowerCase()
+	    );
+            
+            const messageEl = document.getElementById('message');
+            
+            if (isCorrect) {
+                const elapsedSeconds = Math.floor((Date.now() - gameStartTime) / 1000);
+                
+                messageEl.textContent = '🎉 정답입니다!';
+                messageEl.className = 'message success show';
+                
+                messageEl.onclick = () => {
+                    messageEl.classList.remove('show');
+                    
+                    if (level < gameData.length - 1) {
+                        level++;
+                        gameStartTime = Date.now();
+                        loadProblem();
+                    } else {
+                        let studentName = '학생';
+                        try {
+                            studentName = wasmModule.get_cookie('studentName');
+                        } catch (e) {}
+                        
+                        messageEl.innerHTML = `🏆 ${studentName}<br>대단합니다!`;
+                        messageEl.className = 'message success show';
+                        gameState = 'complete';
+                        
+                        messageEl.onclick = () => {
+                            messageEl.classList.remove('show');
+                            showButtons();
+                        };
+                    }
+                };
+            } else {
+                messageEl.textContent = '❌ 틀렸습니다!';
+                messageEl.className = 'message fail show';
+                
+                messageEl.onclick = () => {
+                    messageEl.classList.remove('show');
+                };
+            }
         };
 
         window.stopGameManually = function() {
             gameState = 'stopped';
-            stopGame();
-            document.getElementById('message').textContent = '';
-            document.getElementById('message').className = 'message';
             showButtons();
         };
+
+        function showButtons() {
+            const buttonsEl = document.getElementById('buttons');
+            buttonsEl.innerHTML = `
+                <button class="btn btn-reset" onclick="backToLevelSelect()">레벨 선택</button>
+                <button class="btn btn-start" onclick="startGame()">▶ 다시 시도</button>
+                <button class="btn btn-stop" onclick="logout()">로그아웃</button>
+            `;
+        }
 
         function resetGame() {
             level = 0;
             gameState = 'ready';
-            userAnswer = "";
-            answerHistory = [];
-            correctAnswer = "";
-            speed = CONFIG.FALL_SPEED;
-            stopGame();
-            
-            wasmModule.reset_undo_count();
-            wasmModule.reset_bomb_usage();
             
             document.getElementById('levelNum').textContent = '1';
-            document.getElementById('message').textContent = '';
             document.getElementById('buttons').innerHTML = '<button class="btn btn-start" onclick="startGame()">▶ 게임 시작</button>';
-            
-            grid = Array(CONFIG.GRID_ROWS).fill(null).map(() => Array(CONFIG.GRID_COLS).fill(null));
-            fallingBlocks = [];
-            updateDisplay();
+            document.getElementById('answerInput').value = '';
+            document.getElementById('hintDisplay').classList.remove('show');
+            document.getElementById('correctAnswerDisplay').classList.remove('show');
+            document.getElementById('contentSection').classList.remove('hidden');
         }
 
         window.backToLevelSelect = function() {
@@ -831,550 +676,6 @@ function parseAnswer(answer) {
             resetGame();
         };
 
-        function spawnBlock() {
-            if (gameState !== 'playing' || availableBlocks.length === 0) return;
-            
-            const blockText = availableBlocks.shift();
-            const cells = blockText.split('');
-            const maxLane = CONFIG.GRID_COLS - cells.length;
-            const seed = wasmModule.generate_seed();
-            const lane = seed % (maxLane + 1);
-            
-            const newBlock = {
-                text: blockText,
-                cells: cells,
-                position: -1,
-                lane: lane,
-                id: blockIdCounter++,
-                color: getBlockColor(blockText)
-            };
-            
-            if (!checkCollision(newBlock)) {
-                fallingBlocks.push(newBlock);
-                updateDisplay();
-            } else {
-                availableBlocks.unshift(blockText);
-                setTimeout(() => spawnBlock(), 500);
-            }
-        }
-
-        function scheduleNextBlock() {
-            if (gameState !== 'playing' || availableBlocks.length === 0) return;
-            
-            const seed = wasmModule.generate_seed();
-            const delay = (seed % (CONFIG.SPAWN_DELAY_MAX - CONFIG.SPAWN_DELAY_MIN)) + CONFIG.SPAWN_DELAY_MIN;
-            spawnTimeout = setTimeout(() => {
-                spawnBlock();
-                scheduleNextBlock();
-            }, delay);
-        }
-
-        function startFalling() {
-            fallInterval = setInterval(() => {
-                if (gameState !== 'playing') return;
-                
-                fallingBlocks.forEach(block => {
-                    const nextBlock = { ...block, position: block.position + 1 };
-                    
-                    if (checkCollision(nextBlock)) {
-                        stackBlock(block);
-                        fallingBlocks = fallingBlocks.filter(b => b.id !== block.id);
-                    } else {
-                        block.position++;
-                    }
-                });
-                
-                updateDisplay();
-            }, speed);
-        }
-
-        function startGravity() {
-            gravityInterval = setInterval(() => {
-                if (gameState !== 'playing') return;
-                applyGravityStep();
-            }, CONFIG.GRAVITY_SPEED);
-        }
-
-        function stopGame() {
-            if (fallInterval) {
-                clearInterval(fallInterval);
-                fallInterval = null;
-            }
-            if (spawnTimeout) {
-                clearTimeout(spawnTimeout);
-                spawnTimeout = null;
-            }
-            if (gravityInterval) {
-                clearInterval(gravityInterval);
-                gravityInterval = null;
-            }
-        }
-
-        function checkCollision(block) {
-            const row = block.position;
-            if (row < 0) return false;
-            if (row >= CONFIG.GRID_ROWS) return false;
-            
-            for (let i = 0; i < block.cells.length; i++) {
-                const col = block.lane + i;
-                if (col >= CONFIG.GRID_COLS) return false;
-                
-                const nextRow = row + 1;
-                if (nextRow >= CONFIG.GRID_ROWS) return true;
-                if (grid[nextRow][col] !== null) return true;
-            }
-            return false;
-        }
-
-        function stackBlock(block) {
-            block.cells.forEach((cell, idx) => {
-                const row = block.position;
-                const col = block.lane + idx;
-                if (row >= 0 && row < CONFIG.GRID_ROWS && col < CONFIG.GRID_COLS) {
-                    grid[row][col] = {
-                        char: cell,
-                        blockText: block.text,
-                        color: block.color,
-                        id: block.id,
-                        blockLength: block.cells.length,
-                        posInBlock: idx
-                    };
-                }
-            });
-        }
-
-        function applyGravityStep() {
-            const blockIds = new Set();
-            for (let row = 0; row < CONFIG.GRID_ROWS; row++) {
-                for (let col = 0; col < CONFIG.GRID_COLS; col++) {
-                    if (grid[row][col] !== null) {
-                        blockIds.add(grid[row][col].id);
-                    }
-                }
-            }
-            
-            let moved = false;
-            blockIds.forEach(blockId => {
-                const blockCells = [];
-                for (let row = 0; row < CONFIG.GRID_ROWS; row++) {
-                    for (let col = 0; col < CONFIG.GRID_COLS; col++) {
-                        if (grid[row][col] && grid[row][col].id === blockId) {
-                            blockCells.push({ row, col, data: grid[row][col] });
-                        }
-                    }
-                }
-                
-                if (blockCells.length === 0) return;
-                
-                const canFall = blockCells.every(cell => {
-                    const nextRow = cell.row + 1;
-                    if (nextRow >= CONFIG.GRID_ROWS) return false;
-                    const cellBelow = grid[nextRow][cell.col];
-                    return cellBelow === null || cellBelow.id === blockId;
-                });
-                
-                if (canFall) {
-                    blockCells.sort((a, b) => b.row - a.row);
-                    blockCells.forEach(cell => {
-                        grid[cell.row][cell.col] = null;
-                    });
-                    blockCells.forEach(cell => {
-                        grid[cell.row + 1][cell.col] = cell.data;
-                    });
-                    moved = true;
-                }
-            });
-            
-            if (moved) updateDisplay();
-        }
-
-        function updateDisplay() {
-            const gridEl = document.getElementById('grid');
-            gridEl.innerHTML = '';
-            
-            // 8x9 그리드 표시
-            for (let row = 0; row < CONFIG.GRID_ROWS; row++) {
-                const rowEl = document.createElement('div');
-                rowEl.className = 'row';
-                
-                for (let col = 0; col < CONFIG.GRID_COLS; col++) {
-                    const cellEl = document.createElement('div');
-                    cellEl.className = 'cell';
-                    
-                    const fallingBlock = fallingBlocks.find(fb => 
-                        fb.position === row && col >= fb.lane && col < fb.lane + fb.cells.length
-                    );
-                    
-                    if (fallingBlock) {
-                        const fallingIdx = col - fallingBlock.lane;
-                        cellEl.style.backgroundColor = fallingBlock.color.bg;
-                        cellEl.style.color = fallingBlock.color.text;
-                        cellEl.textContent = fallingBlock.cells[fallingIdx] === " " ? "" : fallingBlock.cells[fallingIdx];
-                        cellEl.classList.add('clickable', 'block-cell');
-                        
-                        if (fallingBlock.cells.length === 1) {
-                            cellEl.classList.add('block-single');
-                        } else if (fallingIdx === 0) {
-                            cellEl.classList.add('block-start');
-                        } else if (fallingIdx === fallingBlock.cells.length - 1) {
-                            cellEl.classList.add('block-end');
-                        } else {
-                            cellEl.classList.add('block-middle');
-                        }
-                        
-                        cellEl.dataset.blockId = fallingBlock.id;
-                        cellEl.onclick = () => handleBlockClick(fallingBlock.id);
-                        cellEl.onmouseenter = () => highlightBlock(fallingBlock.id, true);
-                        cellEl.onmouseleave = () => highlightBlock(fallingBlock.id, false);
-                    } else if (grid[row][col]) {
-                        const cell = grid[row][col];
-                        cellEl.style.backgroundColor = cell.color.bg;
-                        cellEl.style.color = cell.color.text;
-                        cellEl.textContent = cell.char === " " ? "" : cell.char;
-                        cellEl.classList.add('clickable', 'block-cell');
-                        
-                        if (cell.blockLength === 1) {
-                            cellEl.classList.add('block-single');
-                        } else if (cell.posInBlock === 0) {
-                            cellEl.classList.add('block-start');
-                        } else if (cell.posInBlock === cell.blockLength - 1) {
-                            cellEl.classList.add('block-end');
-                        } else {
-                            cellEl.classList.add('block-middle');
-                        }
-                        
-                        cellEl.dataset.blockId = cell.id;
-                        cellEl.onclick = () => handleCellClick(row, col);
-                        cellEl.onmouseenter = () => highlightBlock(cell.id, true);
-                        cellEl.onmouseleave = () => highlightBlock(cell.id, false);
-                    } else {
-                        cellEl.classList.add('empty');
-                    }
-                    
-                    rowEl.appendChild(cellEl);
-                }
-                
-                gridEl.appendChild(rowEl);
-            }
-            
-            // 고정 조사 블록 행 추가
-            const josaRow = document.createElement('div');
-            josaRow.className = 'row fixed-josa-row';
-            
-            for (let i = 0; i < FIXED_JOSA_BLOCKS.length; i++) {
-                const josaText = FIXED_JOSA_BLOCKS[i];
-                const cellEl = document.createElement('div');
-                cellEl.className = 'cell clickable block-cell block-single fixed-josa';
-                
-                const color = getBlockColor(josaText);
-                cellEl.style.backgroundColor = color.bg;
-                cellEl.style.color = color.text;
-                cellEl.textContent = josaText === ' ' ? '' : josaText;
-                
-                cellEl.onclick = () => handleFixedJosaClick(josaText);
-                
-                josaRow.appendChild(cellEl);
-            }
-            
-            // 나머지 빈 칸 채우기
-            const remaining = CONFIG.GRID_COLS - FIXED_JOSA_BLOCKS.length;
-            for (let i = 0; i < remaining; i++) {
-                const cellEl = document.createElement('div');
-                cellEl.className = 'cell empty';
-                josaRow.appendChild(cellEl);
-            }
-            
-            gridEl.appendChild(josaRow);
-            
-            updateAnswerDisplay();
-        }
-
-
-
-        function highlightBlock(blockId, highlight) {
-            const cells = document.querySelectorAll(`[data-block-id="${blockId}"]`);
-            cells.forEach(cell => {
-                if (highlight) {
-                    cell.classList.add('block-hover');
-                } else {
-                    cell.classList.remove('block-hover');
-                }
-            });
-        }
-
-        function handleBlockClick(blockId) {
-            if (gameState !== 'playing') return;
-            
-            const block = fallingBlocks.find(b => b.id === blockId);
-            if (!block) return;
-            
-            playClickSound();
-            const blockText = block.text;
-            fallingBlocks = fallingBlocks.filter(b => b.id !== blockId);
-            answerHistory.push(blockText);
-            userAnswer += blockText;
-            
-            updateDisplay();
-            
-            const correctLength = correctAnswer.length;
-            if (userAnswer.length >= correctLength) {
-                checkAnswer();
-            }
-        }
-
-        function handleCellClick(row, col) {
-            if (gameState !== 'playing') return;
-            
-            const cell = grid[row][col];
-            if (!cell) return;
-
-            playClickSound();
-            const blockText = cell.blockText;
-            const blockId = cell.id;
-
-            for (let r = 0; r < CONFIG.GRID_ROWS; r++) {
-                for (let c = 0; c < CONFIG.GRID_COLS; c++) {
-                    if (grid[r][c] && grid[r][c].id === blockId) {
-                        grid[r][c] = null;
-                    }
-                }
-            }
-
-            answerHistory.push(blockText);
-            userAnswer += blockText;
-            updateDisplay();
-
-            const correctLength = correctAnswer.length;
-            if (userAnswer.length >= correctLength) {
-                checkAnswer();
-            }
-        }
-
-
-
-
-function handleFixedJosaClick(josaText) {
-    if (gameState !== 'playing') return;
-    
-    playClickSound();
-    
-    const textToAdd = (josaText !== ' ') ? josaText + ' ' : josaText;
-    
-    answerHistory.push(textToAdd);
-    userAnswer += textToAdd;
-    
-    updateDisplay();
-    
-    const correctLength = correctAnswer.length;
-    if (userAnswer.length >= correctLength) {
-        checkAnswer();
-    }
-}
-
-
-
-
-        
-function handleUndo() {
-    if (gameState !== 'playing' || answerHistory.length === 0) return;
-
-    if (!wasmModule.can_undo()) {
-        alert('되돌리기는 게임당 20번까지만 가능합니다.');
-        return;
-    }
-
-    wasmModule.increment_undo();
-
-    const lastBlock = answerHistory.pop();
-    userAnswer = userAnswer.slice(0, -lastBlock.length);
-    
-    // 고정 조사 블록(+ 공백 포함)은 다시 생성하지 않음
-    const fixedJosaWithSpace = FIXED_JOSA_BLOCKS.map(j => j === ' ' ? j : j + ' ');
-    const isFixedJosa = FIXED_JOSA_BLOCKS.includes(lastBlock) || fixedJosaWithSpace.includes(lastBlock);
-    
-    if (!isFixedJosa) {
-        const cells = lastBlock.split('');
-        const maxLane = CONFIG.GRID_COLS - cells.length;
-        const seed = wasmModule.generate_seed();
-        const lane = seed % (maxLane + 1);
-        
-        const newBlock = {
-            text: lastBlock,
-            cells: cells,
-            position: -1,
-            lane: lane,
-            id: blockIdCounter++,
-            color: getBlockColor(lastBlock)
-        };
-        
-        fallingBlocks.push(newBlock);
-    }
-    
-    updateDisplay();
-}
-
-
-
-function handleBomb() {
-    if (gameState !== 'playing') return;
-    
-    currentLevelBombCount++;
-    playClickSound();
-    
-    grid = Array(CONFIG.GRID_ROWS).fill(null).map(() => Array(CONFIG.GRID_COLS).fill(null));
-    fallingBlocks = [];
-    
-    const currentBlocks = parseAnswer(gameData[level].answer);
-    const neededBlocks = [];
-    
-    // correctAnswer와 userAnswer를 비교하여 필요한 블록 찾기
-    let remainingAnswer = correctAnswer.slice(userAnswer.length);
-    
-    // 남은 정답에서 필요한 블록들 찾기
-    for (const block of currentBlocks) {
-        if (remainingAnswer.includes(block) && !userAnswer.includes(block)) {
-            neededBlocks.push(block);
-        }
-    }
-    
-    console.log('필요한 블록들:', neededBlocks);
-    console.log('현재 답:', userAnswer);
-    console.log('정답:', correctAnswer);
-    
-    // 조사 제거
-    const filteredNeeded = neededBlocks.filter(block => !FIXED_JOSA_BLOCKS.includes(block));
-    
-    const fakeBlocks = getFakeBlocks(level);
-    const enhancedBlocks = [];
-    
-    // 필요한 정답 블록 추가 (1번씩만)
-    filteredNeeded.forEach(block => {
-        enhancedBlocks.push(block);
-    });
-    
-    // 오답 블록을 정답 개수와 동일하게 추가 (1:1 비율)
-    const fakeCount = filteredNeeded.length;
-    for (let i = 0; i < fakeCount && fakeBlocks.length > 0; i++) {
-        const seed = wasmModule.generate_seed();
-        const fakeIdx = seed % fakeBlocks.length;
-        enhancedBlocks.push(fakeBlocks[fakeIdx]);
-        fakeBlocks.splice(fakeIdx, 1);
-    }
-    
-    // 랜덤하게 섞기
-    const seed = wasmModule.generate_seed();
-    const shuffledJson = wasmModule.generate_block_sequence(
-        JSON.stringify(enhancedBlocks.slice(0, Math.ceil(enhancedBlocks.length / 2))),
-        JSON.stringify(enhancedBlocks.slice(Math.ceil(enhancedBlocks.length / 2))),
-        seed
-    );
-    availableBlocks = JSON.parse(shuffledJson);
-    
-    updateDisplay();
-    
-    if (spawnTimeout) {
-        clearTimeout(spawnTimeout);
-        spawnTimeout = null;
-    }
-    
-    setTimeout(() => {
-        spawnBlock();
-        scheduleNextBlock();
-    }, 300);
-}
-
-
-
-        function updateAnswerDisplay() {
-            const display = document.getElementById('answerDisplay');
-            const text = userAnswer.split('').map(c => c === " " ? "□" : c).join('');
-            display.innerHTML = text + '<span class="blink">|</span>';
-            
-            const undoBtn = document.getElementById('undoBtn');
-            undoBtn.disabled = answerHistory.length === 0 || gameState !== 'playing' || !wasmModule.can_undo();
-            
-            const bombBtn = document.getElementById('bombBtn');
-            bombBtn.disabled = gameState !== 'playing';
-        }
-
-
-       
-function checkAnswer() {
-    const isCorrect = userAnswer === correctAnswer;
-    const messageEl = document.getElementById('message');
-
-    if (isCorrect) {
-        const elapsedSeconds = Math.floor((Date.now() - gameStartTime) / 1000);
-        if (!wasmModule.verify_timing(level, elapsedSeconds)) {
-            messageEl.textContent = '⚠️ 비정상적인 플레이가 감지되었습니다.';
-            messageEl.className = 'message fail show';
-            gameState = 'failed';
-            stopGame();
-            
-            setTimeout(() => {
-                messageEl.classList.remove('show');
-                setTimeout(() => showButtons(), 300);
-            }, 2000);
-            return;
-        }
-        
-        messageEl.textContent = '🎉 정답입니다!';
-        messageEl.className = 'message success show';
-        gameState = 'success';
-        stopGame();
-        
-        setTimeout(() => {
-            messageEl.classList.remove('show');
-            setTimeout(() => {
-                if (level < gameData.length - 1) {
-                    level++;
-                    document.getElementById('levelNum').textContent = level + 1;
-                    speed = Math.max(400, speed - 100);
-                    currentLevelBombCount = 0;
-                    startGame();
-                } else {
-                    // 모든 레벨 클리어 - 학생 이름 가져오기
-                    let studentName = '학생';
-                    try {
-                        studentName = wasmModule.get_cookie('studentName');
-                    } catch (e) {
-                        console.log('이름을 가져올 수 없습니다');
-                    }
-                    
-                    messageEl.innerHTML = `🏆 ${studentName}<br>대단합니다!`;
-                    messageEl.className = 'message success show';
-                    gameState = 'complete';
-                    setTimeout(() => {
-                        messageEl.classList.remove('show');
-                        setTimeout(() => showButtons(), 300);
-                    }, 3000);
-                }
-            }, 300);
-        }, 2000);
-    } else {
-        mistakeCount++;
-        messageEl.textContent = '❌ 틀렸습니다!';
-        messageEl.className = 'message fail show';
-        gameState = 'failed';
-        stopGame();
-        
-        setTimeout(() => {
-            messageEl.classList.remove('show');
-            setTimeout(() => showButtons(), 300);
-        }, 2000);
-    }
-}
-
-
-        function showButtons() {
-            const buttonsEl = document.getElementById('buttons');
-            buttonsEl.innerHTML = `
-                <button class="btn btn-reset" onclick="backToLevelSelect()">레벨 선택</button>
-                ${gameState === 'failed' || gameState === 'stopped' ? '<button class="btn btn-start" onclick="startGame()">▶ 다시 시도</button>' : ''}
-                ${gameState === 'failed' || gameState === 'stopped' ? '<button class="btn btn-stop" onclick="logout()">로그아웃</button>' : ''}
-            `;
-        }
-
         window.addEventListener('load', async () => {
             const wasmReady = await initWasm();
             if (!wasmReady) return;
@@ -1382,15 +683,8 @@ function checkAnswer() {
             if (!checkLogin()) return;
             
             document.getElementById('loadingScreen').style.display = 'none';
-            document.getElementById('gameContent').style.display = 'block';
-            
-            document.getElementById('undoBtn').onclick = handleUndo;
-            document.getElementById('bombBtn').onclick = handleBomb;
+            document.getElementById('gameContent').classList.remove('hidden');
         });
     </script>
-
-
-
-
 </body>
 </html>
