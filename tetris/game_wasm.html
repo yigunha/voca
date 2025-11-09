@@ -1267,14 +1267,7 @@ function checkAnswer() {
             return;
         }
         
-        const score = wasmModule.calculate_score(
-            level,
-            elapsedSeconds,
-            mistakeCount,
-            wasmModule.get_undo_count()
-        );
-        
-        messageEl.textContent = `🎉 정답입니다! (점수: ${score})`;
+        messageEl.textContent = '🎉 정답입니다!';
         messageEl.className = 'message success show';
         gameState = 'success';
         stopGame();
