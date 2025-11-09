@@ -310,36 +310,47 @@
             51%, 100% { opacity: 0; }
         }
         
-        .answer-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-        }
-        
-        .answer-header-left {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .answer-header h3 {
-            font-size: 0.85em;
-            color: #f3f4f6;
-        }
-        
-        .level {
-            font-size: 0.75em;
-            color: #9ca3af;
-            background: #1f2937;
-            padding: 4px 8px;
-            border-radius: 4px;
-        }
-        
-        .button-group {
-            display: flex;
-            gap: 6px;
-        }
+
+/* 기존 .answer-header 스타일 교체 */
+.answer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.answer-header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.answer-header-center {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+}
+
+.answer-header h3 {
+    font-size: 0.85em;
+    color: #f3f4f6;
+}
+
+.level {
+    font-size: 0.85em;
+    color: #f3f4f6;
+    background: #1f2937;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+.button-group {
+    display: flex;
+    gap: 6px;
+}
+
+
         
         .undo-btn, .show-target-btn, .bomb-btn {
             background: #6b7280;
@@ -503,24 +514,23 @@
                             <span class="blink">|</span>
                         </div>
                         
-                        <div class="answer-header">
-                            <div class="answer-header-left">
-                                <h3>정답칸:</h3>
-                                <div class="level">레벨 <span id="levelNum">1</span> / 12</div>
-                            </div>
-                            <div class="button-group">
-                                <button class="show-target-btn" onclick="toggleTarget()">👁️</button>
-                                <button class="bomb-btn" id="bombBtn" disabled>💣</button>
-                                <button class="undo-btn" id="undoBtn" disabled>↶</button>
-                            </div>
-                        </div>
+<!-- 기존 answer-header 부분 교체 -->
+<div class="answer-header">
+    <div class="answer-header-left">
+        <h3>정답칸:</h3>
+    </div>
+    <div class="answer-header-center">
+        <div class="level">레벨 <span id="levelNum">1</span> / 12</div>
+    </div>
+    <div class="button-group">
+        <button class="show-target-btn" onclick="toggleTarget()">👁️</button>
+        <button class="bomb-btn" id="bombBtn" disabled>💣</button>
+        <button class="undo-btn" id="undoBtn" disabled>↶</button>
+    </div>
+</div>
                         
                         <div class="target" id="target"></div>
-                        <div class="stats" id="stats">
-                            <span>되돌리기: <span id="undoCount">0</span>/20</span>
-                            <span>폭탄: <span id="bombCount">0</span> (무제한)</span>
-                        </div>
-                    </div>
+                     </div>
                 </div>
             </div>
         </div>
@@ -737,7 +747,6 @@ function checkLogin() {
             
             wasmModule.reset_undo_count();
             wasmModule.reset_bomb_usage();
-            updateStats();
             
             document.getElementById('description').textContent = '문장: ' + currentGame.description;
             document.getElementById('target').textContent = '목표: ' + correctAnswer.split('').map(c => c === " " ? "□" : c).join('');
@@ -772,7 +781,6 @@ function checkLogin() {
             
             wasmModule.reset_undo_count();
             wasmModule.reset_bomb_usage();
-            updateStats();
             
             document.getElementById('levelNum').textContent = '1';
             document.getElementById('message').textContent = '';
@@ -1131,41 +1139,46 @@ function handleFixedJosaClick(josaText) {
             }
         }
 
-        function handleUndo() {
-            if (gameState !== 'playing' || answerHistory.length === 0) return;
+        
+function handleUndo() {
+    if (gameState !== 'playing' || answerHistory.length === 0) return;
 
-            if (!wasmModule.can_undo()) {
-                alert('되돌리기는 게임당 20번까지만 가능합니다.');
-                return;
-            }
+    if (!wasmModule.can_undo()) {
+        alert('되돌리기는 게임당 20번까지만 가능합니다.');
+        return;
+    }
 
-            wasmModule.increment_undo();
-            updateStats();
+    wasmModule.increment_undo();
 
-            const lastBlock = answerHistory.pop();
-            userAnswer = userAnswer.slice(0, -lastBlock.length);
-            
-            // 조사는 되돌려도 다시 생성하지 않음 (고정 영역에 있으므로)
-            if (!FIXED_JOSA_BLOCKS.includes(lastBlock)) {
-                const cells = lastBlock.split('');
-                const maxLane = CONFIG.GRID_COLS - cells.length;
-                const seed = wasmModule.generate_seed();
-                const lane = seed % (maxLane + 1);
-                
-                const newBlock = {
-                    text: lastBlock,
-                    cells: cells,
-                    position: -1,
-                    lane: lane,
-                    id: blockIdCounter++,
-                    color: getBlockColor(lastBlock)
-                };
-                
-                fallingBlocks.push(newBlock);
-            }
-            
-            updateDisplay();
-        }
+    const lastBlock = answerHistory.pop();
+    userAnswer = userAnswer.slice(0, -lastBlock.length);
+    
+    // 고정 조사 블록(+ 공백 포함)은 다시 생성하지 않음
+    const fixedJosaWithSpace = FIXED_JOSA_BLOCKS.map(j => j === ' ' ? j : j + ' ');
+    const isFixedJosa = FIXED_JOSA_BLOCKS.includes(lastBlock) || fixedJosaWithSpace.includes(lastBlock);
+    
+    if (!isFixedJosa) {
+        const cells = lastBlock.split('');
+        const maxLane = CONFIG.GRID_COLS - cells.length;
+        const seed = wasmModule.generate_seed();
+        const lane = seed % (maxLane + 1);
+        
+        const newBlock = {
+            text: lastBlock,
+            cells: cells,
+            position: -1,
+            lane: lane,
+            id: blockIdCounter++,
+            color: getBlockColor(lastBlock)
+        };
+        
+        fallingBlocks.push(newBlock);
+    }
+    
+    updateDisplay();
+}
+
+
 
         function handleBomb() {
             if (gameState !== 'playing') return;
@@ -1242,10 +1255,6 @@ function handleFixedJosaClick(josaText) {
             bombBtn.disabled = gameState !== 'playing';
         }
 
-        function updateStats() {
-            document.getElementById('undoCount').textContent = wasmModule.get_undo_count();
-            document.getElementById('bombCount').textContent = currentLevelBombCount;
-        }
 
        
 function checkAnswer() {
