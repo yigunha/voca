@@ -313,25 +313,27 @@
 /* 컨테이너 스타일 (다크 모드 배경 및 테두리) */
 .answer-header {
     display: flex;
-    justify-content: space-between;
+    justify-content: space-between; /* 좌우 끝으로 정렬 */
     align-items: center;
-    padding: 10px 15px;
+    padding: 8px 12px;
     background-color: #363a40;
     border-radius: 8px;
-    flex-wrap: nowrap;
-    min-width: 400px;
+    flex-wrap: nowrap; /* 한 줄 유지 */
+    /* min-width: 350px; /* 벗어남 문제의 원인일 수 있어 제거 */
+    width: 100%; /* 부모 컨테이너의 100% 너비를 사용 */
+    box-sizing: border-box; /* 패딩과 보더가 너비에 포함되도록 */
 }
 
 .header-left-group {
     display: flex;
     align-items: center;
-    gap: 10px;
-    flex-shrink: 0;
+    gap: 12px;
+    flex-shrink: 0; /* 공간 부족해도 줄어들지 않음 */
 }
 
 .answer-label h3 {
     color: #f0f0f0;
-    font-size: 16px;
+    font-size: 15px;
     margin: 0;
     white-space: nowrap;
 }
@@ -339,48 +341,50 @@
 .header-right-group {
     display: flex;
     align-items: center;
-    gap: 8px;
-    flex-shrink: 0;
+    gap: 6px;
+    flex-shrink: 0; /* 공간 부족해도 줄어들지 않음 */
+    /* flex-grow: 1; /* 이 그룹이 남은 공간을 채우지 않도록 */
+    justify-content: flex-end; /* 이 그룹 내 요소들을 오른쪽으로 정렬 */
 }
 
 .level {
     background-color: #2b2f34;
-    padding: 8px 12px;
-    border-radius: 6px;
+    padding: 6px 10px;
+    border-radius: 5px;
     color: #e0e0e0;
     font-weight: bold;
-    font-size: 16px;
+    font-size: 14px;
     white-space: nowrap;
 }
 
 .show-target-btn, .bomb-btn, .undo-btn {
-    padding: 8px 12px;
+    padding: 6px 8px;
     border: none;
     cursor: pointer;
-    border-radius: 6px;
-    font-size: 18px;
+    border-radius: 5px;
     transition: background-color 0.2s;
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 40px;
-    min-width: 40px;
+    height: 32px;
+    min-width: 32px; /* 버튼의 최소 너비는 유지하여 아이콘이 찌그러지지 않게 */
     color: white;
 }
 
 .show-target-btn {
     background-color: #555c66;
+    font-size: 16px;
 }
 
 .bomb-btn {
     background-color: #d83a3a;
-    font-size: 20px;
+    font-size: 18px;
     line-height: 1;
 }
 
 .undo-btn {
     background-color: #555c66;
-    font-size: 20px;
+    font-size: 18px;
 }
 
 
