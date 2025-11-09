@@ -1226,8 +1226,6 @@ function handleUndo() {
 
 
 
-
-
 function handleBomb() {
     if (gameState !== 'playing') return;
     
@@ -1260,22 +1258,21 @@ function handleBomb() {
     const fakeBlocks = getFakeBlocks(level);
     const enhancedBlocks = [];
     
-    // 필요한 블록을 5번씩 추가 (확률 대폭 증가)
+    // 필요한 정답 블록 추가 (1번씩만)
     filteredNeeded.forEach(block => {
-        for (let i = 0; i < 5; i++) {
-            enhancedBlocks.push(block);
-        }
+        enhancedBlocks.push(block);
     });
     
-    // 오답 블록은 적게 추가
-    const remainingCount = Math.max(5, filteredNeeded.length);
-    for (let i = 0; i < remainingCount && fakeBlocks.length > 0; i++) {
+    // 오답 블록을 정답 개수와 동일하게 추가 (1:1 비율)
+    const fakeCount = filteredNeeded.length;
+    for (let i = 0; i < fakeCount && fakeBlocks.length > 0; i++) {
         const seed = wasmModule.generate_seed();
         const fakeIdx = seed % fakeBlocks.length;
         enhancedBlocks.push(fakeBlocks[fakeIdx]);
         fakeBlocks.splice(fakeIdx, 1);
     }
     
+    // 랜덤하게 섞기
     const seed = wasmModule.generate_seed();
     const shuffledJson = wasmModule.generate_block_sequence(
         JSON.stringify(enhancedBlocks.slice(0, Math.ceil(enhancedBlocks.length / 2))),
@@ -1296,16 +1293,6 @@ function handleBomb() {
         scheduleNextBlock();
     }, 300);
 }
-
-
-
-
-
-
-
-
-
-
 
 
 
