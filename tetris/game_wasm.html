@@ -1291,13 +1291,21 @@ function checkAnswer() {
                     currentLevelBombCount = 0;
                     startGame();
                 } else {
-                    messageEl.textContent = '🏆 모든 레벨을 클리어했습니다!';
+                    // 모든 레벨 클리어 - 학생 이름 가져오기
+                    let studentName = '학생';
+                    try {
+                        studentName = wasmModule.get_cookie('studentName');
+                    } catch (e) {
+                        console.log('이름을 가져올 수 없습니다');
+                    }
+                    
+                    messageEl.innerHTML = `🏆 ${studentName}<br>대단합니다!`;
                     messageEl.className = 'message success show';
                     gameState = 'complete';
                     setTimeout(() => {
                         messageEl.classList.remove('show');
                         setTimeout(() => showButtons(), 300);
-                    }, 2000);
+                    }, 3000);
                 }
             }, 300);
         }, 2000);
