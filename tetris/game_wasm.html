@@ -573,14 +573,17 @@
             }
         }
 
-        window.logout = function() {
-            if (wasmModule) {
-                wasmModule.delete_cookie('studentName');
-                wasmModule.delete_cookie('studentClass');
-                wasmModule.delete_cookie('studentPassword');
-            }
-            window.location.href = '../munpup.html';
-        };
+
+window.logout = function() {
+    if (wasmModule) {
+        wasmModule.delete_cookie('studentName');
+        wasmModule.delete_cookie('studentClass');
+        wasmModule.delete_cookie('studentPassword');
+    }
+    // logout 파라미터 추가
+    window.location.href = '../munpup.html?logout=true';
+};
+
 
         async function loadEncryptedData(levelName) {
             try {
