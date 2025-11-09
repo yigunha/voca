@@ -21,36 +21,7 @@
             justify-content: center;
             align-items: center;
         }
-        
-        .user-info {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 10px 15px;
-            border-radius: 8px;
-            color: white;
-            font-size: 0.9em;
-            display: none;
-            gap: 15px;
-            align-items: center;
-            z-index: 100;
-        }
-        
-        .logout-btn {
-            padding: 5px 10px;
-            background: #ef4444;
-            border: none;
-            border-radius: 4px;
-            color: white;
-            cursor: pointer;
-            font-size: 0.85em;
-        }
-        
-        .logout-btn:hover {
-            background: #dc2626;
-        }
-        
+         
         .container {
             width: 100%;
             max-width: 392px;
@@ -219,33 +190,63 @@
             50% { transform: scale(1.1); }
         }
         
-        .message {
-            text-align: center;
-            font-size: 1.1em;
-            font-weight: bold;
-            margin-bottom: 12px;
-            min-height: 30px;
-        }
+.message {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    font-size: 1.5em;
+    font-weight: bold;
+    background: rgba(31, 41, 55, 0.95);
+    padding: 30px 50px;
+    border-radius: 12px;
+    border: 3px solid;
+    min-height: auto;
+    z-index: 1000;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
+
+.message.show {
+    opacity: 1;
+}
+
+
+.message.success { 
+    color: #10b981;
+    border-color: #10b981;
+    box-shadow: 0 0 30px rgba(16, 185, 129, 0.3);
+}
+
+.message.fail { 
+    color: #ef4444;
+    border-color: #ef4444;
+    box-shadow: 0 0 30px rgba(239, 68, 68, 0.3);
+}
+
         
-        .message.success { color: #10b981; }
-        .message.fail { color: #ef4444; }
-        
-        .buttons {
-            display: flex;
-            gap: 8px;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-bottom: 12px;
-        }
-        
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 0.95em;
-            cursor: pointer;
-        }
+.buttons {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    flex-wrap: nowrap;
+    margin-bottom: 12px;
+}
+
+.btn {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 0.85em;
+    cursor: pointer;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+}
+
         
         .btn-start {
             background: #22c55e;
@@ -434,18 +435,20 @@
 .fixed-josa-row {
     margin-top: 8px;
     padding-top: 8px;
-    border-top: 3px solid #fbbf24;
+    border-top: 2px solid #4b5563;
 }
 
 .fixed-josa {
-    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%) !important;
+    background: linear-gradient(135deg, #374151 0%, #1f2937 100%) !important;
     cursor: pointer;
     transition: all 0.2s;
+    border: 1px solid #6b7280 !important;
 }
 
 .fixed-josa:hover {
     transform: scale(1.08);
-    box-shadow: 0 4px 8px rgba(251, 191, 36, 0.5);
+    box-shadow: 0 4px 8px rgba(107, 114, 128, 0.5);
+    background: linear-gradient(135deg, #4b5563 0%, #374151 100%) !important;
 }
 
 .fixed-josa:active {
@@ -460,10 +463,7 @@
     </style>
 </head>
 <body>
-    <div class="user-info" id="userInfo">
-        <span id="studentInfo"></span>
-        <button class="logout-btn" onclick="logout()">로그아웃</button>
-    </div>
+    
 
     <div class="container">
         <div class="game-box">
@@ -583,30 +583,29 @@
             }
         }
 
-        function checkLogin() {
-            if (!wasmModule) return false;
-            
-            try {
-                if (!wasmModule.check_login_status()) {
-                    window.location.href = '../munpup.html';
-                    return false;
-                }
-                
-                wasmModule.refresh_cookies();
-                
-                const studentName = wasmModule.get_cookie('studentName');
-                const studentClass = wasmModule.get_cookie('studentClass');
-                document.getElementById('studentInfo').textContent = 
-                    `${studentClass} ${studentName}`;
-                document.getElementById('userInfo').style.display = 'flex';
-                
-                return true;
-            } catch (error) {
-                console.error('로그인 확인 실패:', error);
-                window.location.href = '../munpup.html';
-                return false;
-            }
+
+
+function checkLogin() {
+    if (!wasmModule) return false;
+    
+    try {
+        if (!wasmModule.check_login_status()) {
+            window.location.href = '../munpup.html';
+            return false;
         }
+        
+        wasmModule.refresh_cookies();
+        // 학생 정보 표시 제거
+        
+        return true;
+    } catch (error) {
+        console.error('로그인 확인 실패:', error);
+        window.location.href = '../munpup.html';
+        return false;
+    }
+}
+
+
 
         window.logout = function() {
             if (wasmModule) {
@@ -1241,59 +1240,77 @@
             document.getElementById('bombCount').textContent = currentLevelBombCount;
         }
 
-        function checkAnswer() {
-            const isCorrect = userAnswer === correctAnswer;
+       
+function checkAnswer() {
+    const isCorrect = userAnswer === correctAnswer;
+    const messageEl = document.getElementById('message');
 
-            if (isCorrect) {
-                const elapsedSeconds = Math.floor((Date.now() - gameStartTime) / 1000);
-                if (!wasmModule.verify_timing(level, elapsedSeconds)) {
-                    document.getElementById('message').textContent = '⚠️ 비정상적인 플레이가 감지되었습니다.';
-                    document.getElementById('message').className = 'message fail';
-                    gameState = 'failed';
-                    stopGame();
-                    showButtons();
-                    return;
-                }
-                
-                const score = wasmModule.calculate_score(
-                    level,
-                    elapsedSeconds,
-                    mistakeCount,
-                    wasmModule.get_undo_count()
-                );
-                
-                document.getElementById('message').textContent = `🎉 정답입니다! (점수: ${score})`;
-                document.getElementById('message').className = 'message success';
-                gameState = 'success';
-                stopGame();
-                
-                setTimeout(() => {
-                    if (level < gameData.length - 1) {
-                        level++;
-                        document.getElementById('levelNum').textContent = level + 1;
-                        speed = Math.max(400, speed - 100);
-                        currentLevelBombCount = 0;
-                        startGame();
-                    } else {
-                        document.getElementById('message').textContent = '🏆 모든 레벨을 클리어했습니다!';
-                        gameState = 'complete';
-                        showButtons();
-                    }
-                }, 2000);
-            } else {
-                mistakeCount++;
-                document.getElementById('message').textContent = '❌ 틀렸습니다!';
-                document.getElementById('message').className = 'message fail';
-                gameState = 'failed';
-                stopGame();
-                showButtons();
-            }
+    if (isCorrect) {
+        const elapsedSeconds = Math.floor((Date.now() - gameStartTime) / 1000);
+        if (!wasmModule.verify_timing(level, elapsedSeconds)) {
+            messageEl.textContent = '⚠️ 비정상적인 플레이가 감지되었습니다.';
+            messageEl.className = 'message fail show';
+            gameState = 'failed';
+            stopGame();
+            
+            setTimeout(() => {
+                messageEl.classList.remove('show');
+                setTimeout(() => showButtons(), 300);
+            }, 2000);
+            return;
         }
+        
+        const score = wasmModule.calculate_score(
+            level,
+            elapsedSeconds,
+            mistakeCount,
+            wasmModule.get_undo_count()
+        );
+        
+        messageEl.textContent = `🎉 정답입니다! (점수: ${score})`;
+        messageEl.className = 'message success show';
+        gameState = 'success';
+        stopGame();
+        
+        setTimeout(() => {
+            messageEl.classList.remove('show');
+            setTimeout(() => {
+                if (level < gameData.length - 1) {
+                    level++;
+                    document.getElementById('levelNum').textContent = level + 1;
+                    speed = Math.max(400, speed - 100);
+                    currentLevelBombCount = 0;
+                    startGame();
+                } else {
+                    messageEl.textContent = '🏆 모든 레벨을 클리어했습니다!';
+                    messageEl.className = 'message success show';
+                    gameState = 'complete';
+                    setTimeout(() => {
+                        messageEl.classList.remove('show');
+                        setTimeout(() => showButtons(), 300);
+                    }, 2000);
+                }
+            }, 300);
+        }, 2000);
+    } else {
+        mistakeCount++;
+        messageEl.textContent = '❌ 틀렸습니다!';
+        messageEl.className = 'message fail show';
+        gameState = 'failed';
+        stopGame();
+        
+        setTimeout(() => {
+            messageEl.classList.remove('show');
+            setTimeout(() => showButtons(), 300);
+        }, 2000);
+    }
+}
+
 
         function showButtons() {
             const buttonsEl = document.getElementById('buttons');
             buttonsEl.innerHTML = `
-                <button class="btn btn-reset" onclick="backToLevelSelect()">← 레벨 선택</button>
+                <button class="btn btn-reset" onclick="backToLevelSelect()">레벨 선택</button>
                 ${gameState === 'failed' || gameState === 'stopped' ? '<button class="btn btn-start" onclick="startGame()">▶ 다시 시도</button>' : ''}
                 ${gameState === 'failed' || gameState === 'stopped' ? '<button class="btn btn-stop" onclick="logout()">로그아웃</button>' : ''}
             `;
