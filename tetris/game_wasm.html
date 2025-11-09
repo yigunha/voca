@@ -711,9 +711,17 @@ function checkLogin() {
             } catch(e) {}
         }
 
-        function parseAnswer(answer) {
-            const blocks = answer.split('/');
-            correctAnswer = blocks.join('');
+	function parseAnswer(answer) {
+            // '/'로 분리하고, 각 블록 내의 공백도 분리
+            const blocks = answer.split('/').flatMap(block => {
+                if (block === '') return [];
+                // 블록 내에 공백이 있으면 공백으로도 분리
+                return block.split(' ').filter(part => part !== '');
+            });
+            
+            // 원본 answer에서 공백을 유지하여 correctAnswer 생성
+            correctAnswer = answer.split('/').join('');
+            
             return blocks;
         }
         
