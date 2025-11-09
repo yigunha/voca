@@ -29,7 +29,6 @@ export class InputHandler {
   move_up(): boolean;
   move_down(): boolean;
   move_next_row(): boolean;
-  clear_all_buffers(): void;
   get_buffer_state(): any;
   /**
    * DOM 인덱스 → 학생 데이터 인덱스 변환
@@ -100,7 +99,6 @@ export interface InitOutput {
   readonly inputhandler_move_up: (a: number) => number;
   readonly inputhandler_move_down: (a: number) => number;
   readonly inputhandler_move_next_row: (a: number) => number;
-  readonly inputhandler_clear_all_buffers: (a: number) => void;
   readonly inputhandler_get_buffer_state: (a: number) => any;
   readonly inputhandler_dom_to_student_index: (a: number, b: number) => number;
   readonly inputhandler_student_to_dom_index: (a: number, b: number) => number;

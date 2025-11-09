@@ -7,9 +7,6 @@ function initializePaper() {
     teacherData = [];
     errorMarks = [];
     
-    // ★★★ 이 플래그를 초기화하는 코드가 필요합니다. (1_config.js에 넣어도 좋습니다)
-    window.compositionCancelledByClick = false;
-    
     manuscriptPaper.className = 'manuscript-paper';
     if (cols === 20) {
         manuscriptPaper.classList.add('cols-20');
@@ -169,46 +166,37 @@ function clearSelection() {
     isSelecting = false;
 }
 
-// ★★★★★ handleCellClick 함수 수정 ★★★★★
+// 셀 클릭 핸들러
 function handleCellClick(idx, e) {
-    // 1. Composition(조합) 중인 경우 (한글 'ㅁ' 등)
     if (window.inputHandler && window.inputHandler.is_composing()) {
-        
-        // ★★★ (A) 플래그 설정: 'compositionend' 이벤트 무시
-        window.compositionCancelledByClick = true; 
-        
-        // (B) WASM에 조합 종료 알림
-        window.inputHandler.end_composition(); 
-        
-        // (C) 숨겨진 <input> 값 비우기
+        window.inputHandler.end_composition();
         var compositionInput = document.getElementById('compositionInput');
-        if (compositionInput) {
+        if (compositionInput && compositionInput.value) {
+            var result = window.inputHandler.finalize_composition(compositionInput.value);
+            handleInputResults(result);
             compositionInput.value = '';
         }
     }
     
-    // 2. 버퍼(buffer1)에 내용이 있는 경우 (영어 'a' 등)
     if (window.inputHandler) {
-        var oldPos = window.inputHandler.get_position(); // 현재 포지션을 저장
-        
-        // (A) Rust의 버퍼(buffer1, buffer2)를 비웁니다.
-        window.inputHandler.clear_all_buffers(); 
-        
-        // (B) 현재 셀(oldPos)에 'data-temp'로 표시된 
-        //     임시 버퍼 내용("ㅁ" 또는 "a")을 DOM에서 지웁니다.
-        if (oldPos >= 0 && oldPos < studentCells.length) {
-            var oldCell = studentCells[oldPos];
-            if (oldCell.dataset.temp) {
-                studentData[oldPos] = ''; // JS 데이터 클리어
-                var content = oldCell.querySelector('.cell-content');
-                if (content) content.textContent = ''; // DOM 클리어
-                delete oldCell.dataset.temp; // 임시 상태 제거
+        var oldPos = window.inputHandler.get_position();
+        if (oldPos + 1 < studentCells.length) {
+            var nextCell = studentCells[oldPos + 1];
+            if (nextCell.dataset.temp && studentData[oldPos + 1] === '') {
+                var nextContent = nextCell.querySelector('.cell-content');
+                if (nextContent) {
+                    nextContent.textContent = '';
+                }
+                delete nextCell.dataset.temp;
             }
+        }
+        
+        var result = window.inputHandler.finalize_buffer();
+        if (result) {
+            handleInputResults(result);
         }
     }
     
-    // 3. (이후 로직은 동일)
-    //    새로운 셀로 커서를 이동시킵니다.
     if (e.shiftKey) {
         e.preventDefault();
         
@@ -586,3 +574,15 @@ window.getManuscriptText = getManuscriptText;
 window.loadManuscriptText = loadManuscriptText;
 window.switchLayer = switchLayer;
 window.adjustMemoPanelPosition = adjustMemoPanelPosition;
+
+
+
+
+
+
+
+
+
+
+
+

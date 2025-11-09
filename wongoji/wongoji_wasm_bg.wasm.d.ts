@@ -20,7 +20,6 @@ export const inputhandler_move_right: (a: number) => number;
 export const inputhandler_move_up: (a: number) => number;
 export const inputhandler_move_down: (a: number) => number;
 export const inputhandler_move_next_row: (a: number) => number;
-export const inputhandler_clear_all_buffers: (a: number) => void;
 export const inputhandler_get_buffer_state: (a: number) => any;
 export const inputhandler_dom_to_student_index: (a: number, b: number) => number;
 export const inputhandler_student_to_dom_index: (a: number, b: number) => number;

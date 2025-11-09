@@ -236,26 +236,10 @@ function setupInputEvents() {
         lastCompositionData = text;
     });
     
-    // ★★★★★ 한글 조합 완료 (compositionend) 함수 수정 ★★★★★
+    // 한글 조합 완료
     compositionInput.addEventListener('compositionend', function(e) {
         if (!inputHandler) return;
         
-        // ★★★ (A) 클릭으로 취소되었는지 확인
-        if (window.compositionCancelledByClick === true) {
-            window.compositionCancelledByClick = false; // 플래그 리셋
-            isComposing = false;
-            // inputHandler.end_composition(); // handleCellClick에서 이미 호출됨
-            compositionInput.classList.remove('is-composing');
-            
-            for (var i = 0; i < studentCells.length; i++) {
-                studentCells[i].classList.remove('is-composing');
-            }
-            lastCompositionData = '';
-            compositionInput.value = '';
-            return; // ★★★ 여기서 finalize_composition() 호출을 막음
-        }
-        
-        // (B) (기존 로직)
         isComposing = false;
         inputHandler.end_composition();
         compositionInput.classList.remove('is-composing');
@@ -267,7 +251,7 @@ function setupInputEvents() {
         var text = e.data || '';
         if (text) {
             compositionInput.value = '';
-            var result = inputHandler.finalize_composition(text); // 정상 종료
+            var result = inputHandler.finalize_composition(text);
             handleInputResults(result);
         }
         
