@@ -514,17 +514,24 @@
                             <span class="blink">|</span>
                         </div>
                         
-<!-- 기존 answer-header 부분 교체 -->
 <div class="answer-header">
     <div class="answer-header-left">
         <h3>정답칸:</h3>
     </div>
+
+    <div class="button-group">
+        <button class="show-target-btn" onclick="toggleTarget()">👁️</button>
+    </div>
+    
+    <div class="button-group">
+        <button class="bomb-btn" id="bombBtn" disabled>💣</button>
+    </div>
+
     <div class="answer-header-center">
         <div class="level">레벨 <span id="levelNum">1</span> / 12</div>
     </div>
+    
     <div class="button-group">
-        <button class="show-target-btn" onclick="toggleTarget()">👁️</button>
-        <button class="bomb-btn" id="bombBtn" disabled>💣</button>
         <button class="undo-btn" id="undoBtn" disabled>↶</button>
     </div>
 </div>
