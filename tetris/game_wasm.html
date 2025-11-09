@@ -493,7 +493,7 @@
         </div>
     </div>
 
-    <script type="module">
+<script type="module">
         let wasmModule = null;
         
         const CONFIG = {
@@ -514,6 +514,7 @@
         let availableBlocks = [];
         let userAnswer = "";
         let answerHistory = [];
+        let correctAnswer = "";  // ← 전역 변수로 추가
         let gameState = 'ready';
         let speed = CONFIG.FALL_SPEED;
         let fallInterval = null;
@@ -641,11 +642,11 @@
             } catch(e) {}
         }
 
-function parseAnswer(answer) {
-    const blocks = answer.split('/');
-    correctAnswer = blocks.join('');
-    return blocks;
-}
+        function parseAnswer(answer) {
+            const blocks = answer.split('/');
+            correctAnswer = blocks.join('');  // ← 전역 변수에 저장
+            return blocks;
+        }
         
         function getFakeBlocks(currentLevel) {
             const fakeBlocks = [];
@@ -697,7 +698,6 @@ function parseAnswer(answer) {
             wasmModule.reset_bomb_usage();
             updateStats();
             
-            const correctAnswer = blocks.join('');
             document.getElementById('description').textContent = '문장: ' + currentGame.description;
             document.getElementById('target').textContent = '목표: ' + correctAnswer.split('').map(c => c === " " ? "□" : c).join('');
             document.getElementById('target').classList.remove('show');
@@ -725,6 +725,7 @@ function parseAnswer(answer) {
             gameState = 'ready';
             userAnswer = "";
             answerHistory = [];
+            correctAnswer = "";  // ← 초기화
             speed = CONFIG.FALL_SPEED;
             stopGame();
             
@@ -847,22 +848,22 @@ function parseAnswer(answer) {
             return false;
         }
 
-function stackBlock(block) {
-    block.cells.forEach((cell, idx) => {
-        const row = block.position;
-        const col = block.lane + idx;
-        if (row >= 0 && row < CONFIG.GRID_ROWS && col < CONFIG.GRID_COLS) {
-            grid[row][col] = {
-                char: cell,
-                blockText: block.text,
-                color: block.color,
-                id: block.id,
-                blockLength: block.cells.length,
-                posInBlock: idx
-            };
+        function stackBlock(block) {
+            block.cells.forEach((cell, idx) => {
+                const row = block.position;
+                const col = block.lane + idx;
+                if (row >= 0 && row < CONFIG.GRID_ROWS && col < CONFIG.GRID_COLS) {
+                    grid[row][col] = {
+                        char: cell,
+                        blockText: block.text,
+                        color: block.color,
+                        id: block.id,
+                        blockLength: block.cells.length,
+                        posInBlock: idx
+                    };
+                }
+            });
         }
-    });
-}
 
         function applyGravityStep() {
             const blockIds = new Set();
@@ -909,78 +910,76 @@ function stackBlock(block) {
             if (moved) updateDisplay();
         }
 
-       function updateDisplay() {
-    const gridEl = document.getElementById('grid');
-    gridEl.innerHTML = '';
-    
-    for (let row = 0; row < CONFIG.GRID_ROWS; row++) {
-        const rowEl = document.createElement('div');
-        rowEl.className = 'row';
-        
-        for (let col = 0; col < CONFIG.GRID_COLS; col++) {
-            const cellEl = document.createElement('div');
-            cellEl.className = 'cell';
+        function updateDisplay() {
+            const gridEl = document.getElementById('grid');
+            gridEl.innerHTML = '';
             
-            const fallingBlock = fallingBlocks.find(fb => 
-                fb.position === row && col >= fb.lane && col < fb.lane + fb.cells.length
-            );
-            
-            if (fallingBlock) {
-                const fallingIdx = col - fallingBlock.lane;
-                cellEl.style.backgroundColor = fallingBlock.color.bg;
-                cellEl.style.color = fallingBlock.color.text;
-                cellEl.textContent = fallingBlock.cells[fallingIdx] === " " ? "" : fallingBlock.cells[fallingIdx];
-                cellEl.classList.add('clickable', 'block-cell');
+            for (let row = 0; row < CONFIG.GRID_ROWS; row++) {
+                const rowEl = document.createElement('div');
+                rowEl.className = 'row';
                 
-                // 블록 위치에 따라 클래스 추가
-                if (fallingBlock.cells.length === 1) {
-                    cellEl.classList.add('block-single');
-                } else if (fallingIdx === 0) {
-                    cellEl.classList.add('block-start');
-                } else if (fallingIdx === fallingBlock.cells.length - 1) {
-                    cellEl.classList.add('block-end');
-                } else {
-                    cellEl.classList.add('block-middle');
+                for (let col = 0; col < CONFIG.GRID_COLS; col++) {
+                    const cellEl = document.createElement('div');
+                    cellEl.className = 'cell';
+                    
+                    const fallingBlock = fallingBlocks.find(fb => 
+                        fb.position === row && col >= fb.lane && col < fb.lane + fb.cells.length
+                    );
+                    
+                    if (fallingBlock) {
+                        const fallingIdx = col - fallingBlock.lane;
+                        cellEl.style.backgroundColor = fallingBlock.color.bg;
+                        cellEl.style.color = fallingBlock.color.text;
+                        cellEl.textContent = fallingBlock.cells[fallingIdx] === " " ? "" : fallingBlock.cells[fallingIdx];
+                        cellEl.classList.add('clickable', 'block-cell');
+                        
+                        if (fallingBlock.cells.length === 1) {
+                            cellEl.classList.add('block-single');
+                        } else if (fallingIdx === 0) {
+                            cellEl.classList.add('block-start');
+                        } else if (fallingIdx === fallingBlock.cells.length - 1) {
+                            cellEl.classList.add('block-end');
+                        } else {
+                            cellEl.classList.add('block-middle');
+                        }
+                        
+                        cellEl.dataset.blockId = fallingBlock.id;
+                        cellEl.onclick = () => handleBlockClick(fallingBlock.id);
+                        cellEl.onmouseenter = () => highlightBlock(fallingBlock.id, true);
+                        cellEl.onmouseleave = () => highlightBlock(fallingBlock.id, false);
+                    } else if (grid[row][col]) {
+                        const cell = grid[row][col];
+                        cellEl.style.backgroundColor = cell.color.bg;
+                        cellEl.style.color = cell.color.text;
+                        cellEl.textContent = cell.char === " " ? "" : cell.char;
+                        cellEl.classList.add('clickable', 'block-cell');
+                        
+                        if (cell.blockLength === 1) {
+                            cellEl.classList.add('block-single');
+                        } else if (cell.posInBlock === 0) {
+                            cellEl.classList.add('block-start');
+                        } else if (cell.posInBlock === cell.blockLength - 1) {
+                            cellEl.classList.add('block-end');
+                        } else {
+                            cellEl.classList.add('block-middle');
+                        }
+                        
+                        cellEl.dataset.blockId = cell.id;
+                        cellEl.onclick = () => handleCellClick(row, col);
+                        cellEl.onmouseenter = () => highlightBlock(cell.id, true);
+                        cellEl.onmouseleave = () => highlightBlock(cell.id, false);
+                    } else {
+                        cellEl.classList.add('empty');
+                    }
+                    
+                    rowEl.appendChild(cellEl);
                 }
                 
-                cellEl.dataset.blockId = fallingBlock.id;
-                cellEl.onclick = () => handleBlockClick(fallingBlock.id);
-                cellEl.onmouseenter = () => highlightBlock(fallingBlock.id, true);
-                cellEl.onmouseleave = () => highlightBlock(fallingBlock.id, false);
-            } else if (grid[row][col]) {
-                const cell = grid[row][col];
-                cellEl.style.backgroundColor = cell.color.bg;
-                cellEl.style.color = cell.color.text;
-                cellEl.textContent = cell.char === " " ? "" : cell.char;
-                cellEl.classList.add('clickable', 'block-cell');
-                
-                // 블록 위치에 따라 클래스 추가
-                if (cell.blockLength === 1) {
-                    cellEl.classList.add('block-single');
-                } else if (cell.posInBlock === 0) {
-                    cellEl.classList.add('block-start');
-                } else if (cell.posInBlock === cell.blockLength - 1) {
-                    cellEl.classList.add('block-end');
-                } else {
-                    cellEl.classList.add('block-middle');
-                }
-                
-                cellEl.dataset.blockId = cell.id;
-                cellEl.onclick = () => handleCellClick(row, col);
-                cellEl.onmouseenter = () => highlightBlock(cell.id, true);
-                cellEl.onmouseleave = () => highlightBlock(cell.id, false);
-            } else {
-                cellEl.classList.add('empty');
+                gridEl.appendChild(rowEl);
             }
             
-            rowEl.appendChild(cellEl);
+            updateAnswerDisplay();
         }
-        
-        gridEl.appendChild(rowEl);
-    }
-    
-    updateAnswerDisplay();
-}
 
         function highlightBlock(blockId, highlight) {
             const cells = document.querySelectorAll(`[data-block-id="${blockId}"]`);
@@ -993,53 +992,53 @@ function stackBlock(block) {
             });
         }
 
-function handleBlockClick(blockId) {
-    if (gameState !== 'playing') return;
-    
-    const block = fallingBlocks.find(b => b.id === blockId);
-    if (!block) return;
-    
-    playClickSound();
-    const blockText = block.text;
-    fallingBlocks = fallingBlocks.filter(b => b.id !== blockId);
-    answerHistory.push(blockText);
-    userAnswer += blockText;
-    
-    updateDisplay();
-    
-    const correctLength = gameData[level].answer.replace(/\//g, '').length;
-    if (userAnswer.length >= correctLength) {
-        checkAnswer();
-    }
-}
-
-function handleCellClick(row, col) {
-    if (gameState !== 'playing') return;
-    
-    const cell = grid[row][col];
-    if (!cell) return;
-
-    playClickSound();
-    const blockText = cell.blockText;
-    const blockId = cell.id;
-
-    for (let r = 0; r < CONFIG.GRID_ROWS; r++) {
-        for (let c = 0; c < CONFIG.GRID_COLS; c++) {
-            if (grid[r][c] && grid[r][c].id === blockId) {
-                grid[r][c] = null;
+        function handleBlockClick(blockId) {
+            if (gameState !== 'playing') return;
+            
+            const block = fallingBlocks.find(b => b.id === blockId);
+            if (!block) return;
+            
+            playClickSound();
+            const blockText = block.text;
+            fallingBlocks = fallingBlocks.filter(b => b.id !== blockId);
+            answerHistory.push(blockText);
+            userAnswer += blockText;
+            
+            updateDisplay();
+            
+            const correctLength = correctAnswer.length;
+            if (userAnswer.length >= correctLength) {
+                checkAnswer();
             }
         }
-    }
 
-    answerHistory.push(blockText);
-    userAnswer += blockText;
-    updateDisplay();
+        function handleCellClick(row, col) {
+            if (gameState !== 'playing') return;
+            
+            const cell = grid[row][col];
+            if (!cell) return;
 
-    const correctLength = gameData[level].answer.replace(/\//g, '').length;
-    if (userAnswer.length >= correctLength) {
-        checkAnswer();
-    }
-}
+            playClickSound();
+            const blockText = cell.blockText;
+            const blockId = cell.id;
+
+            for (let r = 0; r < CONFIG.GRID_ROWS; r++) {
+                for (let c = 0; c < CONFIG.GRID_COLS; c++) {
+                    if (grid[r][c] && grid[r][c].id === blockId) {
+                        grid[r][c] = null;
+                    }
+                }
+            }
+
+            answerHistory.push(blockText);
+            userAnswer += blockText;
+            updateDisplay();
+
+            const correctLength = correctAnswer.length;
+            if (userAnswer.length >= correctLength) {
+                checkAnswer();
+            }
+        }
 
         function handleUndo() {
             if (gameState !== 'playing' || answerHistory.length === 0) return;
@@ -1076,7 +1075,6 @@ function handleCellClick(row, col) {
         function handleBomb() {
             if (gameState !== 'playing') return;
             
-            // 폭탄 무제한 사용 가능
             currentLevelBombCount++;
             updateStats();
             playClickSound();
@@ -1141,57 +1139,54 @@ function handleCellClick(row, col) {
             document.getElementById('bombCount').textContent = currentLevelBombCount;
         }
 
-function checkAnswer() {
-    const isCorrect = userAnswer === correctAnswer;
+        function checkAnswer() {
+            const isCorrect = userAnswer === correctAnswer;
 
-    if (isCorrect) {
-        const elapsedSeconds = Math.floor((Date.now() - gameStartTime) / 1000);
-        if (!wasmModule.verify_timing(level, elapsedSeconds)) {
-            document.getElementById('message').textContent = '⚠️ 비정상적인 플레이가 감지되었습니다.';
-            document.getElementById('message').className = 'message fail';
-            gameState = 'failed';
-            stopGame();
-            showButtons();
-            return;
-        }
-        
-        const score = wasmModule.calculate_score(
-            level,
-            elapsedSeconds,
-            mistakeCount,
-            wasmModule.get_undo_count()
-        );
-        
-        document.getElementById('message').textContent = `🎉 정답입니다! (점수: ${score})`;
-        document.getElementById('message').className = 'message success';
-        gameState = 'success';
-        stopGame();
-        
-        setTimeout(() => {
-            if (level < gameData.length - 1) {
-                level++;
-                document.getElementById('levelNum').textContent = level + 1;
-                speed = Math.max(400, speed - 100);
-                currentLevelBombCount = 0;
-                startGame();
+            if (isCorrect) {
+                const elapsedSeconds = Math.floor((Date.now() - gameStartTime) / 1000);
+                if (!wasmModule.verify_timing(level, elapsedSeconds)) {
+                    document.getElementById('message').textContent = '⚠️ 비정상적인 플레이가 감지되었습니다.';
+                    document.getElementById('message').className = 'message fail';
+                    gameState = 'failed';
+                    stopGame();
+                    showButtons();
+                    return;
+                }
+                
+                const score = wasmModule.calculate_score(
+                    level,
+                    elapsedSeconds,
+                    mistakeCount,
+                    wasmModule.get_undo_count()
+                );
+                
+                document.getElementById('message').textContent = `🎉 정답입니다! (점수: ${score})`;
+                document.getElementById('message').className = 'message success';
+                gameState = 'success';
+                stopGame();
+                
+                setTimeout(() => {
+                    if (level < gameData.length - 1) {
+                        level++;
+                        document.getElementById('levelNum').textContent = level + 1;
+                        speed = Math.max(400, speed - 100);
+                        currentLevelBombCount = 0;
+                        startGame();
+                    } else {
+                        document.getElementById('message').textContent = '🏆 모든 레벨을 클리어했습니다!';
+                        gameState = 'complete';
+                        showButtons();
+                    }
+                }, 2000);
             } else {
-                document.getElementById('message').textContent = '🏆 모든 레벨을 클리어했습니다!';
-                gameState = 'complete';
+                mistakeCount++;
+                document.getElementById('message').textContent = '❌ 틀렸습니다!';
+                document.getElementById('message').className = 'message fail';
+                gameState = 'failed';
+                stopGame();
                 showButtons();
             }
-        }, 2000);
-    } else {
-        mistakeCount++;
-        document.getElementById('message').textContent = '❌ 틀렸습니다!';
-        document.getElementById('message').className = 'message fail';
-        gameState = 'failed';
-        stopGame();
-        showButtons();
-    }
-}
-
-
-
+        }
 
         function showButtons() {
             const buttonsEl = document.getElementById('buttons');
