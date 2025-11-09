@@ -981,11 +981,7 @@
             userAnswer += blockText;
             
             updateDisplay();
-            
-            const correctLength = gameData[level].answer.replace(/\//g, '').length;
-            if (userAnswer.length >= correctLength) {
-                checkAnswer();
-            }
+            checkAnswer();
         }
 
         function handleCellClick(row, col) {
@@ -1009,11 +1005,7 @@
             answerHistory.push(blockText);
             userAnswer += blockText;
             updateDisplay();
-
-            const correctLength = gameData[level].answer.replace(/\//g, '').length;
-            if (userAnswer.length >= correctLength) {
-                checkAnswer();
-            }
+ 	    checkAnswer();
         }
 
         function handleUndo() {
@@ -1116,71 +1108,76 @@
             document.getElementById('bombCount').textContent = currentLevelBombCount;
         }
 
-        function checkAnswer() {
-            const isCorrect = wasmModule.verify_answer(userAnswer, correctAnswerHash);
+function checkAnswer() {
+    // 빈 답변은 체크하지 않음
+    if (userAnswer.length === 0) return;
+    
+    const isCorrect = wasmModule.verify_answer(userAnswer, correctAnswerHash);
+    const correctLength = gameData[level].answer.replace(/\//g, '').length;
 
-            if (isCorrect) {
-                const elapsedSeconds = Math.floor((Date.now() - gameStartTime) / 1000);
-                if (!wasmModule.verify_timing(level, elapsedSeconds)) {
-                    document.getElementById('message').textContent = '⚠️ 비정상적인 플레이가 감지되었습니다.';
-                    document.getElementById('message').className = 'message fail';
-                    gameState = 'failed';
-                    stopGame();
-                    showButtons();
-                    return;
-                }
-                
-                const score = wasmModule.calculate_score(
-                    level,
-                    elapsedSeconds,
-                    mistakeCount,
-                    wasmModule.get_undo_count()
-                );
-                
-                const timestamp = Date.now();
-                const token = wasmModule.create_game_token(level, userAnswer, timestamp);
-                console.log('Game token:', token);
-                
-                document.getElementById('message').textContent = `🎉 정답입니다! (점수: ${score})`;
-                document.getElementById('message').className = 'message success';
-                gameState = 'success';
-                stopGame();
-                
-                setTimeout(() => {
-                    if (level < gameData.length - 1) {
-                        level++;
-                        document.getElementById('levelNum').textContent = level + 1;
-                        speed = Math.max(400, speed - 100);
-                        currentLevelBombCount = 0;
-                        startGame();
-                    } else {
-                        const studentName = wasmModule.get_cookie('studentName') || 'Unknown';
-                        const studentClass = wasmModule.get_cookie('studentClass') || 'Unknown';
-                        const scores = [score];
-                        const encryptedScore = wasmModule.encrypt_score_data(
-                            studentName,
-                            studentClass,
-                            selectedLevel,
-                            new Uint32Array(scores),
-                            timestamp
-                        );
-                        console.log('Encrypted score:', encryptedScore);
-                        
-                        document.getElementById('message').textContent = '🏆 모든 레벨을 클리어했습니다!';
-                        gameState = 'complete';
-                        showButtons();
-                    }
-                }, 2000);
+    // 정답 체크
+    if (isCorrect && userAnswer.length === correctLength) {
+        const elapsedSeconds = Math.floor((Date.now() - gameStartTime) / 1000);
+        if (!wasmModule.verify_timing(level, elapsedSeconds)) {
+            document.getElementById('message').textContent = '⚠️ 비정상적인 플레이가 감지되었습니다.';
+            document.getElementById('message').className = 'message fail';
+            gameState = 'failed';
+            stopGame();
+            showButtons();
+            return;
+        }
+        
+        const score = wasmModule.calculate_score(
+            level,
+            elapsedSeconds,
+            mistakeCount,
+            wasmModule.get_undo_count()
+        );
+        
+        const timestamp = Date.now();
+        const token = wasmModule.create_game_token(level, userAnswer, timestamp);
+        console.log('Game token:', token);
+        
+        document.getElementById('message').textContent = `🎉 정답입니다! (점수: ${score})`;
+        document.getElementById('message').className = 'message success';
+        gameState = 'success';
+        stopGame();
+        
+        setTimeout(() => {
+            if (level < gameData.length - 1) {
+                level++;
+                document.getElementById('levelNum').textContent = level + 1;
+                speed = Math.max(400, speed - 100);
+                currentLevelBombCount = 0;
+                startGame();
             } else {
-                mistakeCount++;
-                document.getElementById('message').textContent = '❌ 틀렸습니다!';
-                document.getElementById('message').className = 'message fail';
-                gameState = 'failed';
-                stopGame();
+                const studentName = wasmModule.get_cookie('studentName') || 'Unknown';
+                const studentClass = wasmModule.get_cookie('studentClass') || 'Unknown';
+                const scores = [score];
+                const encryptedScore = wasmModule.encrypt_score_data(
+                    studentName,
+                    studentClass,
+                    selectedLevel,
+                    new Uint32Array(scores),
+                    timestamp
+                );
+                console.log('Encrypted score:', encryptedScore);
+                
+                document.getElementById('message').textContent = '🏆 모든 레벨을 클리어했습니다!';
+                gameState = 'complete';
                 showButtons();
             }
-        }
-
+        }, 2000);
+    } else if (userAnswer.length >= correctLength) {
+        // 길이는 충분한데 틀린 경우
+        mistakeCount++;
+        document.getElementById('message').textContent = '❌ 틀렸습니다!';
+        document.getElementById('message').className = 'message fail';
+        gameState = 'failed';
+        stopGame();
+        showButtons();
+    }
+}
         function showButtons() {
             const buttonsEl = document.getElementById('buttons');
             buttonsEl.innerHTML = `
