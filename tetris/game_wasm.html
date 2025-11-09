@@ -426,6 +426,37 @@
             gap: 10px;
             justify-content: center;
         }
+
+
+
+
+/* 고정 조사 행 스타일 */
+.fixed-josa-row {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 3px solid #fbbf24;
+}
+
+.fixed-josa {
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%) !important;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.fixed-josa:hover {
+    transform: scale(1.08);
+    box-shadow: 0 4px 8px rgba(251, 191, 36, 0.5);
+}
+
+.fixed-josa:active {
+    transform: scale(0.95);
+}
+
+
+
+
+
+
     </style>
 </head>
 <body>
@@ -493,11 +524,12 @@
         </div>
     </div>
 
+
 <script type="module">
         let wasmModule = null;
         
         const CONFIG = {
-            GRID_ROWS: 9,
+            GRID_ROWS: 8,  // ← 9 → 8로 변경
             GRID_COLS: 9,
             FALL_SPEED: 600,
             GRAVITY_SPEED: 150,
@@ -506,6 +538,9 @@
             WRONG_ANSWERS_PER_CORRECT: 3,
         };
 
+        // 고정 조사 블록 (화면 아래 고정)
+        const FIXED_JOSA_BLOCKS = ['은', '는', '이', '가', '을', '를', ' ', ''];
+        
         let selectedLevel = null;
         let gameData = [];
         let level = 0;
@@ -514,7 +549,7 @@
         let availableBlocks = [];
         let userAnswer = "";
         let answerHistory = [];
-        let correctAnswer = "";  // ← 전역 변수로 추가
+        let correctAnswer = "";
         let gameState = 'ready';
         let speed = CONFIG.FALL_SPEED;
         let fallInterval = null;
@@ -573,17 +608,14 @@
             }
         }
 
-
-window.logout = function() {
-    if (wasmModule) {
-        wasmModule.delete_cookie('studentName');
-        wasmModule.delete_cookie('studentClass');
-        wasmModule.delete_cookie('studentPassword');
-    }
-    // logout 파라미터 추가
-    window.location.href = '../munpup.html?logout=true';
-};
-
+        window.logout = function() {
+            if (wasmModule) {
+                wasmModule.delete_cookie('studentName');
+                wasmModule.delete_cookie('studentClass');
+                wasmModule.delete_cookie('studentPassword');
+            }
+            window.location.href = '../munpup.html?logout=true';
+        };
 
         async function loadEncryptedData(levelName) {
             try {
@@ -647,7 +679,7 @@ window.logout = function() {
 
         function parseAnswer(answer) {
             const blocks = answer.split('/');
-            correctAnswer = blocks.join('');  // ← 전역 변수에 저장
+            correctAnswer = blocks.join('');
             return blocks;
         }
         
@@ -658,13 +690,18 @@ window.logout = function() {
                     fakeBlocks.push(...game.answer.split('/'));
                 }
             });
-            return fakeBlocks;
+            // 조사 제거
+            return fakeBlocks.filter(block => !FIXED_JOSA_BLOCKS.includes(block));
         }
         
         function createBlockSequence(correctBlocks, fakeBlocks) {
+            // 조사 제거
+            const filteredCorrect = correctBlocks.filter(block => !FIXED_JOSA_BLOCKS.includes(block));
+            const filteredFake = fakeBlocks.filter(block => !FIXED_JOSA_BLOCKS.includes(block));
+            
             const seed = wasmModule.generate_seed();
-            const correctJson = JSON.stringify(correctBlocks);
-            const fakeJson = JSON.stringify(fakeBlocks);
+            const correctJson = JSON.stringify(filteredCorrect);
+            const fakeJson = JSON.stringify(filteredFake);
             const sequenceJson = wasmModule.generate_block_sequence(correctJson, fakeJson, seed);
             return JSON.parse(sequenceJson);
         }
@@ -728,7 +765,7 @@ window.logout = function() {
             gameState = 'ready';
             userAnswer = "";
             answerHistory = [];
-            correctAnswer = "";  // ← 초기화
+            correctAnswer = "";
             speed = CONFIG.FALL_SPEED;
             stopGame();
             
@@ -917,6 +954,7 @@ window.logout = function() {
             const gridEl = document.getElementById('grid');
             gridEl.innerHTML = '';
             
+            // 8x9 그리드 표시
             for (let row = 0; row < CONFIG.GRID_ROWS; row++) {
                 const rowEl = document.createElement('div');
                 rowEl.className = 'row';
@@ -981,7 +1019,51 @@ window.logout = function() {
                 gridEl.appendChild(rowEl);
             }
             
+            // 고정 조사 블록 행 추가
+            const josaRow = document.createElement('div');
+            josaRow.className = 'row fixed-josa-row';
+            
+            for (let i = 0; i < FIXED_JOSA_BLOCKS.length; i++) {
+                const josaText = FIXED_JOSA_BLOCKS[i];
+                const cellEl = document.createElement('div');
+                cellEl.className = 'cell clickable block-cell block-single fixed-josa';
+                
+                const color = getBlockColor(josaText);
+                cellEl.style.backgroundColor = color.bg;
+                cellEl.style.color = color.text;
+                cellEl.textContent = josaText === ' ' ? '' : josaText;
+                
+                cellEl.onclick = () => handleFixedJosaClick(josaText);
+                
+                josaRow.appendChild(cellEl);
+            }
+            
+            // 나머지 빈 칸 채우기
+            const remaining = CONFIG.GRID_COLS - FIXED_JOSA_BLOCKS.length;
+            for (let i = 0; i < remaining; i++) {
+                const cellEl = document.createElement('div');
+                cellEl.className = 'cell empty';
+                josaRow.appendChild(cellEl);
+            }
+            
+            gridEl.appendChild(josaRow);
+            
             updateAnswerDisplay();
+        }
+
+        function handleFixedJosaClick(josaText) {
+            if (gameState !== 'playing') return;
+            
+            playClickSound();
+            answerHistory.push(josaText);
+            userAnswer += josaText;
+            
+            updateDisplay();
+            
+            const correctLength = correctAnswer.length;
+            if (userAnswer.length >= correctLength) {
+                checkAnswer();
+            }
         }
 
         function highlightBlock(blockId, highlight) {
@@ -1057,93 +1139,90 @@ window.logout = function() {
             const lastBlock = answerHistory.pop();
             userAnswer = userAnswer.slice(0, -lastBlock.length);
             
-            const cells = lastBlock.split('');
-            const maxLane = CONFIG.GRID_COLS - cells.length;
-            const seed = wasmModule.generate_seed();
-            const lane = seed % (maxLane + 1);
+            // 조사는 되돌려도 다시 생성하지 않음 (고정 영역에 있으므로)
+            if (!FIXED_JOSA_BLOCKS.includes(lastBlock)) {
+                const cells = lastBlock.split('');
+                const maxLane = CONFIG.GRID_COLS - cells.length;
+                const seed = wasmModule.generate_seed();
+                const lane = seed % (maxLane + 1);
+                
+                const newBlock = {
+                    text: lastBlock,
+                    cells: cells,
+                    position: -1,
+                    lane: lane,
+                    id: blockIdCounter++,
+                    color: getBlockColor(lastBlock)
+                };
+                
+                fallingBlocks.push(newBlock);
+            }
             
-            const newBlock = {
-                text: lastBlock,
-                cells: cells,
-                position: -1,
-                lane: lane,
-                id: blockIdCounter++,
-                color: getBlockColor(lastBlock)
-            };
-            
-            fallingBlocks.push(newBlock);
             updateDisplay();
         }
 
         function handleBomb() {
-    if (gameState !== 'playing') return;
-    
-    currentLevelBombCount++;
-    updateStats();
-    playClickSound();
-    
-    // 화면의 모든 블록 제거
-    grid = Array(CONFIG.GRID_ROWS).fill(null).map(() => Array(CONFIG.GRID_COLS).fill(null));
-    fallingBlocks = [];
-    
-    // 현재 레벨의 정답 블록들 파싱
-    const currentBlocks = parseAnswer(gameData[level].answer);
-    const neededBlocks = [];
-    let tempAnswer = userAnswer;
-    
-    // 아직 입력하지 않은 정답 블록들 찾기
-    for (const block of currentBlocks) {
-        if (!tempAnswer.startsWith(block)) {
-            neededBlocks.push(block);
-        } else {
-            tempAnswer = tempAnswer.slice(block.length);
+            if (gameState !== 'playing') return;
+            
+            currentLevelBombCount++;
+            updateStats();
+            playClickSound();
+            
+            grid = Array(CONFIG.GRID_ROWS).fill(null).map(() => Array(CONFIG.GRID_COLS).fill(null));
+            fallingBlocks = [];
+            
+            const currentBlocks = parseAnswer(gameData[level].answer);
+            const neededBlocks = [];
+            let tempAnswer = userAnswer;
+            
+            for (const block of currentBlocks) {
+                if (!tempAnswer.startsWith(block)) {
+                    neededBlocks.push(block);
+                } else {
+                    tempAnswer = tempAnswer.slice(block.length);
+                }
+            }
+            
+            // 조사 제거
+            const filteredNeeded = neededBlocks.filter(block => !FIXED_JOSA_BLOCKS.includes(block));
+            
+            const fakeBlocks = getFakeBlocks(level);
+            const enhancedBlocks = [];
+            
+            filteredNeeded.forEach(block => {
+                for (let i = 0; i < 3; i++) {
+                    enhancedBlocks.push(block);
+                }
+            });
+            
+            const remainingCount = Math.max(10, filteredNeeded.length * 2);
+            for (let i = 0; i < remainingCount && fakeBlocks.length > 0; i++) {
+                const seed = wasmModule.generate_seed();
+                const fakeIdx = seed % fakeBlocks.length;
+                enhancedBlocks.push(fakeBlocks[fakeIdx]);
+                fakeBlocks.splice(fakeIdx, 1);
+            }
+            
+            const seed = wasmModule.generate_seed();
+            const shuffledJson = wasmModule.generate_block_sequence(
+                JSON.stringify(enhancedBlocks.slice(0, Math.ceil(enhancedBlocks.length / 2))),
+                JSON.stringify(enhancedBlocks.slice(Math.ceil(enhancedBlocks.length / 2))),
+                seed
+            );
+            availableBlocks = JSON.parse(shuffledJson);
+            
+            updateDisplay();
+            
+            if (spawnTimeout) {
+                clearTimeout(spawnTimeout);
+                spawnTimeout = null;
+            }
+            
+            setTimeout(() => {
+                spawnBlock();
+                scheduleNextBlock();
+            }, 300);
         }
-    }
-    
-    const fakeBlocks = getFakeBlocks(level);
-    const enhancedBlocks = [];
-    
-    // 필요한 정답 블록을 3개씩 복제
-    neededBlocks.forEach(block => {
-        for (let i = 0; i < 3; i++) {
-            enhancedBlocks.push(block);
-        }
-    });
-    
-    // 오답 블록 추가
-    const remainingCount = Math.max(10, neededBlocks.length * 2);
-    for (let i = 0; i < remainingCount && fakeBlocks.length > 0; i++) {
-        const seed = wasmModule.generate_seed();
-        const fakeIdx = seed % fakeBlocks.length;
-        enhancedBlocks.push(fakeBlocks[fakeIdx]);
-        fakeBlocks.splice(fakeIdx, 1);
-    }
-    
-    // 블록 섞기
-    const seed = wasmModule.generate_seed();
-    const shuffledJson = wasmModule.generate_block_sequence(
-        JSON.stringify(enhancedBlocks.slice(0, Math.ceil(enhancedBlocks.length / 2))),
-        JSON.stringify(enhancedBlocks.slice(Math.ceil(enhancedBlocks.length / 2))),
-        seed
-    );
-    availableBlocks = JSON.parse(shuffledJson);
-    
-    // 화면 업데이트
-    updateDisplay();
-    
-    // ⭐ 핵심: 기존 스폰 스케줄 취소하고 즉시 새 블록 생성 시작
-    if (spawnTimeout) {
-        clearTimeout(spawnTimeout);
-        spawnTimeout = null;
-    }
-    
-    // 첫 블록 즉시 생성
-    setTimeout(() => {
-        spawnBlock();
-        // 이후 블록들 자동 스폰 재시작
-        scheduleNextBlock();
-    }, 300);
-}
 
         function updateAnswerDisplay() {
             const display = document.getElementById('answerDisplay');
@@ -1233,5 +1312,9 @@ window.logout = function() {
             document.getElementById('bombBtn').onclick = handleBomb;
         });
     </script>
+
+
+
+
 </body>
 </html>
