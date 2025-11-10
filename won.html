@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>원고지 프로그램</title>
+    <link rel="stylesheet" href="wongoji1/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- 로그인 화면 -->
+        <div id="loginArea" class="active">
+            <h1>원고지 프로그램 - 학생 로그인</h1>
+            <form id="loginForm">
+                <input type="text" id="studentName" placeholder="이름" required>
+                <input type="text" id="studentClass" placeholder="반 (예: 3A)" required>
+                <input type="password" id="studentNumber" placeholder="학번" required>
+                <button type="submit">로그인</button>
+            </form>
+        </div>
+
+        <!-- 메인 화면 -->
+        <div id="mainArea" style="display: none;">
+            <div id="toolbar">
+                <span id="userInfo"></span>
+                <button id="saveBtn">저장</button>
+                <button id="loadBtn">불러오기</button>
+                <button id="logoutBtn">로그아웃</button>
+            </div>
+
+            <div id="editorContainer">
+                <div id="manuscriptPaper"></div>
+            </div>
+
+            <div id="statusBar">
+                <span id="currentLayer">레이어: 학생</span>
+                <span id="helpText">Tab: 레이어 전환 | Ctrl+C/V/X: 복사/붙여넣기/잘라내기</span>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import init, { 
+            init_wasm, 
+            initialize_paper,
+            get_student_data,
+            get_teacher_data,
+            load_student_data,
+            load_teacher_data
+        } from './wongoji1/pkg/wongoji.js';
+
+        let supabase;
+        let currentUser = null;
+
+        async function initApp() {
+            // WASM 초기화
+            await init();
+            init_wasm();
+
+            // Supabase 초기화
+            const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+            const SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY';
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+            setupEventListeners();
+        }
+
+        function setupEventListeners() {
+            document.getElementById('loginForm').addEventListener('submit', handleLogin);
+            document.getElementById('saveBtn').addEventListener('click', handleSave);
+            document.getElementById('loadBtn').addEventListener('click', handleLoad);
+	    document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+
+            const studentName = document.getElementById('studentName').value;
+            const studentClass = document.getElementById('studentClass').value;
+            const studentNumber = document.getElementById('studentNumber').value;
+
+            // Supabase에서 학생 정보 확인
+            const { data, error } = await supabase
+                .from('id_students')
+                .select('*')
+                .eq('student_name', studentName)
+                .eq('class', studentClass)
+                .eq('student_number', studentNumber)
+                .single();
+
+            if (error || !data) {
+                alert('로그인 실패: 학생 정보를 확인해주세요.');
+                return;
+            }
+
+            currentUser = {
+                name: studentName,
+                class: studentClass
+            };
+
+            document.getElementById('loginArea').style.display = 'none';
+            document.getElementById('mainArea').style.display = 'block';
+            document.getElementById('userInfo').textContent = `${studentName} (${studentClass})`;
+
+            // 원고지 초기화
+            initialize_paper(20, 20);
+        }
+
+        async function handleSave() {
+            if (!currentUser) return;
+
+            const title = prompt('원고 제목을 입력하세요:');
+            if (!title) return;
+
+            const studentData = get_student_data();
+            const teacherData = get_teacher_data();
+
+            const { data, error } = await supabase
+                .from('wongo')
+                .insert({
+                    student_name: currentUser.name,
+                    class: currentUser.class,
+                    title: title,
+                    content: studentData,
+                    modified_text: teacherData,
+                    error_text: '[]',
+                    cols: 20,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                });
+
+            if (error) {
+                alert('저장 실패: ' + error.message);
+            } else {
+                alert('저장되었습니다!');
+            }
+        }
+
+        async function handleLoad() {
+            if (!currentUser) return;
+
+            // 사용자의 원고 목록 가져오기
+            const { data, error } = await supabase
+                .from('wongo')
+                .select('id, title, created_at')
+                .eq('student_name', currentUser.name)
+                .eq('class', currentUser.class)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                alert('불러오기 실패: ' + error.message);
+                return;
+            }
+
+            if (!data || data.length === 0) {
+                alert('저장된 원고가 없습니다.');
+                return;
+            }
+
+            // 간단한 선택 UI
+            let listText = '불러올 원고를 선택하세요:\n\n';
+            data.forEach((item, index) => {
+                listText += `${index + 1}. ${item.title} (${new Date(item.created_at).toLocaleString()})\n`;
+            });
+
+            const selection = prompt(listText + '\n번호를 입력하세요:');
+            const selectedIndex = parseInt(selection) - 1;
+
+            if (selectedIndex >= 0 && selectedIndex < data.length) {
+                await loadManuscript(data[selectedIndex].id);
+            }
+        }
+
+        async function loadManuscript(id) {
+            const { data, error } = await supabase
+                .from('wongo')
+                .select('*')
+                .eq('id', id)
+                .single();
+
+            if (error || !data) {
+                alert('원고를 불러오는데 실패했습니다.');
+                return;
+            }
+
+            // 원고지 초기화
+            initialize_paper(data.cols || 20, 20);
+
+            // 데이터 로드
+            if (data.content) {
+                load_student_data(data.content);
+            }
+
+            if (data.modified_text) {
+                load_teacher_data(data.modified_text);
+            }
+
+            alert(`"${data.title}" 원고를 불러왔습니다.`);
+        }
+
+        function handleLogout() {
+            currentUser = null;
+            document.getElementById('mainArea').style.display = 'none';
+            document.getElementById('loginArea').style.display = 'block';
+            document.getElementById('loginForm').reset();
+        }
+
+        // 앱 초기화
+        initApp();
+    </script>
+</body>
+</html>
