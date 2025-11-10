@@ -11,9 +11,10 @@
     <div id="app">
         <!-- 로그인 화면 -->
         <div id="loginArea" class="active">
-            <h1>원고지 프로그램 - 학생 로그인</h1>
+            <h1>📝 원고지 프로그램</h1>
+            <h2>학생 로그인</h2>
             <form id="loginForm">
-                <input type="text" id="studentName" placeholder="이름" required>
+                <input type="text" id="studentName" placeholder="이름 (예: 김철수)" required>
                 <input type="text" id="studentClass" placeholder="반 (예: 3A)" required>
                 <input type="password" id="studentNumber" placeholder="학번" required>
                 <button type="submit">로그인</button>
@@ -23,10 +24,16 @@
         <!-- 메인 화면 -->
         <div id="mainArea" style="display: none;">
             <div id="toolbar">
-                <span id="userInfo"></span>
-                <button id="saveBtn">저장</button>
-                <button id="loadBtn">불러오기</button>
-                <button id="logoutBtn">로그아웃</button>
+                <div>
+                    <span id="userInfo"></span>
+                    <span id="currentTitle" style="margin-left: 20px; font-weight: normal;"></span>
+                </div>
+                <div>
+                    <button id="newBtn" class="btn-primary">새 원고</button>
+                    <button id="saveBtn" class="btn-success">저장</button>
+                    <button id="loadBtn" class="btn-info">불러오기</button>
+                    <button id="logoutBtn" class="btn-secondary">로그아웃</button>
+                </div>
             </div>
 
             <div id="editorContainer">
@@ -34,8 +41,21 @@
             </div>
 
             <div id="statusBar">
-                <span id="currentLayer">레이어: 학생</span>
-                <span id="helpText">Tab: 레이어 전환 | Ctrl+C/V/X: 복사/붙여넣기/잘라내기</span>
+                <span id="currentLayer">레이어: 학생 작성</span>
+                <span id="helpText">Tab: 레이어 전환 | Ctrl+C/V/X: 복사/붙여넣기/잘라내기 | Delete: 삭제</span>
+            </div>
+        </div>
+
+        <!-- 불러오기 모달 -->
+        <div id="loadModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>원고 불러오기</h2>
+                    <span class="close">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div id="manuscriptList"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -50,35 +70,58 @@
             load_teacher_data
         } from './wongoji1/pkg/wongoji.js';
 
-        let supabase;
+        // Supabase 설정
+        const SUPABASE_URL = 'https://svlqqkfkmevcjssarpng.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN2bHFxa2ZrbWV2Y2pzc2FycG5nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA4NjE5MDUsImV4cCI6MjA2NjQzNzkwNX0.bB8oanmqsBtoL3H4xwczP6khaojvnu02VWmtm0xY_yM';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
         let currentUser = null;
+        let currentManuscriptId = null;
+        let currentTitle = '';
 
         async function initApp() {
             // WASM 초기화
             await init();
             init_wasm();
 
-            // Supabase 초기화
-            const SUPABASE_URL = 'YOUR_SUPABASE_URL';
-            const SUPABASE_KEY = 'YOUR_SUPABASE_ANON_KEY';
-            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
             setupEventListeners();
         }
 
         function setupEventListeners() {
             document.getElementById('loginForm').addEventListener('submit', handleLogin);
+            document.getElementById('newBtn').addEventListener('click', handleNew);
             document.getElementById('saveBtn').addEventListener('click', handleSave);
             document.getElementById('loadBtn').addEventListener('click', handleLoad);
-	    document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+            document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+
+            // 모달 닫기
+            const closeBtn = document.querySelector('.close');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', () => {
+                    document.getElementById('loadModal').style.display = 'none';
+                });
+            }
+
+            // 모달 외부 클릭 시 닫기
+            window.addEventListener('click', (e) => {
+                const modal = document.getElementById('loadModal');
+                if (e.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
         }
 
         async function handleLogin(e) {
             e.preventDefault();
 
-            const studentName = document.getElementById('studentName').value;
-            const studentClass = document.getElementById('studentClass').value;
-            const studentNumber = document.getElementById('studentNumber').value;
+            const studentName = document.getElementById('studentName').value.trim();
+            const studentClass = document.getElementById('studentClass').value.trim();
+            const studentNumber = document.getElementById('studentNumber').value.trim();
+
+            if (!studentName || !studentClass || !studentNumber) {
+                alert('모든 필드를 입력해주세요.');
+                return;
+            }
 
             // Supabase에서 학생 정보 확인
             const { data, error } = await supabase
@@ -91,6 +134,7 @@
 
             if (error || !data) {
                 alert('로그인 실패: 학생 정보를 확인해주세요.');
+                console.error('로그인 에러:', error);
                 return;
             }
 
@@ -100,8 +144,22 @@
             };
 
             document.getElementById('loginArea').style.display = 'none';
-            document.getElementById('mainArea').style.display = 'block';
-            document.getElementById('userInfo').textContent = `${studentName} (${studentClass})`;
+            document.getElementById('mainArea').style.display = 'flex';
+            document.getElementById('userInfo').textContent = `${studentName} (${studentClass})님 환영합니다!`;
+
+            // 원고지 초기화
+            initialize_paper(20, 20);
+        }
+
+        function handleNew() {
+            if (!currentUser) return;
+
+            const confirmed = confirm('새 원고를 작성하시겠습니까? 저장하지 않은 내용은 사라집니다.');
+            if (!confirmed) return;
+
+            currentManuscriptId = null;
+            currentTitle = '';
+            document.getElementById('currentTitle').textContent = '';
 
             // 원고지 초기화
             initialize_paper(20, 20);
@@ -110,104 +168,239 @@
         async function handleSave() {
             if (!currentUser) return;
 
-            const title = prompt('원고 제목을 입력하세요:');
-            if (!title) return;
+            let title = currentTitle;
+            if (!title) {
+                title = prompt('원고 제목을 입력하세요:');
+                if (!title) return;
+            }
 
             const studentData = get_student_data();
             const teacherData = get_teacher_data();
 
-            const { data, error } = await supabase
-                .from('wongo')
-                .insert({
-                    student_name: currentUser.name,
-                    class: currentUser.class,
-                    title: title,
-                    content: studentData,
-                    modified_text: teacherData,
-                    error_text: '[]',
-                    cols: 20,
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString()
-                });
+            try {
+                if (currentManuscriptId) {
+                    // 기존 원고 업데이트
+                    const { error } = await supabase
+                        .from('wongo')
+                        .update({
+                            title: title,
+                            content: studentData,
+                            modified_text: teacherData,
+                            updated_at: new Date().toISOString()
+                        })
+                        .eq('id', currentManuscriptId);
 
-            if (error) {
+                    if (error) throw error;
+                    alert('저장되었습니다!');
+                } else {
+                    // 새 원고 저장
+                    const { data, error } = await supabase
+                        .from('wongo')
+                        .insert({
+                            student_name: currentUser.name,
+                            class: currentUser.class,
+                            title: title,
+                            content: studentData,
+                            modified_text: teacherData,
+                            error_text: '[]',
+                            cols: 20,
+                            created_at: new Date().toISOString(),
+                            updated_at: new Date().toISOString()
+                        })
+                        .select();
+
+                    if (error) throw error;
+                    
+                    if (data && data.length > 0) {
+                        currentManuscriptId = data[0].id;
+                        currentTitle = title;
+                        document.getElementById('currentTitle').textContent = `📄 ${title}`;
+                    }
+                    alert('저장되었습니다!');
+                }
+            } catch (error) {
                 alert('저장 실패: ' + error.message);
-            } else {
-                alert('저장되었습니다!');
+                console.error('저장 에러:', error);
             }
         }
 
         async function handleLoad() {
             if (!currentUser) return;
 
-            // 사용자의 원고 목록 가져오기
-            const { data, error } = await supabase
-                .from('wongo')
-                .select('id, title, created_at')
-                .eq('student_name', currentUser.name)
-                .eq('class', currentUser.class)
-                .order('created_at', { ascending: false });
+            try {
+                // 사용자의 원고 목록 가져오기
+                const { data, error } = await supabase
+                    .from('wongo')
+                    .select('id, title, created_at, updated_at')
+                    .eq('student_name', currentUser.name)
+                    .eq('class', currentUser.class)
+                    .order('updated_at', { ascending: false });
 
-            if (error) {
+                if (error) throw error;
+
+                if (!data || data.length === 0) {
+                    alert('저장된 원고가 없습니다.');
+                    return;
+                }
+
+                // 모달에 목록 표시
+                const listContainer = document.getElementById('manuscriptList');
+                listContainer.innerHTML = '';
+
+                data.forEach((item) => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'manuscript-item';
+                    
+                    const titleSpan = document.createElement('span');
+                    titleSpan.className = 'manuscript-title';
+                    titleSpan.textContent = item.title;
+                    
+                    const dateSpan = document.createElement('span');
+                    dateSpan.className = 'manuscript-date';
+                    const date = new Date(item.updated_at);
+                    dateSpan.textContent = date.toLocaleString('ko-KR');
+                    
+                    const loadButton = document.createElement('button');
+                    loadButton.textContent = '불러오기';
+                    loadButton.className = 'btn-small';
+                    loadButton.onclick = () => loadManuscript(item.id);
+                    
+                    const deleteButton = document.createElement('button');
+                    deleteButton.textContent = '삭제';
+                    deleteButton.className = 'btn-small btn-danger';
+                    deleteButton.onclick = () => deleteManuscript(item.id);
+                    
+                    itemDiv.appendChild(titleSpan);
+                    itemDiv.appendChild(dateSpan);
+                    itemDiv.appendChild(loadButton);
+                    itemDiv.appendChild(deleteButton);
+                    
+                    listContainer.appendChild(itemDiv);
+                });
+
+                document.getElementById('loadModal').style.display = 'block';
+            } catch (error) {
                 alert('불러오기 실패: ' + error.message);
-                return;
-            }
-
-            if (!data || data.length === 0) {
-                alert('저장된 원고가 없습니다.');
-                return;
-            }
-
-            // 간단한 선택 UI
-            let listText = '불러올 원고를 선택하세요:\n\n';
-            data.forEach((item, index) => {
-                listText += `${index + 1}. ${item.title} (${new Date(item.created_at).toLocaleString()})\n`;
-            });
-
-            const selection = prompt(listText + '\n번호를 입력하세요:');
-            const selectedIndex = parseInt(selection) - 1;
-
-            if (selectedIndex >= 0 && selectedIndex < data.length) {
-                await loadManuscript(data[selectedIndex].id);
+                console.error('불러오기 에러:', error);
             }
         }
 
         async function loadManuscript(id) {
-            const { data, error } = await supabase
-                .from('wongo')
-                .select('*')
-                .eq('id', id)
-                .single();
+            try {
+                const { data, error } = await supabase
+                    .from('wongo')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
 
-            if (error || !data) {
-                alert('원고를 불러오는데 실패했습니다.');
+                if (error) throw error;
+                if (!data) {
+                    alert('원고를 찾을 수 없습니다.');
+                    return;
+                }
+
+                // 원고지 초기화
+                initialize_paper(data.cols || 20, 20);
+
+                // 데이터 로드
+                if (data.content) {
+                    load_student_data(data.content);
+                }
+
+                if (data.modified_text) {
+                    load_teacher_data(data.modified_text);
+                }
+
+                currentManuscriptId = id;
+                currentTitle = data.title;
+                document.getElementById('currentTitle').textContent = `📄 ${data.title}`;
+
+                // 모달 닫기
+                document.getElementById('loadModal').style.display = 'none';
+
+                alert(`"${data.title}" 원고를 불러왔습니다.`);
+            } catch (error) {
+                alert('원고 불러오기 실패: ' + error.message);
+                console.error('불러오기 에러:', error);
+            }
+        }
+
+        async function deleteManuscript(id) {
+            if (!confirm('정말로 이 원고를 삭제하시겠습니까?')) {
                 return;
             }
 
-            // 원고지 초기화
-            initialize_paper(data.cols || 20, 20);
+            try {
+                const { error } = await supabase
+                    .from('wongo')
+                    .delete()
+                    .eq('id', id);
 
-            // 데이터 로드
-            if (data.content) {
-                load_student_data(data.content);
+                if (error) throw error;
+
+                alert('삭제되었습니다.');
+                
+                // 목록 새로고침
+                handleLoad();
+
+                // 현재 열린 원고가 삭제된 경우
+                if (currentManuscriptId === id) {
+                    currentManuscriptId = null;
+                    currentTitle = '';
+                    document.getElementById('currentTitle').textContent = '';
+                    initialize_paper(20, 20);
+                }
+            } catch (error) {
+                alert('삭제 실패: ' + error.message);
+                console.error('삭제 에러:', error);
             }
-
-            if (data.modified_text) {
-                load_teacher_data(data.modified_text);
-            }
-
-            alert(`"${data.title}" 원고를 불러왔습니다.`);
         }
 
         function handleLogout() {
+            const confirmed = confirm('로그아웃 하시겠습니까? 저장하지 않은 내용은 사라집니다.');
+            if (!confirmed) return;
+
             currentUser = null;
+            currentManuscriptId = null;
+            currentTitle = '';
+            
             document.getElementById('mainArea').style.display = 'none';
-            document.getElementById('loginArea').style.display = 'block';
+            document.getElementById('loginArea').style.display = 'flex';
             document.getElementById('loginForm').reset();
+            document.getElementById('currentTitle').textContent = '';
         }
 
         // 앱 초기화
         initApp();
+
+        // 페이지 나가기 전 경고
+        window.addEventListener('beforeunload', (e) => {
+            if (currentUser) {
+                e.preventDefault();
+                e.returnValue = '저장하지 않은 내용이 있을 수 있습니다. 정말 나가시겠습니까?';
+            }
+        });
+
+        // 자동 저장 (5분마다)
+        let autoSaveInterval = null;
+
+        function startAutoSave() {
+            if (autoSaveInterval) {
+                clearInterval(autoSaveInterval);
+            }
+
+            autoSaveInterval = setInterval(() => {
+                if (currentUser && currentManuscriptId) {
+                    console.log('자동 저장 중...');
+                    handleSave();
+                }
+            }, 5 * 60 * 1000); // 5분
+        }
+
+        // 로그인 시 자동 저장 시작
+        document.getElementById('loginForm').addEventListener('submit', () => {
+            setTimeout(startAutoSave, 1000);
+        });
     </script>
 </body>
 </html>

@@ -253,3 +253,189 @@ body {
 #editorContainer::-webkit-scrollbar-thumb:hover {
     background: #555;
 }
+
+
+
+/* 모달 스타일 */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+    background-color: white;
+    margin: 5% auto;
+    padding: 0;
+    border-radius: 8px;
+    width: 80%;
+    max-width: 800px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-header {
+    padding: 20px;
+    background: #2c3e50;
+    color: white;
+    border-radius: 8px 8px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.close {
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+.close:hover {
+    color: #e74c3c;
+}
+
+.modal-body {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+/* 원고 목록 스타일 */
+#manuscriptList {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.manuscript-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 6px;
+    border: 1px solid #dee2e6;
+    transition: all 0.3s;
+}
+
+.manuscript-item:hover {
+    background: #e9ecef;
+    border-color: #3498db;
+    transform: translateX(5px);
+}
+
+.manuscript-title {
+    font-weight: bold;
+    font-size: 1.1rem;
+    flex: 1;
+}
+
+.manuscript-date {
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-right: 15px;
+}
+
+/* 버튼 스타일 개선 */
+.btn-primary {
+    background: #3498db;
+}
+
+.btn-primary:hover {
+    background: #2980b9;
+}
+
+.btn-success {
+    background: #27ae60;
+}
+
+.btn-success:hover {
+    background: #229954;
+}
+
+.btn-info {
+    background: #16a085;
+}
+
+.btn-info:hover {
+    background: #138d75;
+}
+
+.btn-secondary {
+    background: #95a5a6;
+}
+
+.btn-secondary:hover {
+    background: #7f8c8d;
+}
+
+.btn-small {
+    padding: 6px 12px;
+    font-size: 0.9rem;
+    margin-left: 8px;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.btn-small:hover {
+    background: #2980b9;
+}
+
+.btn-danger {
+    background: #e74c3c;
+}
+
+.btn-danger:hover {
+    background: #c0392b;
+}
+
+/* 메인 영역 레이아웃 수정 */
+#mainArea {
+    display: flex;
+    flex-direction: column;
+}
+
+#toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+}
+
+#toolbar > div {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#currentTitle {
+    color: #f39c12;
+    font-size: 1.1rem;
+}
+
+/* 빈 목록 메시지 */
+#manuscriptList:empty::after {
+    content: '저장된 원고가 없습니다.';
+    display: block;
+    text-align: center;
+    padding: 40px;
+    color: #95a5a6;
+    font-size: 1.1rem;
+}
