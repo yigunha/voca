@@ -300,9 +300,13 @@
             
             if (isLogout) {
                 // 강제로 쿠키 삭제 확인
-                wasmModule.delete_cookie('studentName');
-                wasmModule.delete_cookie('studentClass');
-                wasmModule.delete_cookie('studentPassword');
+                try {
+                    wasmModule.delete_cookie('studentName');
+                    wasmModule.delete_cookie('studentClass');
+                    wasmModule.delete_cookie('studentPassword');
+                } catch (e) {
+                    console.log('Cookie deletion error:', e);
+                }
                 console.log('Logged out successfully');
                 // URL에서 logout 파라미터 제거
                 window.history.replaceState({}, document.title, window.location.pathname);
