@@ -15,22 +15,25 @@
             </div>
 
             <div id="gameContent" class="hidden">
-                <div class="level-selector" id="levelSelector">
-                    <h2>레벨을 선택하세요</h2>
-                    <div class="level-buttons">
-                        <button class="level-btn" onclick="selectLevel('3A')">3A</button>
-                        <button class="level-btn" onclick="selectLevel('3B')">3B</button>
-                        <button class="level-btn" onclick="selectLevel('4A')">4A</button>
-                        <button class="level-btn" onclick="selectLevel('4B')">4B</button>
-                    </div>
-                    <div class="random-check-container">
-                        <label class="random-check-label">
-                            <input type="checkbox" id="randomCheckbox" checked>
-                            <span>랜덤 체크</span>
-                        </label>
+                <!-- 메인 메뉴 -->
+                <div class="main-menu" id="mainMenu">
+                    <h2>학습 모드 선택</h2>
+                    <div class="main-menu-buttons">
+                        <button class="main-menu-btn" onclick="selectMainMenu('문법')">문법</button>
+                        <button class="main-menu-btn" onclick="selectMainMenu('단어')">단어</button>
+                        <button class="main-menu-btn" onclick="selectMainMenu('받아쓰기')">받아쓰기</button>
+                        <button class="main-menu-btn" onclick="selectMainMenu('듣기')">듣기</button>
                     </div>
                 </div>
 
+                <!-- 레벨 선택 -->
+                <div class="level-selector hidden" id="levelSelector">
+                    <div class="level-title" id="levelTitle"></div>
+                    <button class="back-btn" onclick="backToMainMenu()">← 메인 메뉴</button>
+                    <div class="level-buttons" id="levelButtons"></div>
+                </div>
+
+                <!-- 게임 영역 -->
                 <div id="gameArea" class="hidden game-area">
                     <div class="content-section" id="contentSection">
                         <div class="sentence" id="sentence"></div>
@@ -39,9 +42,23 @@
                         <div id="conditionText" class="condition-text" style="display: none;"></div>
                     </div>
                     
+                    <!-- 오디오 플레이어 -->
+                    <div class="audio-player hidden" id="audioPlayer">
+                        <audio id="audioElement" src=""></audio>
+                        <div class="audio-controls">
+                            <button class="audio-btn" onclick="playAudio()">▶ 재생</button>
+                            <button class="audio-btn" onclick="pauseAudio()">⏸ 일시정지</button>
+                            <button class="audio-btn" onclick="stopAudio()">⏹ 정지</button>
+                        </div>
+                    </div>
+                    
                     <div class="answer-section">
                         <div class="answer-controls">
-                            <div class="level-display">레벨 <span id="levelNum">1</span> / 12</div>
+                            <div class="media-buttons">
+                                <button class="control-btn picture-btn hidden" id="pictureBtn" onclick="togglePicture()">보기</button>
+                                <button class="control-btn audio-toggle-btn hidden" id="audioToggleBtn" onclick="toggleAudioPlayer()">듣기</button>
+                            </div>
+                            <div class="level-display">레벨 <span id="levelNum">1</span> / <span id="totalNum">12</span></div>
                             <div class="control-buttons">
                                 <button class="control-btn random-btn" id="randomToggleBtn" onclick="toggleRandomInGame()">랜덤 ON</button>
                                 <button class="control-btn hint-btn" onclick="toggleHint()">힌트</button>
@@ -61,6 +78,12 @@
                 </div>
             </div>
 
+            <!-- 그림 오버레이 (메시지처럼 화면 위에 표시) -->
+            <div class="picture-overlay hidden" id="pictureOverlay" onclick="hidePicture()">
+                <img id="pictureImage" src="" alt="문제 그림">
+            </div>
+
+            <!-- 메시지 -->
             <div class="message" id="message"></div>
         </div>
     </div>
