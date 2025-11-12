@@ -42,15 +42,22 @@
                         <div id="conditionText" class="condition-text" style="display: none;"></div>
                     </div>
                     
-                    <!-- 오디오 플레이어 -->
-                    <div class="audio-player hidden" id="audioPlayer">
-                        <audio id="audioElement" src=""></audio>
-                        <div class="audio-controls">
-                            <button class="audio-btn" onclick="playAudio()">▶ 재생</button>
-                            <button class="audio-btn" onclick="pauseAudio()">⏸ 일시정지</button>
-                            <button class="audio-btn" onclick="stopAudio()">⏹ 정지</button>
-                        </div>
-                    </div>
+<!-- 오디오 플레이어 -->
+<div class="audio-player hidden" id="audioPlayer">
+    <audio id="audioElement" src=""></audio>
+    <div class="audio-controls">
+        <button class="audio-btn" onclick="playAudio()">▶ 재생</button>
+        <button class="audio-btn" onclick="pauseAudio()">⏸ 일시정지</button>
+        <button class="audio-btn" onclick="stopAudio()">⏹ 정지</button>
+        <button class="audio-btn loop-btn" id="audioLoopBtn" onclick="toggleAudioLoop()">🔁 반복 OFF</button>
+    </div>
+    <div class="audio-options">
+        <div class="audio-option-item start-time-control">
+            <label for="audioStartTime">시작 위치: <span id="startTimeDisplay">0.0초</span></label>
+            <input type="range" id="audioStartTime" min="0" max="10" step="0.1" value="0" oninput="updateStartTime()">
+        </div>
+    </div>
+</div>
                     
                     <div class="answer-section">
                         <div class="answer-controls">

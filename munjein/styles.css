@@ -174,6 +174,7 @@ body {
     display: flex;
     gap: 8px;
     justify-content: center;
+    flex-wrap: wrap;
 }
 
 .audio-btn {
@@ -190,6 +191,70 @@ body {
 
 .audio-btn:hover {
     background: #2563eb;
+}
+
+.audio-btn.loop-btn {
+    background: #6b7280;
+}
+
+.audio-btn.loop-btn.active {
+    background: #10b981;
+}
+
+.audio-btn.loop-btn:hover {
+    opacity: 0.9;
+}
+
+.audio-options {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.audio-option-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #f3f4f6;
+    font-size: 0.9em;
+}
+
+.start-time-control {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.start-time-control label {
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+.start-time-control input[type="range"] {
+    width: 100%;
+    height: 6px;
+    background: #1f2937;
+    border-radius: 3px;
+    outline: none;
+    cursor: pointer;
+}
+
+.start-time-control input[type="range"]::-webkit-slider-thumb {
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #3b82f6;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.start-time-control input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: #3b82f6;
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
 }
 
 .content-section {
@@ -530,4 +595,17 @@ body {
         width: 100%;
         margin-bottom: 8px;
     }
+    
+    .audio-controls {
+        gap: 6px;
+    }
+    
+    .audio-btn {
+        padding: 8px 12px;
+        font-size: 0.85em;
+    }
 }
+
+
+
+

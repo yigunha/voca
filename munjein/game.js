@@ -42,17 +42,15 @@ function checkLogin() {
         
         wasmModule.refresh_cookies();
         
-        // 사용자 클래스 정보 가져오기 (앞 2자리만)
         const fullClass = wasmModule.get_cookie('studentClass');
         userClass = fullClass.substring(0, 2);
         
-        // 로컬 스토리지에서 해결한 문제 불러오기
         loadSolvedProblems();
         
         return true;
     } catch (error) {
         console.error('로그인 확인 실패:', error);
-        window.location.href = '../munjein.html';  // ← 수정
+        window.location.href = '../munjein.html';
         return false;
     }
 }
@@ -85,8 +83,6 @@ function resetSolvedProblems() {
     }
 }
 
-
-
 window.logout = function() {
     if (wasmModule) {
         try {
@@ -100,19 +96,14 @@ window.logout = function() {
     window.location.href = '../munjein.html?logout=true'; 
 };
 
-
-
-// 메인 메뉴 선택
 window.selectMainMenu = function(menu) {
     selectedMainMenu = menu;
     
     document.getElementById('mainMenu').classList.add('hidden');
     document.getElementById('levelSelector').classList.remove('hidden');
     
-    // 레벨 타이틀 설정
     document.getElementById('levelTitle').textContent = `${userClass} ${menu}`;
     
-    // 레벨 버튼 생성 (12개)
     const levelButtonsContainer = document.getElementById('levelButtons');
     levelButtonsContainer.innerHTML = '';
     
@@ -125,7 +116,6 @@ window.selectMainMenu = function(menu) {
     }
 };
 
-// 메인 메뉴로 돌아가기
 window.backToMainMenu = function() {
     document.getElementById('levelSelector').classList.add('hidden');
     document.getElementById('mainMenu').classList.remove('hidden');
@@ -154,7 +144,6 @@ window.selectLevel = async function(category, levelNum) {
     try {
         const data = await loadEncryptedData(category, levelNum);
         
-        // 해결하지 않은 문제만 필터링
         const unsolvedData = data.filter(item => !solvedProblems.has(item.id));
         
         if (unsolvedData.length === 0) {
@@ -229,35 +218,29 @@ function loadProblem() {
     currentProblem = gameData[level];
     usedHintOrAnswer = false;
     
-    // 임시 변수 초기화
     currentProblem.currentPicture = null;
     currentProblem.currentAudio = null;
     
-    // 문장 표시 (|    |로 처리)
     let sentenceHtml = currentProblem.sentence.replace(/\|([^|]+)\|/g, (match, content) => {
         content = content.trim();
         
-        // 그림인 경우: |<이름>|
         if (content.startsWith('<') && content.endsWith('>')) {
             const pictureName = content.slice(1, -1);
             currentProblem.currentPicture = pictureName;
             return '<span class="blank">그림을 보세요</span>';
         }
         
-        // 오디오인 경우: |[이름]|
         if (content.startsWith('[') && content.endsWith(']')) {
             const audioName = content.slice(1, -1);
             currentProblem.currentAudio = audioName;
             return '<span class="blank">소리를 들으세요</span>';
         }
         
-        // 일반 빈칸
         return '<span class="blank">정답을 쓰세요</span>';
     });
     
     document.getElementById('sentence').innerHTML = sentenceHtml;
     
-    // 그림 버튼 표시/숨김
     const pictureBtn = document.getElementById('pictureBtn');
     if (currentProblem.currentPicture) {
         pictureBtn.classList.remove('hidden');
@@ -265,12 +248,14 @@ function loadProblem() {
         pictureBtn.classList.add('hidden');
     }
     
-    // 오디오 버튼 표시/숨김
+    // 오디오가 있으면 자동으로 플레이어 표시 (듣기 버튼은 숨김)
     const audioToggleBtn = document.getElementById('audioToggleBtn');
     if (currentProblem.currentAudio) {
-        audioToggleBtn.classList.remove('hidden');
+        audioToggleBtn.classList.add('hidden');  // 듣기 버튼 숨김
+        showAudioPlayer();  // 오디오 플레이어 자동 표시
     } else {
         audioToggleBtn.classList.add('hidden');
+        hideAudioPlayer();
     }
     
     const optDesc = document.getElementById('optDescription');
@@ -307,12 +292,9 @@ function loadProblem() {
     document.getElementById('levelNum').textContent = level + 1;
     document.getElementById('totalNum').textContent = gameData.length;
     
-    // 미디어 요소 숨김
     hidePicture();
-    hideAudioPlayer();
 }
 
-// 그림 관련 함수
 window.togglePicture = function() {
     const overlay = document.getElementById('pictureOverlay');
     if (overlay.classList.contains('hidden')) {
@@ -358,8 +340,36 @@ function showAudioPlayer() {
     const player = document.getElementById('audioPlayer');
     const audio = document.getElementById('audioElement');
     
+    // 오디오 소스 설정
     audio.src = `./data_mp3/${currentProblem.currentAudio}.mp3`;
+    
+    // 반복 재생 초기 설정 (버튼 상태에 따라)
+    const loopBtn = document.getElementById('audioLoopBtn');
+    audio.loop = false;  // 기본 loop는 사용하지 않음
+    
+    // 시작 위치 초기화
+    const startTimeSlider = document.getElementById('audioStartTime');
+    startTimeSlider.value = 0;
+    document.getElementById('startTimeDisplay').textContent = '0.0초';
+    
     player.classList.remove('hidden');
+    
+    // 메타데이터 로드 후 슬라이더 최대값 설정
+    audio.addEventListener('loadedmetadata', function() {
+        startTimeSlider.max = Math.floor(audio.duration * 10) / 10;
+    }, { once: true });
+    
+    // 반복 재생 이벤트 리스너 추가 (시작 위치로 돌아가기)
+    audio.addEventListener('ended', function audioEndedHandler() {
+        const loopBtn = document.getElementById('audioLoopBtn');
+        if (loopBtn.classList.contains('active')) {
+            const startTime = parseFloat(document.getElementById('audioStartTime').value);
+            audio.currentTime = startTime;
+            audio.play();
+        }
+    });
+    
+    // 자동 재생하지 않음 - 사용자가 재생 버튼을 눌러야 함
 }
 
 function hideAudioPlayer() {
@@ -373,6 +383,9 @@ function hideAudioPlayer() {
 
 window.playAudio = function() {
     const audio = document.getElementById('audioElement');
+    const startTime = parseFloat(document.getElementById('audioStartTime').value);
+    
+    audio.currentTime = startTime;
     audio.play();
 };
 
@@ -381,11 +394,41 @@ window.pauseAudio = function() {
     audio.pause();
 };
 
-
 window.stopAudio = function() {
     const audio = document.getElementById('audioElement');
     audio.pause();
-    audio.currentTime = 0;
+    
+    const startTime = parseFloat(document.getElementById('audioStartTime').value);
+    audio.currentTime = startTime;
+};
+
+window.toggleAudioLoop = function() {
+    const loopBtn = document.getElementById('audioLoopBtn');
+    
+    loopBtn.classList.toggle('active');
+    
+    // 버튼 텍스트 업데이트
+    if (loopBtn.classList.contains('active')) {
+        loopBtn.textContent = '🔁 반복 ON';
+    } else {
+        loopBtn.textContent = '🔁 반복 OFF';
+    }
+};
+
+window.updateStartTime = function() {
+    const audio = document.getElementById('audioElement');
+    const startTime = parseFloat(document.getElementById('audioStartTime').value);
+    
+    document.getElementById('startTimeDisplay').textContent = startTime.toFixed(1) + '초';
+    
+    // 슬라이더 이동 시 바로 재생 위치 반영
+    const isPlaying = !audio.paused;
+    audio.currentTime = startTime;
+    
+    // 재생 중이었다면 계속 재생
+    if (isPlaying) {
+        audio.play();
+    }
 };
 
 window.toggleHint = function() {
@@ -418,8 +461,6 @@ window.toggleCorrectAnswer = function() {
     }
 };
 
-
-
 window.checkAnswer = function() {
     if (gameState !== 'playing') return;
     
@@ -437,7 +478,6 @@ window.checkAnswer = function() {
     const messageEl = document.getElementById('message');
     
     if (isCorrect) {
-        // 힌트나 정답을 보지 않았을 때만 해결한 문제로 저장
         if (!usedHintOrAnswer) {
             solvedProblems.add(currentProblem.id);
             saveSolvedProblems();
@@ -474,17 +514,11 @@ window.checkAnswer = function() {
         messageEl.textContent = '❌ 틀렸습니다!';
         messageEl.className = 'message fail show';
         
-        // 오답일 때도 0.5초 후 자동으로 사라지기
         setTimeout(() => {
             messageEl.classList.remove('show');
         }, 500);
     }
 };
-
-
-
-
-
 
 window.stopGameManually = function() {
     gameState = 'stopped';
@@ -504,6 +538,12 @@ function resetGame() {
     level = 0;
     gameState = 'ready';
     
+    // 초기화 추가
+    document.getElementById('sentence').innerHTML = '';
+    document.getElementById('optDescription').style.display = 'none';
+    document.getElementById('optionsGrid').innerHTML = '';
+    document.getElementById('conditionText').style.display = 'none';
+    
     document.getElementById('levelNum').textContent = '1';
     document.getElementById('totalNum').textContent = gameData.length;
     document.getElementById('buttons').innerHTML = '<button class="btn btn-start" onclick="startGame()">▶ 게임 시작</button>';
@@ -511,8 +551,17 @@ function resetGame() {
     document.getElementById('hintDisplay').classList.remove('show');
     document.getElementById('correctAnswerDisplay').classList.remove('show');
     document.getElementById('contentSection').classList.remove('hidden');
+    
+    // 미디어 요소 숨김 및 초기화
     hidePicture();
     hideAudioPlayer();
+    
+    // 버튼들도 숨김
+    document.getElementById('pictureBtn').classList.add('hidden');
+    document.getElementById('audioToggleBtn').classList.add('hidden');
+    
+    // 메시지 숨김
+    document.getElementById('message').classList.remove('show');
 }
 
 window.backToLevelSelect = function() {
