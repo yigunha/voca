@@ -65,6 +65,24 @@ body {
     transform: scale(1.05);
 }
 
+.reset-all-btn {
+    width: 100%;
+    margin-top: 15px;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    background: #ef4444;
+    color: white;
+    font-size: 0.9em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.reset-all-btn:hover {
+    background: #dc2626;
+}
+
 /* 레벨 선택 */
 .level-selector {
     background: #374151;
@@ -133,7 +151,7 @@ body {
     position: relative;
 }
 
-/* 그림 오버레이 - 메시지처럼 중앙에 표시 */
+/* 그림 오버레이 */
 .picture-overlay {
     position: fixed;
     top: 0;
@@ -393,18 +411,6 @@ body {
     background-color: #7c3aed;
 }
 
-.random-btn {
-    background-color: #10b981;
-}
-
-.random-btn.off {
-    background-color: #6b7280;
-}
-
-.random-btn:hover {
-    opacity: 0.9;
-}
-
 .hint-btn {
     background-color: #3b82f6;
 }
@@ -554,6 +560,15 @@ body {
     background: #7c3aed;
 }
 
+.btn-warning {
+    background: #f59e0b;
+    color: white;
+}
+
+.btn-warning:hover {
+    background: #d97706;
+}
+
 .hidden {
     display: none;
 }
@@ -604,8 +619,14 @@ body {
         padding: 8px 12px;
         font-size: 0.85em;
     }
+    
+    .buttons {
+        gap: 4px;
+    }
+    
+    .btn {
+        padding: 10px 12px;
+        font-size: 0.85em;
+        min-width: auto;
+    }
 }
-
-
-
-

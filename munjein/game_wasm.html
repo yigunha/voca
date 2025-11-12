@@ -24,6 +24,7 @@
                         <button class="main-menu-btn" onclick="selectMainMenu('받아쓰기')">받아쓰기</button>
                         <button class="main-menu-btn" onclick="selectMainMenu('듣기')">듣기</button>
                     </div>
+                    <button class="reset-all-btn" onclick="resetAllProgress()">🔄 전체 학습 기록 초기화</button>
                 </div>
 
                 <!-- 레벨 선택 -->
@@ -42,22 +43,22 @@
                         <div id="conditionText" class="condition-text" style="display: none;"></div>
                     </div>
                     
-<!-- 오디오 플레이어 -->
-<div class="audio-player hidden" id="audioPlayer">
-    <audio id="audioElement" src=""></audio>
-    <div class="audio-controls">
-        <button class="audio-btn" onclick="playAudio()">▶ 재생</button>
-        <button class="audio-btn" onclick="pauseAudio()">⏸ 일시정지</button>
-        <button class="audio-btn" onclick="stopAudio()">⏹ 정지</button>
-        <button class="audio-btn loop-btn" id="audioLoopBtn" onclick="toggleAudioLoop()">🔁 반복 OFF</button>
-    </div>
-    <div class="audio-options">
-        <div class="audio-option-item start-time-control">
-            <label for="audioStartTime">시작 위치: <span id="startTimeDisplay">0.0초</span></label>
-            <input type="range" id="audioStartTime" min="0" max="10" step="0.1" value="0" oninput="updateStartTime()">
-        </div>
-    </div>
-</div>
+                    <!-- 오디오 플레이어 -->
+                    <div class="audio-player hidden" id="audioPlayer">
+                        <audio id="audioElement" src=""></audio>
+                        <div class="audio-controls">
+                            <button class="audio-btn" onclick="playAudio()">▶ 재생</button>
+                            <button class="audio-btn" onclick="pauseAudio()">⏸ 일시정지</button>
+                            <button class="audio-btn" onclick="stopAudio()">⏹ 정지</button>
+                            <button class="audio-btn loop-btn" id="audioLoopBtn" onclick="toggleAudioLoop()">🔁 반복 OFF</button>
+                        </div>
+                        <div class="audio-options">
+                            <div class="audio-option-item start-time-control">
+                                <label for="audioStartTime">시작 위치: <span id="startTimeDisplay">0.0초</span></label>
+                                <input type="range" id="audioStartTime" min="0" max="10" step="0.1" value="0" oninput="updateStartTime()">
+                            </div>
+                        </div>
+                    </div>
                     
                     <div class="answer-section">
                         <div class="answer-controls">
@@ -67,7 +68,6 @@
                             </div>
                             <div class="level-display">레벨 <span id="levelNum">1</span> / <span id="totalNum">12</span></div>
                             <div class="control-buttons">
-                                <button class="control-btn random-btn" id="randomToggleBtn" onclick="toggleRandomInGame()">랜덤 ON</button>
                                 <button class="control-btn hint-btn" onclick="toggleHint()">힌트</button>
                                 <button class="control-btn answer-btn" onclick="toggleCorrectAnswer()">정답</button>
                             </div>
@@ -85,7 +85,7 @@
                 </div>
             </div>
 
-            <!-- 그림 오버레이 (메시지처럼 화면 위에 표시) -->
+            <!-- 그림 오버레이 -->
             <div class="picture-overlay hidden" id="pictureOverlay" onclick="hidePicture()">
                 <img id="pictureImage" src="" alt="문제 그림">
             </div>
