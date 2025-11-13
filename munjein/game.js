@@ -44,6 +44,13 @@ function checkLogin() {
         const fullClass = wasmModule.get_cookie('studentClass');
         userClass = fullClass.substring(0, 2);
         
+        const mainMenuTitle = document.getElementById('mainMenuTitle');
+        if (mainMenuTitle) {
+            mainMenuTitle.textContent = `${userClass} 학습 모드 선택`;
+        }
+        
+        loadSolvedProblems();
+        
         return true;
     } catch (error) {
         console.error('로그인 확인 실패:', error);
@@ -52,59 +59,33 @@ function checkLogin() {
     }
 }
 
-function getSolvedKey(category, level) {
-    return `solved_${userClass}_${category}_${level}`;
-}
-
-function loadSolvedProblems(category, level) {
+function loadSolvedProblems() {
     try {
-        const key = getSolvedKey(category, level);
-        const saved = localStorage.getItem(key);
+        const saved = localStorage.getItem(`solved_${userClass}`);
         if (saved) {
             solvedProblems = new Set(JSON.parse(saved));
-        } else {
-            solvedProblems = new Set();
         }
     } catch (e) {
         console.error('해결한 문제 로드 실패:', e);
-        solvedProblems = new Set();
     }
 }
 
-function saveSolvedProblems(category, level) {
+function saveSolvedProblems() {
     try {
-        const key = getSolvedKey(category, level);
-        localStorage.setItem(key, JSON.stringify([...solvedProblems]));
+        localStorage.setItem(`solved_${userClass}`, JSON.stringify([...solvedProblems]));
     } catch (e) {
         console.error('해결한 문제 저장 실패:', e);
     }
 }
 
-function resetCurrentLevel(category, level) {
-    if (confirm(`${category} ${level}과 학습 기록을 초기화하시겠습니까?`)) {
-        const key = getSolvedKey(category, level);
-        localStorage.removeItem(key);
-        solvedProblems.clear();
-        alert('해당 레벨의 학습 기록이 초기화되었습니다.');
-        backToLevelSelect();
-    }
-}
-
-window.resetAllProgress = function() {
+function resetSolvedProblems() {
     if (confirm('모든 학습 기록을 초기화하시겠습니까?')) {
-        const categories = ['문법', '단어', '받아쓰기', '듣기'];
-        categories.forEach(category => {
-            for (let i = 1; i <= 12; i++) {
-                const levelNum = String(i).padStart(2, '0');
-                const key = getSolvedKey(category, levelNum);
-                localStorage.removeItem(key);
-            }
-        });
         solvedProblems.clear();
-        alert('모든 학습 기록이 초기화되었습니다.');
+        saveSolvedProblems();
+        alert('학습 기록이 초기화되었습니다.');
         backToMainMenu();
     }
-};
+}
 
 window.logout = function() {
     if (wasmModule) {
@@ -141,8 +122,12 @@ window.selectMainMenu = function(menu) {
 
 window.backToMainMenu = function() {
     document.getElementById('levelSelector').classList.add('hidden');
+    document.getElementById('gameArea').classList.add('hidden');
     document.getElementById('mainMenu').classList.remove('hidden');
     selectedMainMenu = null;
+    selectedLevel = null;
+    gameData = [];
+    resetGame();
 };
 
 async function loadEncryptedData(category, levelNum) {
@@ -165,15 +150,13 @@ window.selectLevel = async function(category, levelNum) {
     selectedLevel = levelNum;
 
     try {
-        loadSolvedProblems(category, levelNum);
-        
         const data = await loadEncryptedData(category, levelNum);
         
         const unsolvedData = data.filter(item => !solvedProblems.has(item.id));
         
         if (unsolvedData.length === 0) {
-            if (confirm(`${category} ${levelNum}과의 모든 문제를 해결했습니다! 이 레벨의 학습 기록을 초기화하시겠습니까?`)) {
-                resetCurrentLevel(category, levelNum);
+            if (confirm('모든 문제를 해결했습니다! 학습 기록을 초기화하시겠습니까?')) {
+                resetSolvedProblems();
             }
             return;
         }
@@ -208,6 +191,7 @@ function loadProblem() {
     
     currentProblem.currentPicture = null;
     currentProblem.currentAudio = null;
+    currentProblem.currentPassage = null;
     
     let sentenceHtml = currentProblem.sentence.replace(/\|([^|]+)\|/g, (match, content) => {
         content = content.trim();
@@ -224,6 +208,12 @@ function loadProblem() {
             return '<span class="blank">소리를 들으세요</span>';
         }
         
+        if (content.startsWith('{') && content.endsWith('}')) {
+            const passageName = content.slice(1, -1);
+            currentProblem.currentPassage = passageName;
+            return '<span class="blank">지문을 보세요</span>';
+        }
+        
         return '<span class="blank">정답을 쓰세요</span>';
     });
     
@@ -234,6 +224,13 @@ function loadProblem() {
         pictureBtn.classList.remove('hidden');
     } else {
         pictureBtn.classList.add('hidden');
+    }
+    
+    const passageBtn = document.getElementById('passageBtn');
+    if (currentProblem.currentPassage) {
+        passageBtn.classList.remove('hidden');
+    } else {
+        passageBtn.classList.add('hidden');
     }
     
     const audioToggleBtn = document.getElementById('audioToggleBtn');
@@ -276,38 +273,88 @@ function loadProblem() {
     document.getElementById('answerInput').focus();
     document.getElementById('hintDisplay').classList.remove('show');
     document.getElementById('correctAnswerDisplay').classList.remove('show');
+    document.getElementById('comparisonDisplay').classList.remove('show');
     document.getElementById('levelNum').textContent = level + 1;
     document.getElementById('totalNum').textContent = gameData.length;
     
-    hidePicture();
+    window.hidePicture();
+    window.hidePassage();
 }
 
 window.togglePicture = function() {
     const overlay = document.getElementById('pictureOverlay');
     if (overlay.classList.contains('hidden')) {
-        showPicture();
+        window.showPicture();
     } else {
-        hidePicture();
+        window.hidePicture();
     }
 };
 
-function showPicture() {
+window.showPicture = function() {
     if (!currentProblem || !currentProblem.currentPicture) return;
     
     const overlay = document.getElementById('pictureOverlay');
     const img = document.getElementById('pictureImage');
     
-    img.src = `./data_picture/${currentProblem.currentPicture}.jpeg`;
+    // 이전 핸들러 제거
+    img.onerror = null;
+    img.src = '';
+    
+    // .jpg로 먼저 시도
+    const jpgPath = `./data_picture/${currentProblem.currentPicture}.jpg`;
+    
     img.onerror = function() {
-        console.error('이미지 로드 실패:', currentProblem.currentPicture);
-        alert('이미지를 불러올 수 없습니다.');
-        hidePicture();
+        // .jpg 실패시 .jpeg로 재시도
+        const jpegPath = `./data_picture/${currentProblem.currentPicture}.jpeg`;
+        
+        // 두 번째 onerror 핸들러를 먼저 설정
+        img.onerror = function() {
+            console.error('이미지 로드 실패:', currentProblem.currentPicture);
+            alert(`이미지를 불러올 수 없습니다.\n파일명: ${currentProblem.currentPicture}`);
+            window.hidePicture();
+        };
+        
+        // 핸들러 설정 후 src 변경
+        img.src = jpegPath;
     };
+    
+    img.src = jpgPath;
     overlay.classList.remove('hidden');
 }
 
-function hidePicture() {
+window.hidePicture = function() {
     const overlay = document.getElementById('pictureOverlay');
+    const img = document.getElementById('pictureImage');
+    
+    // 핸들러 제거
+    img.onerror = null;
+    img.src = '';
+    
+    overlay.classList.add('hidden');
+};
+
+window.togglePassage = function() {
+    const overlay = document.getElementById('passageOverlay');
+    if (overlay.classList.contains('hidden')) {
+        window.showPassage();
+    } else {
+        window.hidePassage();
+    }
+};
+
+window.showPassage = function() {
+    if (!currentProblem || !currentProblem.currentPassage) return;
+    
+    const overlay = document.getElementById('passageOverlay');
+    const content = document.getElementById('passageContent');
+    
+    content.textContent = currentProblem.currentPassage;
+    
+    overlay.classList.remove('hidden');
+}
+
+window.hidePassage = function() {
+    const overlay = document.getElementById('passageOverlay');
     overlay.classList.add('hidden');
 }
 
@@ -357,6 +404,9 @@ function hideAudioPlayer() {
     
     audio.pause();
     audio.currentTime = 0;
+    
+    audio.onended = null;
+    
     player.classList.add('hidden');
 }
 
@@ -410,8 +460,10 @@ window.updateStartTime = function() {
 window.toggleHint = function() {
     const hintDisplay = document.getElementById('hintDisplay');
     const correctDisplay = document.getElementById('correctAnswerDisplay');
+    const comparisonDisplay = document.getElementById('comparisonDisplay');
     
     correctDisplay.classList.remove('show');
+    comparisonDisplay.classList.remove('show');
     
     if (hintDisplay.classList.contains('show')) {
         hintDisplay.classList.remove('show');
@@ -431,11 +483,59 @@ window.toggleCorrectAnswer = function() {
     if (correctDisplay.classList.contains('show')) {
         correctDisplay.classList.remove('show');
     } else {
-        correctDisplay.textContent = `✅ 정답: ${currentProblem.answer.join(' 또는 ')}`;
+        correctDisplay.textContent = `${currentProblem.answer[0]}`;
         correctDisplay.classList.add('show');
         usedHintOrAnswer = true;
     }
 };
+
+// 문자열 비교 함수 (띄어쓰기 포함)
+function compareStrings(userAnswer, correctAnswer) {
+    const maxLen = Math.max(userAnswer.length, correctAnswer.length);
+    let result = '';
+    
+    for (let i = 0; i < maxLen; i++) {
+        const userChar = userAnswer[i] || '';
+        const correctChar = correctAnswer[i] || '';
+        
+        if (userChar === correctChar) {
+            // 같은 문자
+            if (userChar === ' ') {
+                // 띄어쓰기가 맞을 때는 [] 표시
+                result += `<span class="diff-space-correct">[ ]</span>`;
+            } else {
+                // 일반 문자가 맞을 때는 ✓ 표시
+                result += `<span class="diff-correct">✓</span>`;
+            }
+        } else if (userChar && !correctChar) {
+            // 사용자가 더 많이 입력함 (분홍색)
+            if (userChar === ' ') {
+                result += `<span class="diff-extra">[ ]</span>`;
+            } else {
+                result += `<span class="diff-extra">${userChar}</span>`;
+            }
+        } else if (!userChar && correctChar) {
+            // 사용자가 덜 입력함 (파란색으로 누락 표시)
+            if (correctChar === ' ') {
+                result += `<span class="diff-missing">[ ]</span>`;
+            } else {
+                result += `<span class="diff-missing">[${correctChar}]</span>`;
+            }
+        } else {
+            // 다른 문자 (빨간색)
+            if (userChar === ' ') {
+                result += `<span class="diff-wrong">[ ]</span>`;
+            } else if (correctChar === ' ') {
+                // 띄어쓰기를 잘못 입력했을 때
+                result += `<span class="diff-wrong">${userChar}</span>`;
+            } else {
+                result += `<span class="diff-wrong">${userChar}</span>`;
+            }
+        }
+    }
+    
+    return result;
+}
 
 window.checkAnswer = function() {
     if (gameState !== 'playing') return;
@@ -452,15 +552,19 @@ window.checkAnswer = function() {
     );
     
     const messageEl = document.getElementById('message');
+    const comparisonDisplay = document.getElementById('comparisonDisplay');
+    const correctDisplay = document.getElementById('correctAnswerDisplay');
     
     if (isCorrect) {
         if (!usedHintOrAnswer) {
             solvedProblems.add(currentProblem.id);
-            saveSolvedProblems(selectedMainMenu, selectedLevel);
+            saveSolvedProblems();
         }
         
         messageEl.textContent = '🎉 정답입니다!';
         messageEl.className = 'message success show';
+        comparisonDisplay.classList.remove('show');
+        correctDisplay.classList.remove('show');
         
         setTimeout(() => {
             messageEl.classList.remove('show');
@@ -470,12 +574,16 @@ window.checkAnswer = function() {
                 gameStartTime = Date.now();
                 loadProblem();
             } else {
+                hideAudioPlayer();
+                
                 let studentName = '학생';
                 try {
                     studentName = wasmModule.get_cookie('studentName');
                 } catch (e) {}
                 
-                messageEl.innerHTML = `🏆 ${studentName}<br>축하합니다!`;
+                const completionInfo = `${userClass} ${selectedMainMenu} ${selectedLevel}과`;
+                
+                messageEl.innerHTML = `🏆 ${studentName}<br>${completionInfo}<br>축하합니다!`;
                 messageEl.className = 'message success show';
                 gameState = 'complete';
                 
@@ -487,8 +595,21 @@ window.checkAnswer = function() {
             }
         }, 500);
     } else {
+        // 틀렸을 때 usedHintOrAnswer를 true로 설정
+        usedHintOrAnswer = true;
+        
         messageEl.textContent = '❌ 틀렸습니다!';
         messageEl.className = 'message fail show';
+        
+        // 정답과 비교 (trim 하지 않고 원본 그대로 비교)
+        const userAnswerFull = document.getElementById('answerInput').value;
+        const correctAnswer = currentProblem.answer[0];
+        const comparison = compareStrings(userAnswerFull, correctAnswer);
+        
+        comparisonDisplay.innerHTML = `
+            <div style="margin-bottom: 8px;">${comparison}</div>
+        `;
+        comparisonDisplay.classList.add('show');
         
         setTimeout(() => {
             messageEl.classList.remove('show');
@@ -498,15 +619,15 @@ window.checkAnswer = function() {
 
 window.stopGameManually = function() {
     gameState = 'stopped';
+    hideAudioPlayer();
     showButtons();
 };
 
 function showButtons() {
     const buttonsEl = document.getElementById('buttons');
     buttonsEl.innerHTML = `
-        <button class="btn btn-reset" onclick="backToLevelSelect()">레벨 선택</button>
+        <button class="btn btn-reset" onclick="backToMainMenu()">닫기</button>
         <button class="btn btn-start" onclick="startGame()">▶ 다시 시도</button>
-        <button class="btn btn-warning" onclick="resetCurrentLevel('${selectedMainMenu}', '${selectedLevel}')">이 레벨 초기화</button>
         <button class="btn btn-stop" onclick="logout()">로그아웃</button>
     `;
 }
@@ -526,18 +647,22 @@ function resetGame() {
     document.getElementById('answerInput').value = '';
     document.getElementById('hintDisplay').classList.remove('show');
     document.getElementById('correctAnswerDisplay').classList.remove('show');
+    document.getElementById('comparisonDisplay').classList.remove('show');
     document.getElementById('contentSection').classList.remove('hidden');
     
-    hidePicture();
+    window.hidePicture();
+    window.hidePassage();
     hideAudioPlayer();
     
     document.getElementById('pictureBtn').classList.add('hidden');
+    document.getElementById('passageBtn').classList.add('hidden');
     document.getElementById('audioToggleBtn').classList.add('hidden');
     
     document.getElementById('message').classList.remove('show');
 }
 
 window.backToLevelSelect = function() {
+    hideAudioPlayer();
     document.getElementById('gameArea').classList.add('hidden');
     document.getElementById('levelSelector').classList.remove('hidden');
     selectedLevel = null;

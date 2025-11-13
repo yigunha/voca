@@ -17,14 +17,13 @@
             <div id="gameContent" class="hidden">
                 <!-- 메인 메뉴 -->
                 <div class="main-menu" id="mainMenu">
-                    <h2>학습 모드 선택</h2>
+                    <h2 id="mainMenuTitle">학습 모드 선택</h2>
                     <div class="main-menu-buttons">
                         <button class="main-menu-btn" onclick="selectMainMenu('문법')">문법</button>
                         <button class="main-menu-btn" onclick="selectMainMenu('단어')">단어</button>
                         <button class="main-menu-btn" onclick="selectMainMenu('받아쓰기')">받아쓰기</button>
                         <button class="main-menu-btn" onclick="selectMainMenu('듣기')">듣기</button>
                     </div>
-                    <button class="reset-all-btn" onclick="resetAllProgress()">🔄 전체 학습 기록 초기화</button>
                 </div>
 
                 <!-- 레벨 선택 -->
@@ -64,6 +63,7 @@
                         <div class="answer-controls">
                             <div class="media-buttons">
                                 <button class="control-btn picture-btn hidden" id="pictureBtn" onclick="togglePicture()">보기</button>
+                                <button class="control-btn passage-btn hidden" id="passageBtn" onclick="togglePassage()">지문</button>
                                 <button class="control-btn audio-toggle-btn hidden" id="audioToggleBtn" onclick="toggleAudioPlayer()">듣기</button>
                             </div>
                             <div class="level-display">레벨 <span id="levelNum">1</span> / <span id="totalNum">12</span></div>
@@ -77,6 +77,7 @@
                         
                         <div class="hint-display" id="hintDisplay"></div>
                         <div class="correct-answer-display" id="correctAnswerDisplay"></div>
+                        <div class="comparison-display" id="comparisonDisplay"></div>
                     </div>
 
                     <div class="buttons" id="buttons">
@@ -88,6 +89,14 @@
             <!-- 그림 오버레이 -->
             <div class="picture-overlay hidden" id="pictureOverlay" onclick="hidePicture()">
                 <img id="pictureImage" src="" alt="문제 그림">
+            </div>
+
+            <!-- 지문 오버레이 -->
+            <div class="passage-overlay hidden" id="passageOverlay" onclick="hidePassage()">
+                <div class="passage-content-wrapper" onclick="event.stopPropagation()">
+                    <div class="passage-content" id="passageContent"></div>
+                    <button class="passage-close-btn" onclick="hidePassage()">닫기</button>
+                </div>
             </div>
 
             <!-- 메시지 -->
