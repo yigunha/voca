@@ -182,8 +182,33 @@ window.startGame = function() {
     
     loadProblem();
     
-    document.getElementById('buttons').innerHTML = '<button class="btn btn-submit" onclick="checkAnswer()">정답 확인</button><button class="btn btn-stop" onclick="stopGameManually()">■ 게임 중단</button>';
+    const currentProblem = gameData[level];
+    
+    // jimuns 모드 확인
+    if (isJimunsMode(currentProblem)) {
+        document.getElementById('buttons').innerHTML = '<button class="btn btn-submit" onclick="checkJimunsAnswer()">정답 확인</button><button class="btn btn-stop" onclick="stopGameManually()">▢ 게임 중단</button>';
+    } else if (currentProblem.number && currentProblem.number.length > 0) {
+        document.getElementById('buttons').innerHTML = '<button class="btn btn-stop" onclick="stopGameManually()">▢ 게임 중단</button>';
+    } else {
+        document.getElementById('buttons').innerHTML = '<button class="btn btn-submit" onclick="checkAnswer()">정답 확인</button><button class="btn btn-stop" onclick="stopGameManually()">▢ 게임 중단</button>';
+    }
 };
+
+// jimuns 모드 확인 함수
+function isJimunsMode(problem) {
+    return problem.jimuns && problem.answers && problem.hints && 
+           Array.isArray(problem.answers) && Array.isArray(problem.hints);
+}
+
+// 공백 보존 함수 (B 프로그램에서 가져옴)
+function preserveWhitespace(text) {
+    return text
+        .split('\n')
+        .map(line => {
+            return line.replace(/^( +)/, (match) => '&nbsp;'.repeat(match.length));
+        })
+        .join('<br>');
+}
 
 function loadProblem() {
     currentProblem = gameData[level];
@@ -193,6 +218,13 @@ function loadProblem() {
     currentProblem.currentAudio = null;
     currentProblem.currentPassage = null;
     
+    // jimuns 모드 처리
+    if (isJimunsMode(currentProblem)) {
+        loadJimunsProblem();
+        return;
+    }
+    
+    // 기존 sentence 모드 처리
     let sentenceHtml = currentProblem.sentence.replace(/\|([^|]+)\|/g, (match, content) => {
         content = content.trim();
         
@@ -269,8 +301,36 @@ function loadProblem() {
         conditionText.style.display = 'none';
     }
     
-    document.getElementById('answerInput').value = '';
-    document.getElementById('answerInput').focus();
+    // number 타입 처리
+    const numberGrid = document.getElementById('numberGrid');
+    const answerInputSection = document.getElementById('answerInputSection');
+    
+    if (currentProblem.number && currentProblem.number.length > 0) {
+        const circleNumbers = ['⓪', '①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨', '⑩', '⑪', '⑫', '⑬', '⑭', '⑮', '⑯', '⑰', '⑱', '⑲', '⑳'];
+        
+        numberGrid.innerHTML = '';
+        currentProblem.number.forEach((item, index) => {
+            const btn = document.createElement('button');
+            btn.className = 'number-btn';
+            btn.innerHTML = `<span class="number-circle">${circleNumbers[index]}</span> ${item}`;
+            btn.onclick = () => checkNumberAnswer(item);
+            numberGrid.appendChild(btn);
+        });
+        
+        numberGrid.classList.remove('hidden');
+        answerInputSection.classList.add('hidden');
+    } else {
+        numberGrid.classList.add('hidden');
+        answerInputSection.classList.remove('hidden');
+        document.getElementById('answerInput').value = '';
+        document.getElementById('answerInput').focus();
+    }
+    
+    // 기존 모드에서는 answer-section 표시
+    document.getElementById('answerSection').style.display = 'block';
+    document.getElementById('jimunsContainer').classList.add('hidden');
+    document.getElementById('contentSection').classList.remove('hidden');
+    
     document.getElementById('hintDisplay').classList.remove('show');
     document.getElementById('correctAnswerDisplay').classList.remove('show');
     document.getElementById('comparisonDisplay').classList.remove('show');
@@ -280,6 +340,329 @@ function loadProblem() {
     window.hidePicture();
     window.hidePassage();
 }
+
+// jimuns 모드 문제 로드 함수
+function loadJimunsProblem() {
+    const jimunsText = currentProblem.jimuns;
+    const questionParts = jimunsText.split('|     |');  // 공백 5개
+    
+    // opt 처리 - contentSection에 표시
+    const optDesc = document.getElementById('optDescription');
+    if (currentProblem.opt) {
+        optDesc.textContent = currentProblem.opt;
+        optDesc.style.display = 'block';
+    } else {
+        optDesc.style.display = 'none';
+    }
+    
+    const optionsGrid = document.getElementById('optionsGrid');
+    optionsGrid.innerHTML = '';
+    if (currentProblem.options && currentProblem.options.length > 0) {
+        currentProblem.options.forEach((option, index) => {
+            const div = document.createElement('div');
+            div.className = 'option-item';
+            div.textContent = `${index + 1}) ${option}`;
+            optionsGrid.appendChild(div);
+        });
+    }
+    
+    const conditionText = document.getElementById('conditionText');
+    if (currentProblem.condition) {
+        conditionText.textContent = currentProblem.condition;
+        conditionText.style.display = 'block';
+    } else {
+        conditionText.style.display = 'none';
+    }
+    
+    // jimuns 컨텐츠 생성
+    let jimunsHTML = '';
+    for (let i = 0; i < questionParts.length; i++) {
+        const textPart = preserveWhitespace(questionParts[i]);
+        jimunsHTML += `<span class="jimuns-text">${textPart}</span>`;
+        
+        if (i < questionParts.length - 1) {
+            const correctAnswer = currentProblem.answers[i] || "";
+            const hintText = currentProblem.hints[i] || '';
+            const dynamicWidth = Math.max(correctAnswer.length * 2.2, 3) + "ch";
+            
+            jimunsHTML += `
+                <span class="input-group">
+                    <button class="answer-btn" data-index="${i}" title="정답 보기">💡</button>
+                    <input type="text" 
+                           class="answerInput" 
+                           placeholder="정답 ${i + 1} 입력" 
+                           data-index="${i}"
+                           style="width: ${dynamicWidth};">
+                    <button class="description-btn" data-index="${i}" title="힌트 보기">❓</button>
+                    <div class="answer-hint" data-index="${i}"></div>
+                    <div class="description-hint" data-index="${i}">${hintText}</div>
+                </span>
+            `;
+        }
+    }
+    
+    // sentence는 숨김
+    document.getElementById('sentence').style.display = 'none';
+
+    // jimuns 컨텐츠를 jimunsContainer에 표시
+    const jimunsContainer = document.getElementById('jimunsContainer');
+    jimunsContainer.innerHTML = jimunsHTML;
+    jimunsContainer.classList.remove('hidden');
+    
+    // 입력창 엔터 이벤트
+    const allInputs = jimunsContainer.querySelectorAll(".answerInput");
+    allInputs.forEach((input, index) => {
+        input.addEventListener("keydown", (event) => {
+            if (event.key === "Enter") {
+                if (index === allInputs.length - 1) {
+                    checkJimunsAnswer();
+                } else {
+                    allInputs[index + 1].focus();
+                }
+            }
+        });
+        
+        // 포커스 시 정답/힌트 숨김
+        input.addEventListener("focus", () => {
+            closeAllJimunsDropdowns();
+            closeAllJimunsHints();
+        });
+    });
+    
+    // 정답/힌트 버튼 이벤트
+    jimunsContainer.querySelectorAll('.answer-btn').forEach(button => {
+        button.addEventListener('click', (event) => {
+            const index = event.target.dataset.index;
+            toggleJimunsAnswer(index);
+        });
+    });
+    
+    jimunsContainer.querySelectorAll('.description-btn').forEach(button => {
+        button.addEventListener('click', (event) => {
+            const index = event.target.dataset.index;
+            toggleJimunsHint(index);
+        });
+    });
+    
+    // jimuns 모드에서는 기존 UI 요소들 완전히 숨기기
+    document.getElementById('numberGrid').classList.add('hidden');
+    document.getElementById('answerInputSection').classList.add('hidden');
+    document.getElementById('answerSection').style.display = 'none';  // 전체 answer-section 숨김
+    
+    document.getElementById('pictureBtn').classList.add('hidden');
+    document.getElementById('passageBtn').classList.add('hidden');
+    document.getElementById('audioToggleBtn').classList.add('hidden');
+    
+    document.getElementById('levelNum').textContent = level + 1;
+    document.getElementById('totalNum').textContent = gameData.length;
+    
+    // 첫 번째 입력창에 포커스
+    if (allInputs.length > 0) {
+        setTimeout(() => {
+            allInputs[0].focus();
+        }, 200);
+    }
+}
+
+// jimuns 정답 토글 함수
+function toggleJimunsAnswer(index) {
+    const hint = document.querySelector(`.answer-hint[data-index="${index}"]`);
+    const correctAnswer = currentProblem.answers[index] || "";
+    
+    // 먼저 현재 상태 저장
+    const isVisible = (hint.style.display === 'block');
+    
+    // 그 다음 다른 것들 닫기
+    closeAllJimunsDropdowns();
+    closeAllJimunsHints();
+    
+    // 저장한 상태로 토글
+    if (isVisible) {
+        hint.innerHTML = "";
+        hint.style.display = "none";
+    } else {
+        if (correctAnswer) {
+            hint.innerHTML = '';
+            const answerDiv = document.createElement('div');
+            answerDiv.className = 'answer-current';
+            answerDiv.textContent = correctAnswer;
+            hint.appendChild(answerDiv);
+            hint.style.display = "block";
+            
+            usedHintOrAnswer = true;
+        }
+    }
+}
+
+// jimuns 힌트 토글 함수
+function toggleJimunsHint(index) {
+    const hint = document.querySelector(`.description-hint[data-index="${index}"]`);
+    
+    closeAllJimunsDropdowns();
+    closeAllJimunsHints(index);
+    
+    if (hint.style.display === 'block') {
+        hint.style.display = 'none';
+    } else {
+        hint.style.display = 'block';
+        usedHintOrAnswer = true;
+    }
+}
+
+// 모든 jimuns 드롭다운 닫기
+function closeAllJimunsDropdowns() {
+    document.querySelectorAll('.jimuns-answer-dropdown').forEach(dd => dd.classList.remove('show'));
+    document.querySelectorAll('.answer-hint').forEach(hint => {
+        hint.innerHTML = "";
+        hint.style.display = 'none';
+    });
+}
+
+// 모든 jimuns 힌트 닫기
+function closeAllJimunsHints(keepIndex = -1) {
+    document.querySelectorAll('.description-hint').forEach(hint => {
+        if (hint.dataset.index !== String(keepIndex)) {
+            hint.style.display = 'none';
+        }
+    });
+}
+
+// jimuns 정답 확인 함수
+window.checkJimunsAnswer = function() {
+    if (gameState !== 'playing') return;
+    
+    const userInputs = document.querySelectorAll("#jimunsContainer .answerInput");
+    const messageEl = document.getElementById('message');
+    
+    let allCorrect = true;
+    userInputs.forEach((input, index) => {
+        if (input.disabled) return;
+        
+        const userAnswer = input.value.trim();
+        const correctAnswer = currentProblem.answers[index] || "";
+        let isCorrect = false;
+        if (userAnswer.toLowerCase() === correctAnswer.toLowerCase()) {
+            isCorrect = true;
+        }
+
+        
+        if (isCorrect && userAnswer !== "") {
+            input.style.borderColor = "green";
+            input.style.backgroundColor = "#e8f5e9";
+            input.disabled = true;
+        } else {
+            input.style.borderColor = "red";
+            input.style.backgroundColor = "#ffebee";
+            allCorrect = false;
+        }
+    });
+    
+    if (allCorrect) {
+        if (!usedHintOrAnswer) {
+            solvedProblems.add(currentProblem.id);
+            saveSolvedProblems();
+        }
+        
+        messageEl.textContent = '🎉 정답입니다!';
+        messageEl.className = 'message success show';
+        
+        setTimeout(() => {
+            messageEl.classList.remove('show');
+            
+            if (level < gameData.length - 1) {
+                level++;
+                gameStartTime = Date.now();
+                loadProblem();
+            } else {
+                hideAudioPlayer();
+                
+                let studentName = '학생';
+                try {
+                    studentName = wasmModule.get_cookie('studentName');
+                } catch (e) {}
+                
+                const completionInfo = `${userClass} ${selectedMainMenu} ${selectedLevel}과`;
+                
+                messageEl.innerHTML = `🏆 ${studentName}<br>${completionInfo}<br>축하합니다!`;
+                messageEl.className = 'message success show';
+                gameState = 'complete';
+                
+                messageEl.onclick = () => {
+                    messageEl.classList.remove('show');
+                    messageEl.onclick = null;
+                    showButtons();
+                };
+            }
+        }, 500);
+    } else {
+        usedHintOrAnswer = true;
+        
+        messageEl.textContent = '❌ 틀렸습니다!';
+        messageEl.className = 'message fail show';
+        
+        setTimeout(() => {
+            messageEl.classList.remove('show');
+        }, 500);
+    }
+};
+
+window.checkNumberAnswer = function(selectedAnswer) {
+    if (gameState !== 'playing') return;
+    
+    const isCorrect = currentProblem.answer.some(ans => 
+        selectedAnswer.toLowerCase() === ans.toLowerCase()
+    );
+    
+    const messageEl = document.getElementById('message');
+    
+    if (isCorrect) {
+        if (!usedHintOrAnswer) {
+            solvedProblems.add(currentProblem.id);
+            saveSolvedProblems();
+        }
+        
+        messageEl.textContent = '🎉 정답입니다!';
+        messageEl.className = 'message success show';
+        
+        setTimeout(() => {
+            messageEl.classList.remove('show');
+            
+            if (level < gameData.length - 1) {
+                level++;
+                gameStartTime = Date.now();
+                loadProblem();
+            } else {
+                hideAudioPlayer();
+                
+                let studentName = '학생';
+                try {
+                    studentName = wasmModule.get_cookie('studentName');
+                } catch (e) {}
+                
+                const completionInfo = `${userClass} ${selectedMainMenu} ${selectedLevel}과`;
+                
+                messageEl.innerHTML = `🏆 ${studentName}<br>${completionInfo}<br>축하합니다!`;
+                messageEl.className = 'message success show';
+                gameState = 'complete';
+                
+                messageEl.onclick = () => {
+                    messageEl.classList.remove('show');
+                    messageEl.onclick = null;
+                    showButtons();
+                };
+            }
+        }, 500);
+    } else {
+        usedHintOrAnswer = true;
+        
+        messageEl.textContent = '❌ 틀렸습니다!';
+        messageEl.className = 'message fail show';
+        
+        setTimeout(() => {
+            messageEl.classList.remove('show');
+        }, 500);
+    }
+};
 
 window.togglePicture = function() {
     const overlay = document.getElementById('pictureOverlay');
@@ -296,25 +679,20 @@ window.showPicture = function() {
     const overlay = document.getElementById('pictureOverlay');
     const img = document.getElementById('pictureImage');
     
-    // 이전 핸들러 제거
     img.onerror = null;
     img.src = '';
     
-    // .jpg로 먼저 시도
     const jpgPath = `./data_picture/${currentProblem.currentPicture}.jpg`;
     
     img.onerror = function() {
-        // .jpg 실패시 .jpeg로 재시도
         const jpegPath = `./data_picture/${currentProblem.currentPicture}.jpeg`;
         
-        // 두 번째 onerror 핸들러를 먼저 설정
         img.onerror = function() {
             console.error('이미지 로드 실패:', currentProblem.currentPicture);
             alert(`이미지를 불러올 수 없습니다.\n파일명: ${currentProblem.currentPicture}`);
             window.hidePicture();
         };
         
-        // 핸들러 설정 후 src 변경
         img.src = jpegPath;
     };
     
@@ -326,7 +704,6 @@ window.hidePicture = function() {
     const overlay = document.getElementById('pictureOverlay');
     const img = document.getElementById('pictureImage');
     
-    // 핸들러 제거
     img.onerror = null;
     img.src = '';
     
@@ -489,7 +866,6 @@ window.toggleCorrectAnswer = function() {
     }
 };
 
-// 문자열 비교 함수 (띄어쓰기 포함)
 function compareStrings(userAnswer, correctAnswer) {
     const maxLen = Math.max(userAnswer.length, correctAnswer.length);
     let result = '';
@@ -499,34 +875,27 @@ function compareStrings(userAnswer, correctAnswer) {
         const correctChar = correctAnswer[i] || '';
         
         if (userChar === correctChar) {
-            // 같은 문자
             if (userChar === ' ') {
-                // 띄어쓰기가 맞을 때는 [] 표시
                 result += `<span class="diff-space-correct">[ ]</span>`;
             } else {
-                // 일반 문자가 맞을 때는 ✓ 표시
                 result += `<span class="diff-correct">✓</span>`;
             }
         } else if (userChar && !correctChar) {
-            // 사용자가 더 많이 입력함 (분홍색)
             if (userChar === ' ') {
                 result += `<span class="diff-extra">[ ]</span>`;
             } else {
                 result += `<span class="diff-extra">${userChar}</span>`;
             }
         } else if (!userChar && correctChar) {
-            // 사용자가 덜 입력함 (파란색으로 누락 표시)
             if (correctChar === ' ') {
                 result += `<span class="diff-missing">[ ]</span>`;
             } else {
                 result += `<span class="diff-missing">[${correctChar}]</span>`;
             }
         } else {
-            // 다른 문자 (빨간색)
             if (userChar === ' ') {
                 result += `<span class="diff-wrong">[ ]</span>`;
             } else if (correctChar === ' ') {
-                // 띄어쓰기를 잘못 입력했을 때
                 result += `<span class="diff-wrong">${userChar}</span>`;
             } else {
                 result += `<span class="diff-wrong">${userChar}</span>`;
@@ -595,13 +964,11 @@ window.checkAnswer = function() {
             }
         }, 500);
     } else {
-        // 틀렸을 때 usedHintOrAnswer를 true로 설정
         usedHintOrAnswer = true;
         
         messageEl.textContent = '❌ 틀렸습니다!';
         messageEl.className = 'message fail show';
         
-        // 정답과 비교 (trim 하지 않고 원본 그대로 비교)
         const userAnswerFull = document.getElementById('answerInput').value;
         const correctAnswer = currentProblem.answer[0];
         const comparison = compareStrings(userAnswerFull, correctAnswer);
@@ -637,9 +1004,16 @@ function resetGame() {
     gameState = 'ready';
     
     document.getElementById('sentence').innerHTML = '';
+    document.getElementById('sentence').style.display = 'block';
     document.getElementById('optDescription').style.display = 'none';
     document.getElementById('optionsGrid').innerHTML = '';
     document.getElementById('conditionText').style.display = 'none';
+    document.getElementById('numberGrid').innerHTML = '';
+    document.getElementById('numberGrid').classList.add('hidden');
+    document.getElementById('answerInputSection').classList.remove('hidden');
+    document.getElementById('jimunsContainer').innerHTML = '';
+    document.getElementById('jimunsContainer').classList.add('hidden');
+    document.getElementById('answerSection').style.display = 'block';
     
     document.getElementById('levelNum').textContent = '1';
     document.getElementById('totalNum').textContent = gameData.length;

@@ -60,7 +60,6 @@ body {
     transition: all 0.3s;
 }
 
-
 .main-menu-btn:hover {
     background: #2563eb;
     transform: scale(1.05);
@@ -367,6 +366,168 @@ body {
     text-align: center;
 }
 
+/* jimuns 모드 스타일 추가 */
+.jimuns-text {
+    white-space: pre-wrap;
+    display: inline;
+    color: #f3f4f6;
+}
+
+.jimuns-input-group {
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    position: relative;
+    overflow: visible;
+    z-index: 1;
+    vertical-align: middle;
+    gap: 5px;
+}
+
+.jimuns-input {
+    display: inline-block;
+    font-size: 1.2em;
+    font-weight: bold;
+    padding: 5px;
+    border: 3px solid #ddd;
+    border-radius: 8px;
+    width: auto;
+    text-align: center;
+    transition: border-color 0.3s, background-color 0.3s;
+    margin: 0px;
+    vertical-align: middle;
+    position: relative;
+    z-index: 1;
+    background: #1f2937;
+    color: #f3f4f6;
+}
+
+.jimuns-input:focus {
+    outline: none;
+    border-color: #60a5fa;
+}
+
+.jimuns-answer-btn,
+.jimuns-hint-btn {
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    font-size: 1.2rem;
+    line-height: 1;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s, transform 0.1s;
+    flex-shrink: 0;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.jimuns-answer-btn {
+    background-color: #28a745;
+    color: white;
+}
+
+.jimuns-hint-btn {
+    background-color: #007bff;
+    color: white;
+}
+
+.jimuns-answer-btn:hover,
+.jimuns-hint-btn:hover {
+    transform: scale(1.05);
+}
+
+.jimuns-answer-btn:active,
+.jimuns-hint-btn:active {
+    transform: scale(0.95);
+}
+
+.jimuns-answer-hint {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10000;
+    margin-top: 4px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border: 1px solid #28a745;
+    overflow: visible;
+    min-width: 120px;
+    padding: 1px 4px;
+    line-height: 1;
+}
+
+.jimuns-answer-current {
+    background-color: #e8f5e8;
+    color: #28a745;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    white-space: nowrap;
+    font-size: 1rem;
+}
+
+.jimuns-answer-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 5px;
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    display: none;
+    flex-direction: column;
+    z-index: 10002;
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 5px 0;
+}
+
+.jimuns-answer-dropdown.show {
+    display: flex;
+}
+
+.jimuns-answer-item {
+    padding: 8px 15px;
+    cursor: pointer;
+    white-space: nowrap;
+    line-height: 1;
+    color: #444;
+    font-size: 1rem;
+}
+
+.jimuns-answer-item:hover,
+.jimuns-answer-item.selected {
+    background-color: #f0f0f0;
+}
+
+.jimuns-description-hint {
+    display: none;
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10000;
+    margin-bottom: 8px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border: 1px solid #007bff;
+    padding: 8px 12px;
+    white-space: nowrap;
+    color: #444;
+    font-size: 1rem;
+    line-height: 1.4;
+}
+
 .opt-description {
     color: #fbbf24;
     font-size: 0.95em;
@@ -379,7 +540,7 @@ body {
 .options-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
+    gap: 4px;
     margin-bottom: 10px;
 }
 
@@ -391,7 +552,7 @@ body {
 .option-item {
     color: #f3f4f6;
     font-size: 1em;
-    padding: 6px;
+    padding: 2px;
     background: transparent;
     text-align: left;
 }
@@ -487,11 +648,11 @@ body {
     background-color: #2563eb;
 }
 
-.answer-btn {
+.control-btn.answer-btn {
     background-color: #10b981;
 }
 
-.answer-btn:hover {
+.control-btn.answer-btn:hover {
     background-color: #059669;
 }
 
@@ -732,8 +893,26 @@ body {
         font-size: 1em;
         padding: 20px;
     }
+    
+    .jimuns-input-group {
+        flex-direction: column;
+    }
+    
+    .jimuns-answer-current {
+        max-width: 70px;
+        font-size: 0.8rem;
+        padding: 3px 6px;
+    }
+    
+    .jimuns-answer-item {
+        font-size: 0.8rem;
+        padding: 3px 6px;
+    }
+    
+    .jimuns-answer-dropdown {
+        max-height: 150px;
+    }
 }
-
 
 .diff-space-correct {
     color: #10b981;
@@ -741,6 +920,253 @@ body {
     margin: 0 1px;
 }
 
+/* number 버튼 스타일 */
+.number-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.number-btn {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #4b5563;
+    border-radius: 8px;
+    background: #1f2937;
+    color: #f3f4f6;
+    font-size: 1.05em;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.number-btn:hover {
+    background: #374151;
+    border-color: #60a5fa;
+}
+
+.number-btn:active {
+    transform: scale(0.98);
+}
+
+.number-circle {
+    font-size: 1.2em;
+    color: #60a5fa;
+    font-weight: bold;
+    min-width: 24px;
+}
+
+/* jimuns 컨테이너 스타일 */
+.jimuns-container {
+    background: #374151;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 15px;
+    font-size: 1.2em;
+    line-height: 2;
+    color: #f3f4f6;
+    text-align: left;
+}
+
+.jimuns-container.hidden {
+    display: none;
+}
+
+/* jimuns 텍스트 스타일 */
+.jimuns-text {
+    white-space: pre-wrap;
+    display: inline;
+    color: #f3f4f6;
+}
+
+/* jimuns 입력 그룹 스타일 */
+.input-group {
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    position: relative;
+    overflow: visible;
+    z-index: 1;
+    vertical-align: middle;
+    gap: 5px;
+}
+
+/* jimuns 입력창 스타일 - answerInput 클래스 사용 */
+.jimuns-container .answerInput {
+    display: inline-block;
+    font-size: 1.2em;
+    font-weight: bold;
+    padding: 5px;
+    border: 3px solid #ddd;
+    border-radius: 8px;
+    width: auto;
+    text-align: center;
+    transition: border-color 0.3s, background-color 0.3s;
+    margin: 0px;
+    vertical-align: middle;
+    position: relative;
+    z-index: 1;
+    background: #1f2937;
+    color: #f3f4f6;
+}
+
+.jimuns-container .answerInput:focus {
+    outline: none;
+    border-color: #60a5fa;
+}
+
+.input-group .answer-btn,
+.input-group .description-btn {
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    font-size: 1.2rem;
+    line-height: 1;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s, transform 0.1s;
+    flex-shrink: 0;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.input-group .answer-btn {
+    background-color: #28a745;
+    color: white;
+}
+
+.input-group .description-btn {
+    background-color: #007bff;
+    color: white;
+}
+
+.input-group .answer-btn:hover,
+.input-group .description-btn:hover {
+    transform: scale(1.05);
+}
 
 
+.answer-hint {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10000;
+    margin-top: 4px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border: 1px solid #28a745;
+    overflow: visible;
+    min-width: 120px;
+    padding: 1px 4px;
+    line-height: 1;
+}
 
+.answer-hint.active {
+    z-index: 10001;
+}
+
+.answer-current {
+    background-color: #e8f5e8;
+    color: #28a745;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.answer-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 5px;
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    display: none;
+    flex-direction: column;
+    z-index: 10002;
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 5px 0;
+}
+
+.answer-dropdown.show {
+    display: flex;
+}
+
+.answer-item {
+    padding: 8px 15px;
+    cursor: pointer;
+    white-space: nowrap;
+    line-height: 1;
+    color: #444;
+}
+
+.answer-item:hover, .answer-item.selected {
+    background-color: #f0f0f0;
+}
+
+/* 설명 보기 드롭다운 스타일 */
+.description-hint {
+    display: none;
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10000;
+    margin-bottom: 8px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border: 1px solid #007bff;
+    padding: 8px 12px;
+    white-space: nowrap;
+    color: #444;
+    font-size: 1rem;
+    line-height: 1.4;
+}
+
+.description-hint.active {
+    z-index: 10001;
+}
+
+/* 반응형 - jimuns 모드 추가 */
+@media (max-width: 768px) {
+    .input-group {
+        flex-direction: column;
+        gap: 3px;
+    }
+    
+    .jimuns-container .answerInput {
+        font-size: 1em;
+        width: 100%;
+        max-width: 200px;
+    }
+    
+    .answer-current {
+        max-width: 70px;
+        font-size: 0.8rem;
+        padding: 3px 6px;
+    }
+    
+    .answer-item {
+        font-size: 0.8rem;
+        padding: 3px 6px;
+    }
+    
+    .answer-dropdown {
+        max-height: 150px;
+    }
+}

@@ -59,7 +59,7 @@
                         </div>
                     </div>
                     
-                    <div class="answer-section">
+                    <div class="answer-section" id="answerSection">
                         <div class="answer-controls">
                             <div class="media-buttons">
                                 <button class="control-btn picture-btn hidden" id="pictureBtn" onclick="togglePicture()">보기</button>
@@ -73,12 +73,21 @@
                             </div>
                         </div>
                         
-                        <input type="text" class="answer-input" id="answerInput" placeholder="정답을 입력하세요...">
+                        <!-- number 버튼 그리드 -->
+                        <div class="number-grid hidden" id="numberGrid"></div>
+                        
+                        <!-- 기존 입력 섹션 -->
+                        <div id="answerInputSection">
+                            <input type="text" class="answer-input" id="answerInput" placeholder="정답을 입력하세요...">
+                        </div>
                         
                         <div class="hint-display" id="hintDisplay"></div>
                         <div class="correct-answer-display" id="correctAnswerDisplay"></div>
                         <div class="comparison-display" id="comparisonDisplay"></div>
                     </div>
+
+                    <!-- jimuns 전용 영역 (버튼 바로 위) -->
+                    <div class="jimuns-container hidden" id="jimunsContainer"></div>
 
                     <div class="buttons" id="buttons">
                         <button class="btn btn-start" onclick="startGame()">▶ 게임 시작</button>
