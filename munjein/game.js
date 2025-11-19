@@ -341,7 +341,20 @@ function loadProblem() {
     window.hidePassage();
 }
 
-// jimuns 모드 문제 로드 함수
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function loadJimunsProblem() {
     const jimunsText = currentProblem.jimuns;
     const questionParts = jimunsText.split('|     |');  // 공백 5개
@@ -380,22 +393,34 @@ function loadJimunsProblem() {
         const textPart = preserveWhitespace(questionParts[i]);
         jimunsHTML += `<span class="jimuns-text">${textPart}</span>`;
         
-        if (i < questionParts.length - 1) {
+        if (i < currentProblem.answers.length) {
             const correctAnswer = currentProblem.answers[i] || "";
             const hintText = currentProblem.hints[i] || '';
-            const dynamicWidth = Math.max(correctAnswer.length * 2.2, 3) + "ch";
             
             jimunsHTML += `
-                <span class="input-group">
-                    <button class="answer-btn" data-index="${i}" title="정답 보기">💡</button>
-                    <input type="text" 
-                           class="answerInput" 
-                           placeholder="정답 ${i + 1} 입력" 
-                           data-index="${i}"
-                           style="width: ${dynamicWidth};">
-                    <button class="description-btn" data-index="${i}" title="힌트 보기">❓</button>
-                    <div class="answer-hint" data-index="${i}"></div>
-                    <div class="description-hint" data-index="${i}">${hintText}</div>
+                <span class="input-wrapper" data-index="${i}" style="position: relative; display: inline;">
+                    <span class="visual-display" data-index="${i}" 
+                          style="display: inline;
+                                 padding: 2px 6px; 
+                                 background: #1f2937; 
+                                 border: 2px solid #60a5fa; 
+                                 border-radius: 4px; 
+                                 cursor: pointer; 
+                                 color: #9ca3af;
+                                 word-break: break-all;">
+                        <span class="user-input-overlay" style="color: #6b7280; font-weight: normal; font-size: 0.9em; opacity: 0.7;">정답${i + 1}</span>
+                    </span>
+                    <div class="real-input-group" data-index="${i}" style="display:none; position: fixed; z-index: 10000; background: #374151; padding: 8px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); width: calc(100% - 40px); max-width: 460px;">
+                        <button class="answer-btn" data-index="${i}" title="정답 보기" style="width: 28px; height: 28px; flex-shrink: 0; border-radius: 50%; background: #10b981; color: white; border: none; cursor: pointer; font-size: 1em; display: flex; align-items: center; justify-content: center;">💡</button>
+                        <input type="text" 
+                               class="answerInput" 
+                               placeholder="정답 ${i + 1}" 
+                               data-index="${i}"
+                               style="flex: 1; padding: 6px 8px; background: #1f2937; color: #f3f4f6; border: 2px solid #93c5fd; border-radius: 4px; font-size: 1em; height: 32px;">
+                        <button class="description-btn" data-index="${i}" title="힌트 보기" style="width: 28px; height: 28px; flex-shrink: 0; border-radius: 50%; background: #3b82f6; color: white; border: none; cursor: pointer; font-size: 1em; display: flex; align-items: center; justify-content: center;">❓</button>
+                        <div class="answer-hint" data-index="${i}" style="display: none; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 4px; background: white; border: 1px solid #28a745; border-radius: 8px; padding: 6px 12px; color: #28a745; font-weight: bold; white-space: nowrap; z-index: 10001;"></div>
+                        <div class="description-hint" data-index="${i}" style="display: none; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); margin-bottom: 8px; background: white; border: 1px solid #007bff; border-radius: 8px; padding: 8px 12px; color: #444; white-space: normal; max-width: 250px; z-index: 10001;">${hintText}</div>
+                    </div>
                 </span>
             `;
         }
@@ -409,36 +434,118 @@ function loadJimunsProblem() {
     jimunsContainer.innerHTML = jimunsHTML;
     jimunsContainer.classList.remove('hidden');
     
-    // 입력창 엔터 이벤트
+    // 시각 표시 클릭 이벤트
+    jimunsContainer.querySelectorAll('.visual-display').forEach(display => {
+        display.addEventListener('click', (event) => {
+            event.stopPropagation();
+            const index = display.dataset.index;
+            const wrapper = display.closest('.input-wrapper');
+            const realInputGroup = wrapper.querySelector('.real-input-group');
+            const input = realInputGroup.querySelector('.answerInput');
+            
+            // 다른 입력창들 모두 숨김
+            jimunsContainer.querySelectorAll('.real-input-group').forEach(group => {
+                group.style.display = 'none';
+            });
+            
+            // 클릭한 위치 근처에 입력창 표시
+            const rect = display.getBoundingClientRect();
+            realInputGroup.style.display = 'flex';
+            realInputGroup.style.gap = '6px';
+            realInputGroup.style.alignItems = 'center';
+            realInputGroup.style.left = '50%';
+            realInputGroup.style.top = (rect.bottom + 5) + 'px';
+            realInputGroup.style.transform = 'translateX(-50%)';
+            input.focus();
+        });
+    });
+    
+    // 입력창 이벤트
     const allInputs = jimunsContainer.querySelectorAll(".answerInput");
-    allInputs.forEach((input, index) => {
+    allInputs.forEach((input) => {
+        // Enter 키
         input.addEventListener("keydown", (event) => {
             if (event.key === "Enter") {
-                if (index === allInputs.length - 1) {
+                event.preventDefault();
+                const inputIndex = parseInt(input.dataset.index);
+                const wrapper = input.closest('.input-wrapper');
+                const visualDisplay = wrapper.querySelector('.visual-display');
+                const overlay = visualDisplay.querySelector('.user-input-overlay');
+                const realInputGroup = wrapper.querySelector('.real-input-group');
+                
+                // 값 업데이트 + 스타일 변경
+                if (input.value) {
+                    overlay.textContent = input.value;
+                    overlay.style.color = '#f3f4f6';
+                    overlay.style.fontWeight = 'bold';
+                    overlay.style.fontSize = '1em';
+                    overlay.style.opacity = '1';
+                } else {
+                    overlay.textContent = '정답' + (inputIndex + 1);
+                    overlay.style.color = '#6b7280';
+                    overlay.style.fontWeight = 'normal';
+                    overlay.style.fontSize = '0.9em';
+                    overlay.style.opacity = '0.7';
+                }
+                
+                // 입력창 숨김
+                realInputGroup.style.display = 'none';
+                
+                // 마지막이면 정답 확인, 아니면 다음 입력창
+                if (inputIndex === allInputs.length - 1) {
                     checkJimunsAnswer();
                 } else {
-                    allInputs[index + 1].focus();
+                    const nextWrapper = jimunsContainer.querySelector(`.input-wrapper[data-index="${inputIndex + 1}"]`);
+                    if (nextWrapper) {
+                        const nextDisplay = nextWrapper.querySelector('.visual-display');
+                        nextDisplay.click();
+                    }
                 }
             }
         });
         
-        // 포커스 시 정답/힌트 숨김
-        input.addEventListener("focus", () => {
-            closeAllJimunsDropdowns();
-            closeAllJimunsHints();
+        // 포커스 아웃 (다른 곳 클릭)
+        input.addEventListener("blur", () => {
+            setTimeout(() => {
+                const inputIndex = parseInt(input.dataset.index);
+                const wrapper = input.closest('.input-wrapper');
+                const visualDisplay = wrapper.querySelector('.visual-display');
+                const overlay = visualDisplay.querySelector('.user-input-overlay');
+                const realInputGroup = wrapper.querySelector('.real-input-group');
+                
+                // 값 업데이트 + 스타일 변경
+                if (input.value) {
+                    overlay.textContent = input.value;
+                    overlay.style.color = '#f3f4f6';
+                    overlay.style.fontWeight = 'bold';
+                    overlay.style.fontSize = '1em';
+                    overlay.style.opacity = '1';
+                } else {
+                    overlay.textContent = '정답' + (inputIndex + 1);
+                    overlay.style.color = '#6b7280';
+                    overlay.style.fontWeight = 'normal';
+                    overlay.style.fontSize = '0.9em';
+                    overlay.style.opacity = '0.7';
+                }
+                
+                // 입력창 숨김
+                realInputGroup.style.display = 'none';
+            }, 200);
         });
     });
     
     // 정답/힌트 버튼 이벤트
     jimunsContainer.querySelectorAll('.answer-btn').forEach(button => {
-        button.addEventListener('click', (event) => {
+        button.addEventListener('mousedown', (event) => {
+            event.preventDefault();
             const index = event.target.dataset.index;
             toggleJimunsAnswer(index);
         });
     });
     
     jimunsContainer.querySelectorAll('.description-btn').forEach(button => {
-        button.addEventListener('click', (event) => {
+        button.addEventListener('mousedown', (event) => {
+            event.preventDefault();
             const index = event.target.dataset.index;
             toggleJimunsHint(index);
         });
@@ -447,7 +554,7 @@ function loadJimunsProblem() {
     // jimuns 모드에서는 기존 UI 요소들 완전히 숨기기
     document.getElementById('numberGrid').classList.add('hidden');
     document.getElementById('answerInputSection').classList.add('hidden');
-    document.getElementById('answerSection').style.display = 'none';  // 전체 answer-section 숨김
+    document.getElementById('answerSection').style.display = 'none';
     
     document.getElementById('pictureBtn').classList.add('hidden');
     document.getElementById('passageBtn').classList.add('hidden');
@@ -455,14 +562,25 @@ function loadJimunsProblem() {
     
     document.getElementById('levelNum').textContent = level + 1;
     document.getElementById('totalNum').textContent = gameData.length;
-    
-    // 첫 번째 입력창에 포커스
-    if (allInputs.length > 0) {
-        setTimeout(() => {
-            allInputs[0].focus();
-        }, 200);
-    }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // jimuns 정답 토글 함수
 function toggleJimunsAnswer(index) {
@@ -527,32 +645,39 @@ function closeAllJimunsHints(keepIndex = -1) {
     });
 }
 
-// jimuns 정답 확인 함수
+
+
+
+
 window.checkJimunsAnswer = function() {
     if (gameState !== 'playing') return;
     
-    const userInputs = document.querySelectorAll("#jimunsContainer .answerInput");
+    const jimunsContainer = document.getElementById('jimunsContainer');
+    const allWrappers = jimunsContainer.querySelectorAll('.input-wrapper');
     const messageEl = document.getElementById('message');
     
     let allCorrect = true;
-    userInputs.forEach((input, index) => {
+    
+    allWrappers.forEach((wrapper, index) => {
+        const visualDisplay = wrapper.querySelector('.visual-display');
+        const input = wrapper.querySelector('.answerInput');
+        
         if (input.disabled) return;
         
         const userAnswer = input.value.trim();
         const correctAnswer = currentProblem.answers[index] || "";
-        let isCorrect = false;
-        if (userAnswer.toLowerCase() === correctAnswer.toLowerCase()) {
-            isCorrect = true;
-        }
-
+        
+        let isCorrect = (userAnswer.toLowerCase() === correctAnswer.toLowerCase());
         
         if (isCorrect && userAnswer !== "") {
-            input.style.borderColor = "green";
-            input.style.backgroundColor = "#e8f5e9";
+            // 정답: 초록 테두리
+            visualDisplay.style.borderColor = "#22c55e";
+            visualDisplay.style.borderWidth = "3px";
             input.disabled = true;
         } else {
-            input.style.borderColor = "red";
-            input.style.backgroundColor = "#ffebee";
+            // 오답: 빨간 테두리
+            visualDisplay.style.borderColor = "#ef4444";
+            visualDisplay.style.borderWidth = "3px";
             allCorrect = false;
         }
     });
@@ -605,6 +730,13 @@ window.checkJimunsAnswer = function() {
         }, 500);
     }
 };
+
+
+
+
+
+
+
 
 window.checkNumberAnswer = function(selectedAnswer) {
     if (gameState !== 'playing') return;
