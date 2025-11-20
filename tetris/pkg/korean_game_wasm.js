@@ -290,7 +290,7 @@ export function create_answer_hash(answer) {
  * @param {number} seed
  * @returns {string}
  */
-export function generate_block_sequence(correct_blocks_json, fake_blocks_json, seed) {
+export function generate_initial_sequence(correct_blocks_json, fake_blocks_json, seed) {
     let deferred3_0;
     let deferred3_1;
     try {
@@ -298,12 +298,47 @@ export function generate_block_sequence(correct_blocks_json, fake_blocks_json, s
         const len0 = WASM_VECTOR_LEN;
         const ptr1 = passStringToWasm0(fake_blocks_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
         const len1 = WASM_VECTOR_LEN;
-        const ret = wasm.generate_block_sequence(ptr0, len0, ptr1, len1, seed);
+        const ret = wasm.generate_initial_sequence(ptr0, len0, ptr1, len1, seed);
         deferred3_0 = ret[0];
         deferred3_1 = ret[1];
         return getStringFromWasm0(ret[0], ret[1]);
     } finally {
         wasm.__wbindgen_free(deferred3_0, deferred3_1, 1);
+    }
+}
+
+/**
+ * @param {string} user_answer
+ * @param {string} correct_answer
+ * @param {string} already_sent_json
+ * @param {string} all_correct_blocks_json
+ * @param {string} fake_blocks_json
+ * @param {string} used_fakes_json
+ * @param {number} seed
+ * @returns {string}
+ */
+export function generate_next_block(user_answer, correct_answer, already_sent_json, all_correct_blocks_json, fake_blocks_json, used_fakes_json, seed) {
+    let deferred7_0;
+    let deferred7_1;
+    try {
+        const ptr0 = passStringToWasm0(user_answer, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ptr1 = passStringToWasm0(correct_answer, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len1 = WASM_VECTOR_LEN;
+        const ptr2 = passStringToWasm0(already_sent_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len2 = WASM_VECTOR_LEN;
+        const ptr3 = passStringToWasm0(all_correct_blocks_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len3 = WASM_VECTOR_LEN;
+        const ptr4 = passStringToWasm0(fake_blocks_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len4 = WASM_VECTOR_LEN;
+        const ptr5 = passStringToWasm0(used_fakes_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len5 = WASM_VECTOR_LEN;
+        const ret = wasm.generate_next_block(ptr0, len0, ptr1, len1, ptr2, len2, ptr3, len3, ptr4, len4, ptr5, len5, seed);
+        deferred7_0 = ret[0];
+        deferred7_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred7_0, deferred7_1, 1);
     }
 }
 
@@ -903,8 +938,8 @@ function __wbg_get_imports() {
         const ret = getStringFromWasm0(arg0, arg1);
         return ret;
     };
-    imports.wbg.__wbindgen_cast_90fb09e08acc4555 = function(arg0, arg1) {
-        // Cast intrinsic for `Closure(Closure { dtor_idx: 39, function: Function { arguments: [Externref], shim_idx: 40, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
+    imports.wbg.__wbindgen_cast_f59528fc2c089a81 = function(arg0, arg1) {
+        // Cast intrinsic for `Closure(Closure { dtor_idx: 41, function: Function { arguments: [Externref], shim_idx: 42, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
         const ret = makeMutClosure(arg0, arg1, wasm.wasm_bindgen__closure__destroy__h0eb5c646152f9b85, wasm_bindgen__convert__closures_____invoke__he7f4b28c0a248a94);
         return ret;
     };
