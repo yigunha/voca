@@ -149,8 +149,8 @@ function parseAnswer(answerText) {
 // 게임 초기화/시작
 // =========================================================================
 window.selectLevel = async function(menu, levelNum) {
-    const filePath = `data/${userClass}/${menu}/${levelNum}_encrypted.dat`;
- 
+    const filePath = `data/${userClass}/${category}/${levelNum}_encrypted.dat`;
+
     try {
         const response = await fetch(filePath);
         if (!response.ok) {
