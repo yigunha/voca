@@ -28,7 +28,6 @@ body {
     width: 392px;
 }
 
-/* 메인 메뉴 */
 .main-menu {
     background: #374151;
     border-radius: 8px;
@@ -65,7 +64,6 @@ body {
     transform: scale(1.05);
 }
 
-/* 레벨 선택 */
 .level-selector {
     background: #374151;
     border-radius: 8px;
@@ -191,14 +189,15 @@ body {
 
 .cell.block-cell {
     box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-    margin: 1px 0;
     border: none;
+    margin: 0;
+    width: 42px;
+    height: 42px;
 }
 
 .cell.block-cell.block-start {
     border-top-left-radius: 6px;
     border-bottom-left-radius: 6px;
-    margin-left: 1px;
     border-left: 2px solid rgba(0,0,0,0.2);
     border-top: 2px solid rgba(0,0,0,0.2);
     border-bottom: 2px solid rgba(0,0,0,0.2);
@@ -206,7 +205,6 @@ body {
 
 .cell.block-cell.block-middle {
     border-radius: 0;
-    margin: 1px 0;
     border-top: 2px solid rgba(0,0,0,0.2);
     border-bottom: 2px solid rgba(0,0,0,0.2);
 }
@@ -214,7 +212,6 @@ body {
 .cell.block-cell.block-end {
     border-top-right-radius: 6px;
     border-bottom-right-radius: 6px;
-    margin-right: 1px;
     border-right: 2px solid rgba(0,0,0,0.2);
     border-top: 2px solid rgba(0,0,0,0.2);
     border-bottom: 2px solid rgba(0,0,0,0.2);
@@ -222,7 +219,6 @@ body {
 
 .cell.block-cell.block-single {
     border-radius: 6px;
-    margin: 1px;
     border: 2px solid rgba(0,0,0,0.2);
 }
 
@@ -464,8 +460,7 @@ body {
 }
 
 .block-hover {
-    transform: scale(0.95);
-    opacity: 0.8;
+    opacity: 0.7;
 }
 
 .hidden {
@@ -512,16 +507,14 @@ body {
     background: linear-gradient(135deg, #374151 0%, #1f2937 100%) !important;
     color: #ffffff !important;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: background 0.15s ease-out;
     border: 1px solid #6b7280 !important;
-}
-
-.fixed-josa:hover {
-    transform: scale(1.08);
-    box-shadow: 0 4px 8px rgba(107, 114, 128, 0.5);
-    background: linear-gradient(135deg, #4b5563 0%, #374151 100%) !important;
 }
 
 .fixed-josa:active {
     transform: scale(0.95);
+}
+
+.josa-hover {
+    opacity: 0.7;
 }
