@@ -148,10 +148,9 @@ function parseAnswer(answerText) {
 // =========================================================================
 // 게임 초기화/시작
 // =========================================================================
-
-window.selectLevel = async function(selectedClass, levelNum) {
-    const filePath = `data/${selectedClass}/단어/${levelNum}_encrypted.dat`;
-    
+window.selectLevel = async function(menu, levelNum) {
+    const filePath = `data/${userClass}/${menu}/${levelNum}_encrypted.dat`;
+ 
     try {
         const response = await fetch(filePath);
         if (!response.ok) {
@@ -662,18 +661,43 @@ window.selectMainMenu = function(menu) {
     createLevelButtons(menu);
 };
 
+window.backToMainMenu = function() {
+    document.getElementById('gameArea').classList.add('hidden');
+    document.getElementById('levelSelector').classList.add('hidden');
+    document.getElementById('mainMenu').classList.remove('hidden');
+    stopGame();
+};
+
 function createLevelButtons(menu) {
     const container = document.getElementById('levelButtons');
     container.innerHTML = '';
     
-    for (let i = 1; i <= 12; i++) {
+    // 레벨 정보 배열 (표시 이름과 파일명)
+    const levels = [
+        { display: '인사하기', file: '인사하기' },
+        { display: '자기소개', file: '자기소개' },
+        { display: '가족', file: '가족' },
+        { display: '취미', file: '취미' },
+        { display: '음식', file: '음식' },
+        { display: '쇼핑', file: '쇼핑' },
+        { display: '교통', file: '교통' },
+        { display: '날씨', file: '날씨' },
+        { display: '여행', file: '여행' },
+        { display: '건강', file: '건강' },
+        { display: '직업', file: '직업' },
+        { display: '12 과', file: '12' }
+    ];
+    
+    levels.forEach((level, index) => {
         const button = document.createElement('button');
         button.className = 'level-btn';
-        button.textContent = `Level ${i}`;
-        button.onclick = () => selectLevel(menu, i.toString().padStart(2, '0'));
+        button.textContent = level.display;  // 표시 이름
+        button.onclick = () => selectLevel(menu, level.file);  // 파일명 전달
         container.appendChild(button);
-    }
+    });
 }
+
+
 
 // =========================================================================
 // 시작
