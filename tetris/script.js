@@ -89,8 +89,7 @@ async function initWasm() {
             return false;
         }
 
-        // 👈 에러 수정: wasmModule.GameEngine.new()로 직접 호출
-        gameEngine = wasmModule.GameEngine.new(CONFIG.GRID_ROWS, CONFIG.GRID_COLS); 
+       gameEngine = new GameEngine(CONFIG.GRID_ROWS, CONFIG.GRID_COLS);
         
         console.log(`Wasm Module Loaded (v${wasmModule.get_version()})`);
         return true;
