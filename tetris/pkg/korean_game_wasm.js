@@ -208,24 +208,80 @@ function makeMutClosure(arg0, arg1, dtor, f) {
     CLOSURE_DTORS.register(real, state, state);
     return real;
 }
-
-function takeFromExternrefTable0(idx) {
-    const value = wasm.__wbindgen_externrefs.get(idx);
-    wasm.__externref_table_dealloc(idx);
-    return value;
+/**
+ * @returns {string}
+ */
+export function get_version() {
+    let deferred1_0;
+    let deferred1_1;
+    try {
+        const ret = wasm.get_version();
+        deferred1_0 = ret[0];
+        deferred1_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+    }
 }
+
+/**
+ * @returns {boolean}
+ */
+export function verify_location() {
+    const ret = wasm.verify_location();
+    return ret !== 0;
+}
+
 /**
  * @param {string} answer
- * @returns {any}
+ * @returns {string}
  */
-export function parse_answer_rs(answer) {
-    const ptr0 = passStringToWasm0(answer, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-    const len0 = WASM_VECTOR_LEN;
-    const ret = wasm.parse_answer_rs(ptr0, len0);
-    if (ret[2]) {
-        throw takeFromExternrefTable0(ret[1]);
+export function hash_answer(answer) {
+    let deferred2_0;
+    let deferred2_1;
+    try {
+        const ptr0 = passStringToWasm0(answer, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.hash_answer(ptr0, len0);
+        deferred2_0 = ret[0];
+        deferred2_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
     }
-    return takeFromExternrefTable0(ret[0]);
+}
+
+/**
+ * @param {string} user_answer
+ * @param {string} correct_hash
+ * @returns {boolean}
+ */
+export function verify_answer(user_answer, correct_hash) {
+    const ptr0 = passStringToWasm0(user_answer, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len0 = WASM_VECTOR_LEN;
+    const ptr1 = passStringToWasm0(correct_hash, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len1 = WASM_VECTOR_LEN;
+    const ret = wasm.verify_answer(ptr0, len0, ptr1, len1);
+    return ret !== 0;
+}
+
+/**
+ * @param {string} answer
+ * @returns {string}
+ */
+export function create_answer_hash(answer) {
+    let deferred2_0;
+    let deferred2_1;
+    try {
+        const ptr0 = passStringToWasm0(answer, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.create_answer_hash(ptr0, len0);
+        deferred2_0 = ret[0];
+        deferred2_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
+    }
 }
 
 /**
@@ -297,82 +353,6 @@ export function get_block_color(block_text) {
         const ptr0 = passStringToWasm0(block_text, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
         const len0 = WASM_VECTOR_LEN;
         const ret = wasm.get_block_color(ptr0, len0);
-        deferred2_0 = ret[0];
-        deferred2_1 = ret[1];
-        return getStringFromWasm0(ret[0], ret[1]);
-    } finally {
-        wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
-    }
-}
-
-/**
- * @returns {string}
- */
-export function get_version() {
-    let deferred1_0;
-    let deferred1_1;
-    try {
-        const ret = wasm.get_version();
-        deferred1_0 = ret[0];
-        deferred1_1 = ret[1];
-        return getStringFromWasm0(ret[0], ret[1]);
-    } finally {
-        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
-    }
-}
-
-/**
- * @returns {boolean}
- */
-export function verify_location() {
-    const ret = wasm.verify_location();
-    return ret !== 0;
-}
-
-/**
- * @param {string} answer
- * @returns {string}
- */
-export function hash_answer(answer) {
-    let deferred2_0;
-    let deferred2_1;
-    try {
-        const ptr0 = passStringToWasm0(answer, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-        const len0 = WASM_VECTOR_LEN;
-        const ret = wasm.hash_answer(ptr0, len0);
-        deferred2_0 = ret[0];
-        deferred2_1 = ret[1];
-        return getStringFromWasm0(ret[0], ret[1]);
-    } finally {
-        wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
-    }
-}
-
-/**
- * @param {string} user_answer
- * @param {string} correct_hash
- * @returns {boolean}
- */
-export function verify_answer(user_answer, correct_hash) {
-    const ptr0 = passStringToWasm0(user_answer, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-    const len0 = WASM_VECTOR_LEN;
-    const ptr1 = passStringToWasm0(correct_hash, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-    const len1 = WASM_VECTOR_LEN;
-    const ret = wasm.verify_answer(ptr0, len0, ptr1, len1);
-    return ret !== 0;
-}
-
-/**
- * @param {string} answer
- * @returns {string}
- */
-export function create_answer_hash(answer) {
-    let deferred2_0;
-    let deferred2_1;
-    try {
-        const ptr0 = passStringToWasm0(answer, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-        const len0 = WASM_VECTOR_LEN;
-        const ret = wasm.create_answer_hash(ptr0, len0);
         deferred2_0 = ret[0];
         deferred2_1 = ret[1];
         return getStringFromWasm0(ret[0], ret[1]);
@@ -477,6 +457,72 @@ export function init() {
     wasm.init();
 }
 
+function passArray8ToWasm0(arg, malloc) {
+    const ptr = malloc(arg.length * 1, 1) >>> 0;
+    getUint8ArrayMemory0().set(arg, ptr / 1);
+    WASM_VECTOR_LEN = arg.length;
+    return ptr;
+}
+
+function takeFromExternrefTable0(idx) {
+    const value = wasm.__wbindgen_externrefs.get(idx);
+    wasm.__externref_table_dealloc(idx);
+    return value;
+}
+/**
+ * XOR cipher를 사용하여 데이터를 복호화합니다.
+ * Python의 encrypt_data.py와 동일한 알고리즘을 사용합니다.
+ * SECRET_KEY는 WASM 내부에 저장되어 JavaScript에서 접근할 수 없습니다.
+ * @param {Uint8Array} encrypted_data
+ * @returns {string}
+ */
+export function decrypt_xor(encrypted_data) {
+    let deferred3_0;
+    let deferred3_1;
+    try {
+        const ptr0 = passArray8ToWasm0(encrypted_data, wasm.__wbindgen_malloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.decrypt_xor(ptr0, len0);
+        var ptr2 = ret[0];
+        var len2 = ret[1];
+        if (ret[3]) {
+            ptr2 = 0; len2 = 0;
+            throw takeFromExternrefTable0(ret[2]);
+        }
+        deferred3_0 = ptr2;
+        deferred3_1 = len2;
+        return getStringFromWasm0(ptr2, len2);
+    } finally {
+        wasm.__wbindgen_free(deferred3_0, deferred3_1, 1);
+    }
+}
+
+/**
+ * Base64로 인코딩된 암호화 데이터를 복호화합니다.
+ * @param {string} encrypted_base64
+ * @returns {string}
+ */
+export function decrypt_xor_base64(encrypted_base64) {
+    let deferred3_0;
+    let deferred3_1;
+    try {
+        const ptr0 = passStringToWasm0(encrypted_base64, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.decrypt_xor_base64(ptr0, len0);
+        var ptr2 = ret[0];
+        var len2 = ret[1];
+        if (ret[3]) {
+            ptr2 = 0; len2 = 0;
+            throw takeFromExternrefTable0(ret[2]);
+        }
+        deferred3_0 = ptr2;
+        deferred3_1 = len2;
+        return getStringFromWasm0(ptr2, len2);
+    } finally {
+        wasm.__wbindgen_free(deferred3_0, deferred3_1, 1);
+    }
+}
+
 /**
  * 학생 인증 함수
  * @param {string} student_name
@@ -574,66 +620,6 @@ export function refresh_cookies() {
     }
 }
 
-function passArray8ToWasm0(arg, malloc) {
-    const ptr = malloc(arg.length * 1, 1) >>> 0;
-    getUint8ArrayMemory0().set(arg, ptr / 1);
-    WASM_VECTOR_LEN = arg.length;
-    return ptr;
-}
-/**
- * XOR cipher를 사용하여 데이터를 복호화합니다.
- * Python의 encrypt_data.py와 동일한 알고리즘을 사용합니다.
- * SECRET_KEY는 WASM 내부에 저장되어 JavaScript에서 접근할 수 없습니다.
- * @param {Uint8Array} encrypted_data
- * @returns {string}
- */
-export function decrypt_xor(encrypted_data) {
-    let deferred3_0;
-    let deferred3_1;
-    try {
-        const ptr0 = passArray8ToWasm0(encrypted_data, wasm.__wbindgen_malloc);
-        const len0 = WASM_VECTOR_LEN;
-        const ret = wasm.decrypt_xor(ptr0, len0);
-        var ptr2 = ret[0];
-        var len2 = ret[1];
-        if (ret[3]) {
-            ptr2 = 0; len2 = 0;
-            throw takeFromExternrefTable0(ret[2]);
-        }
-        deferred3_0 = ptr2;
-        deferred3_1 = len2;
-        return getStringFromWasm0(ptr2, len2);
-    } finally {
-        wasm.__wbindgen_free(deferred3_0, deferred3_1, 1);
-    }
-}
-
-/**
- * Base64로 인코딩된 암호화 데이터를 복호화합니다.
- * @param {string} encrypted_base64
- * @returns {string}
- */
-export function decrypt_xor_base64(encrypted_base64) {
-    let deferred3_0;
-    let deferred3_1;
-    try {
-        const ptr0 = passStringToWasm0(encrypted_base64, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-        const len0 = WASM_VECTOR_LEN;
-        const ret = wasm.decrypt_xor_base64(ptr0, len0);
-        var ptr2 = ret[0];
-        var len2 = ret[1];
-        if (ret[3]) {
-            ptr2 = 0; len2 = 0;
-            throw takeFromExternrefTable0(ret[2]);
-        }
-        deferred3_0 = ptr2;
-        deferred3_1 = len2;
-        return getStringFromWasm0(ptr2, len2);
-    } finally {
-        wasm.__wbindgen_free(deferred3_0, deferred3_1, 1);
-    }
-}
-
 function wasm_bindgen__convert__closures_____invoke__he7f4b28c0a248a94(arg0, arg1, arg2) {
     wasm.wasm_bindgen__convert__closures_____invoke__he7f4b28c0a248a94(arg0, arg1, arg2);
 }
@@ -641,80 +627,6 @@ function wasm_bindgen__convert__closures_____invoke__he7f4b28c0a248a94(arg0, arg
 function wasm_bindgen__convert__closures_____invoke__h0a224680a6fed1b2(arg0, arg1, arg2, arg3) {
     wasm.wasm_bindgen__convert__closures_____invoke__h0a224680a6fed1b2(arg0, arg1, arg2, arg3);
 }
-
-const GameEngineFinalization = (typeof FinalizationRegistry === 'undefined')
-    ? { register: () => {}, unregister: () => {} }
-    : new FinalizationRegistry(ptr => wasm.__wbg_gameengine_free(ptr >>> 0, 1));
-
-export class GameEngine {
-
-    static __wrap(ptr) {
-        ptr = ptr >>> 0;
-        const obj = Object.create(GameEngine.prototype);
-        obj.__wbg_ptr = ptr;
-        GameEngineFinalization.register(obj, obj.__wbg_ptr, obj);
-        return obj;
-    }
-
-    __destroy_into_raw() {
-        const ptr = this.__wbg_ptr;
-        this.__wbg_ptr = 0;
-        GameEngineFinalization.unregister(this);
-        return ptr;
-    }
-
-    free() {
-        const ptr = this.__destroy_into_raw();
-        wasm.__wbg_gameengine_free(ptr, 0);
-    }
-    /**
-     * @param {number} rows
-     * @param {number} cols
-     * @returns {GameEngine}
-     */
-    static new(rows, cols) {
-        const ret = wasm.gameengine_new(rows, cols);
-        return GameEngine.__wrap(ret);
-    }
-    clear_grid() {
-        wasm.gameengine_clear_grid(this.__wbg_ptr);
-    }
-    /**
-     * @param {number} row
-     * @param {number} lane
-     * @param {number} block_len
-     * @returns {boolean}
-     */
-    check_collision(row, lane, block_len) {
-        const ret = wasm.gameengine_check_collision(this.__wbg_ptr, row, lane, block_len);
-        return ret !== 0;
-    }
-    /**
-     * @param {number} row
-     * @param {number} lane
-     * @param {number} block_len
-     * @param {number} block_id
-     */
-    stack_block(row, lane, block_len, block_id) {
-        wasm.gameengine_stack_block(this.__wbg_ptr, row, lane, block_len, block_id);
-    }
-    /**
-     * @param {number} row
-     * @param {number} col
-     * @returns {number}
-     */
-    get_cell_id(row, col) {
-        const ret = wasm.gameengine_get_cell_id(this.__wbg_ptr, row, col);
-        return ret;
-    }
-    /**
-     * @param {number} block_id
-     */
-    remove_block(block_id) {
-        wasm.gameengine_remove_block(this.__wbg_ptr, block_id);
-    }
-}
-if (Symbol.dispose) GameEngine.prototype[Symbol.dispose] = GameEngine.prototype.free;
 
 const EXPECTED_RESPONSE_TYPES = new Set(['basic', 'cors', 'default']);
 
@@ -907,10 +819,6 @@ function __wbg_get_imports() {
         const ret = new URLSearchParams();
         return ret;
     }, arguments) };
-    imports.wbg.__wbg_new_e17d9f43105b08be = function() {
-        const ret = new Array();
-        return ret;
-    };
     imports.wbg.__wbg_new_no_args_ee98eee5275000a4 = function(arg0, arg1) {
         const ret = new Function(getStringFromWasm0(arg0, arg1));
         return ret;
@@ -966,9 +874,6 @@ function __wbg_get_imports() {
     imports.wbg.__wbg_set_8b342d8cd9d2a02c = function() { return handleError(function (arg0, arg1, arg2, arg3, arg4) {
         arg0.set(getStringFromWasm0(arg1, arg2), getStringFromWasm0(arg3, arg4));
     }, arguments) };
-    imports.wbg.__wbg_set_c213c871859d6500 = function(arg0, arg1, arg2) {
-        arg0[arg1 >>> 0] = arg2;
-    };
     imports.wbg.__wbg_set_cookie_9fed051379353710 = function() { return handleError(function (arg0, arg1, arg2) {
         arg0.cookie = getStringFromWasm0(arg1, arg2);
     }, arguments) };
@@ -1033,8 +938,8 @@ function __wbg_get_imports() {
         const ret = getStringFromWasm0(arg0, arg1);
         return ret;
     };
-    imports.wbg.__wbindgen_cast_d2d0cc24b1b6ed59 = function(arg0, arg1) {
-        // Cast intrinsic for `Closure(Closure { dtor_idx: 42, function: Function { arguments: [Externref], shim_idx: 43, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
+    imports.wbg.__wbindgen_cast_f59528fc2c089a81 = function(arg0, arg1) {
+        // Cast intrinsic for `Closure(Closure { dtor_idx: 41, function: Function { arguments: [Externref], shim_idx: 42, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
         const ret = makeMutClosure(arg0, arg1, wasm.wasm_bindgen__closure__destroy__h0eb5c646152f9b85, wasm_bindgen__convert__closures_____invoke__he7f4b28c0a248a94);
         return ret;
     };
