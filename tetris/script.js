@@ -1,1 +1,711 @@
-const _0x23c23b=_0x309d;function _0x309d(_0x31646e,_0x123581){const _0x12e0fe=_0x12e0();return _0x309d=function(_0x309d1e,_0x31eb11){_0x309d1e=_0x309d1e-0x19d;let _0xea6c83=_0x12e0fe[_0x309d1e];return _0xea6c83;},_0x309d(_0x31646e,_0x123581);}(function(_0x17f565,_0xaee112){const _0x1fbec4=_0x309d,_0x4106b9=_0x17f565();while(!![]){try{const _0x22faa4=parseInt(_0x1fbec4(0x1a5))/0x1*(-parseInt(_0x1fbec4(0x1e7))/0x2)+-parseInt(_0x1fbec4(0x1ea))/0x3+-parseInt(_0x1fbec4(0x1fd))/0x4*(-parseInt(_0x1fbec4(0x21f))/0x5)+-parseInt(_0x1fbec4(0x223))/0x6*(-parseInt(_0x1fbec4(0x21e))/0x7)+parseInt(_0x1fbec4(0x1d7))/0x8+parseInt(_0x1fbec4(0x1b2))/0x9*(-parseInt(_0x1fbec4(0x1e0))/0xa)+parseInt(_0x1fbec4(0x1a8))/0xb;if(_0x22faa4===_0xaee112)break;else _0x4106b9['push'](_0x4106b9['shift']());}catch(_0x23b818){_0x4106b9['push'](_0x4106b9['shift']());}}}(_0x12e0,0x7b163));import _0x4f76f5,{authenticate_student,decrypt_xor_base64,get_cookie,set_cookie,refresh_cookies,clear_all_cookies,check_login_status,get_version,verify_location,verify_answer,create_answer_hash,create_game_token,verify_game_token,verify_timing,can_undo,increment_undo,reset_undo_count,get_undo_count,can_use_bomb,reset_bomb_usage,generate_seed,engine}from'./pkg/korean_game_wasm.js';let wasmModule=null,gameEngine=null;const CONFIG={'GRID_ROWS':0x8,'GRID_COLS':0x9,'FALL_SPEED':0x258,'GRAVITY_SPEED':0x96,'SPAWN_DELAY_MIN':0x320,'SPAWN_DELAY_MAX':0x5dc};let selectedMainMenu=null,selectedLevel=null,gameData=[],level=0x0,grid=[],fallingBlocks=[],spaceA=[],spaceB=[],availableBlocks=[],alreadySentBlocks=[],usedFakeBlocks=[],userAnswer='',answerHistory=[],correctAnswer='',gameState=_0x23c23b(0x1ce),speed=CONFIG[_0x23c23b(0x1f4)],fallInterval=null,spawnTimeout=null,blockIdCounter=0x0,gravityInterval=null,gameStartTime=0x0,mistakeCount=0x0,currentLevelBombCount=0x0,userClass='',solvedProblems=new Set(),usedTargetInCurrentProblem=![],nextSpawnLane=0x0;const audioContext=new(window[(_0x23c23b(0x1da))]||window['webkitAudioContext'])();async function initWasm(){const _0x1165ef=_0x23c23b;try{const _0x530b9b=await _0x4f76f5();wasmModule=_0x530b9b;if(!wasmModule[_0x1165ef(0x1cf)]())return console[_0x1165ef(0x1d3)](_0x1165ef(0x201)),alert(_0x1165ef(0x227)),![];return gameEngine=wasmModule[_0x1165ef(0x21c)][_0x1165ef(0x1f8)]['new'](CONFIG[_0x1165ef(0x1de)],CONFIG[_0x1165ef(0x1d5)]),console[_0x1165ef(0x1cc)](_0x1165ef(0x207)+wasmModule[_0x1165ef(0x20d)]()+')'),!![];}catch(_0x43988d){return console['error'](_0x1165ef(0x1ec),_0x43988d),![];}}function checkLogin(){const _0x289818=_0x23c23b;try{if(wasmModule[_0x289818(0x217)]())return userClass=wasmModule[_0x289818(0x231)](_0x289818(0x1c4)),!![];}catch(_0x5839c2){console['log'](_0x289818(0x1d6),_0x5839c2);}return![];}async function loadAndDecryptData(_0x4327e1){const _0x3b138b=_0x23c23b;try{const _0x14e3e1=wasmModule[_0x3b138b(0x1ef)](_0x4327e1);return JSON[_0x3b138b(0x1f7)](_0x14e3e1);}catch(_0x184d60){return console[_0x3b138b(0x1d3)](_0x3b138b(0x1e4),_0x184d60),null;}}function parseAnswer(_0x3f3cd4){const _0x39babf=_0x23c23b;try{const _0x9acec0=wasmModule[_0x39babf(0x1c2)](_0x3f3cd4);return _0x9acec0;}catch(_0x510033){return console[_0x39babf(0x1d3)](_0x39babf(0x1b5),_0x510033),{'blocks':[],'correctAnswer':_0x3f3cd4};}}window[_0x23c23b(0x1db)]=async function(_0x5aa04e,_0x3d3ad8){const _0x27ae5c=_0x23c23b,_0x2ea15e='data/'+_0x5aa04e+_0x27ae5c(0x1f3)+_0x3d3ad8+_0x27ae5c(0x1af);try{const _0x2cdfec=await fetch(_0x2ea15e);if(!_0x2cdfec['ok'])throw new Error(_0x27ae5c(0x233)+_0x2ea15e);const _0xcc57e4=await _0x2cdfec[_0x27ae5c(0x22f)]();gameData=await loadAndDecryptData(_0xcc57e4),selectedLevel=_0x3d3ad8,document[_0x27ae5c(0x20a)](_0x27ae5c(0x224))['classList'][_0x27ae5c(0x226)](_0x27ae5c(0x19e)),document[_0x27ae5c(0x20a)](_0x27ae5c(0x218))[_0x27ae5c(0x1c9)][_0x27ae5c(0x237)](_0x27ae5c(0x19e)),resetGame();}catch(_0x3fbe2e){console[_0x27ae5c(0x1d3)](_0x27ae5c(0x1ad),_0x3fbe2e),alert(_0x27ae5c(0x1b0)+_0x3d3ad8+_0x27ae5c(0x1df));}};function resetGame(){const _0x2da78e=_0x23c23b;gameState=_0x2da78e(0x1ce),stopGame(),document[_0x2da78e(0x20a)](_0x2da78e(0x1fb))[_0x2da78e(0x1f9)]='1',document[_0x2da78e(0x20a)](_0x2da78e(0x1ee))[_0x2da78e(0x1f9)]=gameData[_0x2da78e(0x228)],document[_0x2da78e(0x20a)](_0x2da78e(0x1fa))[_0x2da78e(0x1f9)]='',document['getElementById']('buttons')[_0x2da78e(0x1a7)]='<button\x20class=\x22btn\x20btn-start\x22\x20onclick=\x22startGame()\x22>▶\x20게임\x20시작</button>',gameEngine&&gameEngine[_0x2da78e(0x1a2)](),grid=Array(CONFIG[_0x2da78e(0x1de)])[_0x2da78e(0x21d)](null)[_0x2da78e(0x1c1)](()=>Array(CONFIG['GRID_COLS'])[_0x2da78e(0x21d)](null)),fallingBlocks=[],blockIdCounter=0x0,updateDisplay();}window['startGame']=function(){const _0x19c0bc=_0x23c23b;(gameState==='ready'||gameState==='stopped')&&(gameState='playing',gameStartTime=Date[_0x19c0bc(0x213)](),level=0x1,mistakeCount=0x0,currentLevelBombCount=0x0,reset_undo_count(),reset_bomb_usage(),loadProblem(),showButtons());};function loadProblem(){const _0x9d74a6=_0x23c23b;if(level>gameData[_0x9d74a6(0x228)]){showCompletionScreen();return;}const _0x3350a3=gameData[level-0x1],_0x27b4d2=parseAnswer(_0x3350a3[_0x9d74a6(0x1c0)]);correctAnswer=_0x27b4d2[_0x9d74a6(0x209)],userAnswer='',answerHistory=[],fallingBlocks=[],alreadySentBlocks=[],usedFakeBlocks=[],blockIdCounter=0x0,usedTargetInCurrentProblem=![],nextSpawnLane=0x0;gameEngine&&gameEngine[_0x9d74a6(0x1a2)]();grid=Array(CONFIG[_0x9d74a6(0x1de)])[_0x9d74a6(0x21d)](null)[_0x9d74a6(0x1c1)](()=>Array(CONFIG[_0x9d74a6(0x1d5)])[_0x9d74a6(0x21d)](null)),document[_0x9d74a6(0x20a)](_0x9d74a6(0x1bf))[_0x9d74a6(0x1a7)]=_0x9d74a6(0x1c6),document['getElementById'](_0x9d74a6(0x1eb))['textContent']=correctAnswer,document['getElementById'](_0x9d74a6(0x1fa))[_0x9d74a6(0x1f9)]=_0x3350a3[_0x9d74a6(0x1e5)],document[_0x9d74a6(0x20a)]('levelNum')['textContent']=level,document['getElementById'](_0x9d74a6(0x1eb))['classList'][_0x9d74a6(0x237)](_0x9d74a6(0x21b));const _0x4ed9a2=wasmModule['generate_seed']();try{const _0x2fdbed=wasmModule[_0x9d74a6(0x21c)][_0x9d74a6(0x1dc)](JSON[_0x9d74a6(0x222)](_0x27b4d2[_0x9d74a6(0x1c8)]),JSON[_0x9d74a6(0x222)](_0x3350a3[_0x9d74a6(0x19f)]),_0x4ed9a2),_0x3f0b68=JSON[_0x9d74a6(0x1f7)](_0x2fdbed);availableBlocks=_0x3f0b68[_0x9d74a6(0x1c8)],usedFakeBlocks=_0x3f0b68['used_fakes'];}catch(_0x2b1882){console[_0x9d74a6(0x1d3)]('Failed\x20to\x20generate\x20initial\x20block\x20sequence:',_0x2b1882),availableBlocks=_0x27b4d2[_0x9d74a6(0x1c8)];}stopGame(),speed=CONFIG[_0x9d74a6(0x1f4)],fallInterval=setInterval(handleFall,speed),spawnTimeout=setTimeout(spawnBlock,CONFIG[_0x9d74a6(0x204)]),gravityInterval=setInterval(handleGravity,CONFIG['GRAVITY_SPEED']),updateDisplay();}function spawnBlock(){const _0x14ccdf=_0x23c23b;if(gameState!=='playing'||availableBlocks[_0x14ccdf(0x228)]===0x0){spawnTimeout=setTimeout(spawnBlock,CONFIG['SPAWN_DELAY_MAX']);return;}const _0x5a87bd=availableBlocks[_0x14ccdf(0x1d0)](),_0x2294e5=_0x5a87bd[_0x14ccdf(0x228)],_0x2d883f=wasmModule[_0x14ccdf(0x21c)][_0x14ccdf(0x1bd)](_0x5a87bd),_0x4ed248=wasmModule[_0x14ccdf(0x22e)]();try{const _0x38655a=wasmModule[_0x14ccdf(0x21c)][_0x14ccdf(0x1b8)](userAnswer,correctAnswer,JSON[_0x14ccdf(0x222)](alreadySentBlocks),JSON['stringify'](parseAnswer(gameData[level-0x1][_0x14ccdf(0x1c0)])[_0x14ccdf(0x1c8)]),JSON[_0x14ccdf(0x222)](gameData[level-0x1][_0x14ccdf(0x19f)]),JSON['stringify'](usedFakeBlocks),_0x4ed248),_0x5d1959=JSON[_0x14ccdf(0x1f7)](_0x38655a);availableBlocks[_0x14ccdf(0x1d1)](..._0x5d1959[_0x14ccdf(0x1c8)]),usedFakeBlocks['push'](..._0x5d1959[_0x14ccdf(0x1e9)]),parseAnswer(gameData[level-0x1][_0x14ccdf(0x1c0)])[_0x14ccdf(0x1c8)][_0x14ccdf(0x216)](_0x5a87bd)&&alreadySentBlocks[_0x14ccdf(0x1d1)](_0x5a87bd);}catch(_0x143e3a){console[_0x14ccdf(0x1d3)](_0x14ccdf(0x20c),_0x143e3a);}const _0x5d07ab={'id':blockIdCounter++,'text':_0x5a87bd,'len':_0x2294e5,'row':-0x1,'col':nextSpawnLane,'color':_0x2d883f,'isFalling':!![],'isClicked':![]};if(gameEngine[_0x14ccdf(0x20b)](_0x5d07ab[_0x14ccdf(0x211)]+0x1,_0x5d07ab[_0x14ccdf(0x1ba)],_0x5d07ab['len'])){gameOver();return;}fallingBlocks['push'](_0x5d07ab),nextSpawnLane=Math['floor'](Math[_0x14ccdf(0x203)]()*(CONFIG[_0x14ccdf(0x1d5)]-0x1));const _0x2d95ff=Math[_0x14ccdf(0x203)]()*(CONFIG['SPAWN_DELAY_MAX']-CONFIG[_0x14ccdf(0x204)])+CONFIG[_0x14ccdf(0x204)];spawnTimeout=setTimeout(spawnBlock,_0x2d95ff);}function handleFall(){const _0x4ff9fa=_0x23c23b;if(gameState!==_0x4ff9fa(0x1fe))return;for(let _0xaf1013=fallingBlocks[_0x4ff9fa(0x228)]-0x1;_0xaf1013>=0x0;_0xaf1013--){const _0x520635=fallingBlocks[_0xaf1013];if(!_0x520635[_0x4ff9fa(0x1f6)])continue;if(gameEngine[_0x4ff9fa(0x20b)](_0x520635[_0x4ff9fa(0x211)]+0x1,_0x520635[_0x4ff9fa(0x1ba)],_0x520635[_0x4ff9fa(0x1ff)])){_0x520635['isFalling']=![],gameEngine[_0x4ff9fa(0x1a1)](_0x520635['row'],_0x520635['col'],_0x520635[_0x4ff9fa(0x1ff)],_0x520635['id']);for(let _0x5d13d9=_0x520635[_0x4ff9fa(0x1ba)];_0x5d13d9<_0x520635[_0x4ff9fa(0x1ba)]+_0x520635[_0x4ff9fa(0x1ff)];_0x5d13d9++){_0x520635[_0x4ff9fa(0x211)]>=0x0&&_0x520635[_0x4ff9fa(0x211)]<CONFIG[_0x4ff9fa(0x1de)]&&(grid[_0x520635[_0x4ff9fa(0x211)]][_0x5d13d9]=_0x520635);}}else _0x520635[_0x4ff9fa(0x211)]++;}updateDisplay();}function handleGravity(){const _0x54784c=_0x23c23b;if(gameState!=='playing')return;let _0x3a4c8c=![];for(let _0x5d1e0e=CONFIG[_0x54784c(0x1de)]-0x2;_0x5d1e0e>=0x0;_0x5d1e0e--){for(let _0x59c4b7=0x0;_0x59c4b7<CONFIG[_0x54784c(0x1d5)];_0x59c4b7++){if(grid[_0x5d1e0e][_0x59c4b7]&&!grid[_0x5d1e0e][_0x59c4b7]['isFalling']&&!grid[_0x5d1e0e+0x1][_0x59c4b7]){const _0x48c628=grid[_0x5d1e0e][_0x59c4b7];gameEngine[_0x54784c(0x236)](_0x48c628['id']);for(let _0x23448a=0x0;_0x23448a<_0x48c628[_0x54784c(0x1ff)];_0x23448a++){grid[_0x5d1e0e][_0x48c628[_0x54784c(0x1ba)]+_0x23448a]=null;}_0x48c628[_0x54784c(0x211)]++,gameEngine['stack_block'](_0x48c628[_0x54784c(0x211)],_0x48c628[_0x54784c(0x1ba)],_0x48c628[_0x54784c(0x1ff)],_0x48c628['id']);for(let _0x51e939=0x0;_0x51e939<_0x48c628['len'];_0x51e939++){grid[_0x48c628[_0x54784c(0x211)]][_0x48c628[_0x54784c(0x1ba)]+_0x51e939]=_0x48c628;}_0x3a4c8c=!![];}}}_0x3a4c8c&&updateDisplay();}function handleBlockClick(_0xa87298){const _0x5348f2=_0x23c23b;if(gameState!==_0x5348f2(0x1fe))return;const _0x38236f=fallingBlocks[_0x5348f2(0x208)](_0x543cd8=>_0x543cd8['id']===_0xa87298);if(_0x38236f===-0x1)return;const _0x5c98a3=fallingBlocks[_0x38236f];userAnswer+=_0x5c98a3['text'],answerHistory[_0x5348f2(0x1d1)](_0x5c98a3[_0x5348f2(0x22f)]),_0x5c98a3[_0x5348f2(0x1f6)]=![],gameEngine['remove_block'](_0x5c98a3['id']);for(let _0x57c397=0x0;_0x57c397<CONFIG[_0x5348f2(0x1de)];_0x57c397++){for(let _0xb88d25=0x0;_0xb88d25<CONFIG[_0x5348f2(0x1d5)];_0xb88d25++){grid[_0x57c397][_0xb88d25]&&grid[_0x57c397][_0xb88d25]['id']===_0xa87298&&(grid[_0x57c397][_0xb88d25]=null);}}fallingBlocks[_0x5348f2(0x234)](_0x38236f,0x1),updateAnswerDisplay(),checkAnswer(),updateDisplay();}window[_0x23c23b(0x1a4)]=function(){const _0x43d390=_0x23c23b;if(wasmModule['can_undo']()&&answerHistory['length']>0x0){const _0x47fa41=answerHistory[_0x43d390(0x1d9)]();userAnswer=userAnswer[_0x43d390(0x1ca)](0x0,-_0x47fa41[_0x43d390(0x228)]),wasmModule[_0x43d390(0x1b3)](),updateAnswerDisplay(),updateDisplay();}},window['handleBomb']=function(){const _0x358ab6=_0x23c23b;if(wasmModule[_0x358ab6(0x1b9)]()){if(currentLevelBombCount===0x0){for(let _0x38df74=fallingBlocks[_0x358ab6(0x228)]-0x1;_0x38df74>=0x0;_0x38df74--){const _0x2df5a1=fallingBlocks[_0x38df74];if(_0x2df5a1['row']<0x1){gameEngine['remove_block'](_0x2df5a1['id']);for(let _0x2efe74=0x0;_0x2efe74<CONFIG[_0x358ab6(0x1de)];_0x2efe74++){for(let _0x469cd0=0x0;_0x469cd0<CONFIG[_0x358ab6(0x1d5)];_0x469cd0++){grid[_0x2efe74][_0x469cd0]&&grid[_0x2efe74][_0x469cd0]['id']===_0x2df5a1['id']&&(grid[_0x2efe74][_0x469cd0]=null);}}fallingBlocks['splice'](_0x38df74,0x1);}}handleGravity(),currentLevelBombCount++,document[_0x358ab6(0x20a)](_0x358ab6(0x22b))[_0x358ab6(0x1b4)]=!![],document[_0x358ab6(0x20a)]('bombBtn')[_0x358ab6(0x1f9)]=_0x358ab6(0x219),updateDisplay();}else alert(_0x358ab6(0x21a));}};function _0x12e0(){const _0x4e305c=['Failed\x20to\x20generate\x20next\x20block:','get_version','load','로그아웃\x20하시겠습니까?','🏆\x20모든\x20문제를\x20해결했습니다!\x20(','row','nextLevel','now','cell','div','includes','check_login_status','gameArea','💣\x20사용\x20완료','이번\x20문제에서는\x20폭탄을\x20이미\x20사용했습니다.','show','engine','fill','7GJCnDT','67105VwGjXs','closest','clickable','stringify','825942zThATW','levelSelector','\x20레벨\x20선택','add','보안\x20검증\x20실패:\x20허용되지\x20않은\x20위치에서\x20코드가\x20실행되었습니다.\x20웹사이트\x20주소를\x20확인해\x20주세요.','length','size','loadingScreen','bombBtn','toString','appendChild','generate_seed','text','verify_timing','get_cookie','createElement','Failed\x20to\x20load\x20data\x20for\x20','splice','\x0a\x20\x20\x20\x20\x20\x20\x20\x20<button\x20class=\x22btn\x20btn-pause\x22\x20onclick=\x22stopGameManually()\x22>⏸\x20일시\x20정지</button>\x0a\x20\x20\x20\x20','remove_block','remove','toggleTarget','hidden','fake_blocks','level-btn','stack_block','clear_grid','className','handleUndo','185372XCQIZA','addEventListener','innerHTML','15870305uOBtpB','click','<button\x20class=\x22btn\x20btn-reset\x22\x20onclick=\x22resetLevel()\x22>재시작</button>','grid','location','Error\x20setting\x20up\x20level:','dataset','_encrypted.dat','레벨\x20','style','1611HOpKvp','increment_undo','disabled','Failed\x20to\x20parse\x20answer\x20in\x20Rust:','Level\x20','floor','generate_next_block','can_use_bomb','col','<button\x20class=\x22btn\x20btn-next\x22\x20onclick=\x22nextLevel()\x22>➡️\x20다음\x20문제</button>','backToLevelSelect','get_block_color','button','answerDisplay','answer','map','parse_answer_rs','startsWith','studentClass','levelButtons','<span\x20class=\x22blink\x22>|</span>','↶\x20(','blocks','classList','slice','onclick','log','<button\x20class=\x22btn\x20btn-reset\x22\x20onclick=\x22resetLevel()\x22>🔄\x20재시작</button>','ready','verify_location','shift','push','☠️\x20GAME\x20OVER!\x20(그리드가\x20가득\x20찼습니다)','error','finished','GRID_COLS','Login\x20check\x20failed:','3466056TpiTdY','clear_all_cookies','pop','AudioContext','selectLevel','generate_initial_sequence','href','GRID_ROWS','\x20데이터를\x20불러오는데\x20실패했습니다.','32380moVioY','width','gameContent','mainMenu','Decryption\x20or\x20parsing\x20failed:','question','toggle','6sagvHw','none','used_fakes','1483731bYsHRQ','target','Error\x20loading\x20Wasm\x20module:','create_game_token','totalNum','decrypt_xor_base64','stopGameManually','backgroundColor','stopped','/단어/','FALL_SPEED','get_undo_count','isFalling','parse','GameEngine','textContent','message','levelNum','🚨\x20치트\x20감지:\x20게임\x20결과를\x20전송할\x20수\x20없습니다.','36cUdWiX','playing','len','display','Location\x20verification\x20failed.\x20Code\x20might\x20be\x20running\x20in\x20an\x20unauthorized\x20domain.','.block.clickable','random','SPAWN_DELAY_MIN','buttons','block','Wasm\x20Module\x20Loaded\x20(v','findIndex','correctAnswer','getElementById','check_collision'];_0x12e0=function(){return _0x4e305c;};return _0x12e0();}function updateAnswerDisplay(){const _0x3c8113=_0x23c23b;document[_0x3c8113(0x20a)](_0x3c8113(0x1bf))[_0x3c8113(0x1f9)]=userAnswer;const _0x146b8d=document[_0x3c8113(0x20a)](_0x3c8113(0x1bf))['textContent'];document['getElementById']('answerDisplay')[_0x3c8113(0x1a7)]=_0x146b8d+_0x3c8113(0x1c6);}function checkAnswer(){const _0x3f4750=_0x23c23b;if(userAnswer[_0x3f4750(0x228)]>correctAnswer['length'])handleMistake('정답\x20길이\x20초과');else{if(userAnswer===correctAnswer)handleCorrectAnswer();else!correctAnswer[_0x3f4750(0x1c3)](userAnswer)&&handleMistake('오답');}}function handleMistake(_0x40e82f){const _0x1b8997=_0x23c23b;gameState=_0x1b8997(0x1f2),stopGame(),mistakeCount++,document[_0x1b8997(0x20a)](_0x1b8997(0x1fa))['textContent']='❌\x20'+_0x40e82f+'\x20-\x20다시\x20시도!\x20(실수\x20'+mistakeCount+'회)',document[_0x1b8997(0x20a)](_0x1b8997(0x205))['innerHTML']=_0x1b8997(0x1cd);}function handleCorrectAnswer(){const _0xbc5047=_0x23c23b;gameState='solved',stopGame();const _0x131613=Date[_0xbc5047(0x213)](),_0x2a858c=Math[_0xbc5047(0x1b7)]((_0x131613-gameStartTime)/0x3e8),_0x311ed2=wasmModule[_0xbc5047(0x1ed)](level,correctAnswer,_0x131613),_0x1dfb38=wasmModule['verify_game_token'](level,correctAnswer,_0x131613,_0x311ed2),_0x19b137=wasmModule[_0xbc5047(0x230)](level,_0x2a858c);_0x1dfb38&&_0x19b137?(solvedProblems['add'](level),document[_0xbc5047(0x20a)](_0xbc5047(0x1fa))[_0xbc5047(0x1f9)]='✅\x20정답!\x20('+_0x2a858c+'초\x20소요)',level<gameData[_0xbc5047(0x228)]?document['getElementById'](_0xbc5047(0x205))[_0xbc5047(0x1a7)]=_0xbc5047(0x1bb):showCompletionScreen()):(document[_0xbc5047(0x20a)](_0xbc5047(0x1fa))[_0xbc5047(0x1f9)]=_0xbc5047(0x1fc),document[_0xbc5047(0x20a)](_0xbc5047(0x205))[_0xbc5047(0x1a7)]=_0xbc5047(0x1aa));}window[_0x23c23b(0x212)]=function(){level++,currentLevelBombCount=0x0,reset_undo_count(),reset_bomb_usage(),loadProblem();},window['resetLevel']=function(){currentLevelBombCount=0x0,reset_undo_count(),reset_bomb_usage(),loadProblem();};function showCompletionScreen(){const _0x4fa6d4=_0x23c23b;gameState=_0x4fa6d4(0x1d4),stopGame(),document[_0x4fa6d4(0x20a)](_0x4fa6d4(0x1fa))[_0x4fa6d4(0x1f9)]=_0x4fa6d4(0x210)+solvedProblems[_0x4fa6d4(0x229)]+'/'+gameData[_0x4fa6d4(0x228)]+')',document[_0x4fa6d4(0x20a)](_0x4fa6d4(0x205))[_0x4fa6d4(0x1a7)]='<button\x20class=\x22btn\x20btn-back\x22\x20onclick=\x22backToLevelSelect()\x22>🏠\x20레벨\x20선택으로</button>';}function gameOver(){const _0x1ea469=_0x23c23b;gameState='gameOver',stopGame(),document[_0x1ea469(0x20a)](_0x1ea469(0x1fa))[_0x1ea469(0x1f9)]=_0x1ea469(0x1d2),document[_0x1ea469(0x20a)](_0x1ea469(0x205))['innerHTML']=_0x1ea469(0x1cd);}function stopGame(){if(fallInterval)clearInterval(fallInterval);if(spawnTimeout)clearTimeout(spawnTimeout);if(gravityInterval)clearInterval(gravityInterval);fallInterval=null,spawnTimeout=null,gravityInterval=null;}function showButtons(){const _0x404ff7=_0x23c23b;document[_0x404ff7(0x20a)]('buttons')[_0x404ff7(0x1a7)]=_0x404ff7(0x235),document[_0x404ff7(0x20a)]('undoBtn')[_0x404ff7(0x1b4)]=!wasmModule['can_undo'](),document['getElementById']('bombBtn')[_0x404ff7(0x1b4)]=!wasmModule['can_use_bomb']()||currentLevelBombCount>0x0,document[_0x404ff7(0x20a)]('undoBtn')[_0x404ff7(0x1f9)]=_0x404ff7(0x1c7)+(0x14-wasmModule[_0x404ff7(0x1f5)]())+')';}function updateDisplay(){const _0x5f2e29=_0x23c23b,_0x1d3ed4=document['getElementById']('grid');_0x1d3ed4[_0x5f2e29(0x1a7)]='';const _0x275ec3=Array(CONFIG[_0x5f2e29(0x1de)])[_0x5f2e29(0x21d)](null)['map'](()=>Array(CONFIG[_0x5f2e29(0x1d5)])[_0x5f2e29(0x21d)](null));for(const _0x3d6972 of fallingBlocks){if(!_0x3d6972[_0x5f2e29(0x1f6)]&&_0x3d6972['row']>=0x0)for(let _0x59347f=0x0;_0x59347f<_0x3d6972[_0x5f2e29(0x1ff)];_0x59347f++){_0x3d6972['col']+_0x59347f<CONFIG['GRID_COLS']&&(_0x275ec3[_0x3d6972[_0x5f2e29(0x211)]][_0x3d6972[_0x5f2e29(0x1ba)]+_0x59347f]=_0x3d6972);}}for(const _0x17fa4e of fallingBlocks){if(_0x17fa4e[_0x5f2e29(0x1f6)])for(let _0x5d673e=0x0;_0x5d673e<_0x17fa4e['len'];_0x5d673e++){_0x17fa4e[_0x5f2e29(0x211)]>=0x0&&_0x17fa4e['row']<CONFIG[_0x5f2e29(0x1de)]&&_0x17fa4e[_0x5f2e29(0x1ba)]+_0x5d673e<CONFIG[_0x5f2e29(0x1d5)]&&(_0x275ec3[_0x17fa4e[_0x5f2e29(0x211)]][_0x17fa4e[_0x5f2e29(0x1ba)]+_0x5d673e]=_0x17fa4e);}}for(let _0x1e53dd=0x0;_0x1e53dd<CONFIG[_0x5f2e29(0x1de)];_0x1e53dd++){for(let _0x360c9e=0x0;_0x360c9e<CONFIG[_0x5f2e29(0x1d5)];_0x360c9e++){const _0x593109=document['createElement'](_0x5f2e29(0x215));_0x593109['className']=_0x5f2e29(0x214);const _0xa7fa7f=_0x275ec3[_0x1e53dd][_0x360c9e];if(_0xa7fa7f){if(_0x360c9e===_0xa7fa7f[_0x5f2e29(0x1ba)]){const _0x13c6af=document[_0x5f2e29(0x232)](_0x5f2e29(0x215));_0x13c6af[_0x5f2e29(0x1a3)]=_0x5f2e29(0x206),_0x13c6af[_0x5f2e29(0x1b1)][_0x5f2e29(0x1e1)]=_0xa7fa7f[_0x5f2e29(0x1ff)]*0x28+'px',_0x13c6af[_0x5f2e29(0x1b1)][_0x5f2e29(0x1f1)]=_0xa7fa7f['color'],_0x13c6af[_0x5f2e29(0x1f9)]=_0xa7fa7f['text'],_0x13c6af['dataset']['id']=_0xa7fa7f['id'],!_0xa7fa7f[_0x5f2e29(0x1f6)]&&(_0x13c6af[_0x5f2e29(0x1c9)][_0x5f2e29(0x226)](_0x5f2e29(0x221)),_0x13c6af[_0x5f2e29(0x1cb)]=()=>handleBlockClick(_0xa7fa7f['id'])),_0x593109[_0x5f2e29(0x22d)](_0x13c6af);}}else{}_0x1d3ed4[_0x5f2e29(0x22d)](_0x593109);}}showButtons();}function initGridEventListener(){const _0x1d908d=_0x23c23b,_0x283f38=document['getElementById'](_0x1d908d(0x1ab));_0x283f38[_0x1d908d(0x1a6)](_0x1d908d(0x1a9),_0x93a85b=>{const _0x140640=_0x1d908d,_0x30f2ae=_0x93a85b['target'][_0x140640(0x220)](_0x140640(0x202));_0x30f2ae&&handleBlockClick(parseInt(_0x30f2ae[_0x140640(0x1ae)]['id']));});}window['logout']=function(){const _0x1289c9=_0x23c23b;confirm(_0x1289c9(0x20f))&&(wasmModule[_0x1289c9(0x1d8)](),window[_0x1289c9(0x1ac)][_0x1289c9(0x1dd)]='../munpup.html?logout=true');},window['selectMainMenu']=function(_0x594833){const _0x3400e6=_0x23c23b;selectedMainMenu=_0x594833,document[_0x3400e6(0x20a)](_0x3400e6(0x1e3))[_0x3400e6(0x1c9)][_0x3400e6(0x226)](_0x3400e6(0x19e)),document[_0x3400e6(0x20a)]('levelSelector')[_0x3400e6(0x1c9)][_0x3400e6(0x237)](_0x3400e6(0x19e)),document[_0x3400e6(0x20a)]('levelTitle')['textContent']=_0x594833+_0x3400e6(0x225),createLevelButtons(_0x594833);};function createLevelButtons(_0x4a8d95){const _0x24f47c=_0x23c23b,_0x1e1be1=document[_0x24f47c(0x20a)](_0x24f47c(0x1c5));_0x1e1be1['innerHTML']='';for(let _0x4b9a4c=0x1;_0x4b9a4c<=0xc;_0x4b9a4c++){const _0x1123eb=document[_0x24f47c(0x232)](_0x24f47c(0x1be));_0x1123eb[_0x24f47c(0x1a3)]=_0x24f47c(0x1a0),_0x1123eb[_0x24f47c(0x1f9)]=_0x24f47c(0x1b6)+_0x4b9a4c,_0x1123eb[_0x24f47c(0x1cb)]=()=>selectLevel(_0x4a8d95,_0x4b9a4c[_0x24f47c(0x22c)]()['padStart'](0x2,'0')),_0x1e1be1[_0x24f47c(0x22d)](_0x1123eb);}}window[_0x23c23b(0x1bc)]=function(){const _0x3b2cf4=_0x23c23b;document['getElementById']('gameArea')[_0x3b2cf4(0x1c9)][_0x3b2cf4(0x226)](_0x3b2cf4(0x19e)),document[_0x3b2cf4(0x20a)](_0x3b2cf4(0x224))['classList'][_0x3b2cf4(0x237)](_0x3b2cf4(0x19e)),resetGame();},window[_0x23c23b(0x19d)]=function(){const _0x5a12d7=_0x23c23b,_0x1d733f=document[_0x5a12d7(0x20a)]('target');if(!_0x1d733f[_0x5a12d7(0x1c9)]['contains'](_0x5a12d7(0x21b)))usedTargetInCurrentProblem=!![];_0x1d733f[_0x5a12d7(0x1c9)][_0x5a12d7(0x1e6)](_0x5a12d7(0x21b));},window[_0x23c23b(0x1f0)]=function(){const _0x36f0da=_0x23c23b;gameState=_0x36f0da(0x1f2),stopGame(),showButtons();},window[_0x23c23b(0x1a6)](_0x23c23b(0x20e),async()=>{const _0xa550d=_0x23c23b;await initWasm()&&checkLogin()&&(document[_0xa550d(0x20a)](_0xa550d(0x22a))['style'][_0xa550d(0x200)]=_0xa550d(0x1e8),document[_0xa550d(0x20a)](_0xa550d(0x1e2))[_0xa550d(0x1c9)][_0xa550d(0x237)](_0xa550d(0x19e)),initGridEventListener(),document[_0xa550d(0x20a)](_0xa550d(0x1e3))['classList'][_0xa550d(0x237)](_0xa550d(0x19e)));});
+import init, {
+    // --- Auth & Crypto (auth.rs, crypto.rs) ---
+    authenticate_student,
+    decrypt_xor_base64,
+    get_cookie,
+    set_cookie,
+    refresh_cookies,
+    clear_all_cookies,
+    check_login_status,
+
+    // --- Core Utilities (lib.rs) ---
+    get_version,
+    verify_location,
+    verify_answer,
+    create_answer_hash,
+    create_game_token,
+    verify_game_token,
+    verify_timing,
+    can_undo,
+    increment_undo,
+    reset_undo_count,
+    get_undo_count,
+    can_use_bomb,
+    reset_bomb_usage,
+    generate_seed,
+
+    // --- Game Engine (engine.rs) - 에러 수정: 모두 최상위에서 직접 가져옴 ---
+    GameEngine, // 👈 GameEngine Class
+    parse_answer_rs,
+    generate_initial_sequence,
+    generate_next_block,
+    get_block_color,
+} from "./pkg/korean_game_wasm.js";
+
+let wasmModule = null;
+let gameEngine = null; // 👈 Rust GameEngine 인스턴스
+
+const CONFIG = {
+    GRID_ROWS: 8,
+    GRID_COLS: 9,
+    FALL_SPEED: 600,
+    GRAVITY_SPEED: 150,
+    SPAWN_DELAY_MIN: 800,
+    SPAWN_DELAY_MAX: 1500,
+};
+
+let selectedMainMenu = null;
+let selectedLevel = null;
+let gameData = [];
+let level = 0;
+let grid = []; // 👈 이제 Rust의 gameEngine 내부 상태를 반영하는 뷰 모델
+let fallingBlocks = [];
+let spaceA = [];
+let spaceB = [];
+let availableBlocks = [];
+let alreadySentBlocks = [];
+let usedFakeBlocks = [];
+let userAnswer = "";
+let answerHistory = [];
+let correctAnswer = "";
+let gameState = 'ready';
+let speed = CONFIG.FALL_SPEED;
+let fallInterval = null;
+let spawnTimeout = null;
+let blockIdCounter = 0;
+let gravityInterval = null;
+let gameStartTime = 0;
+let mistakeCount = 0;
+let currentLevelBombCount = 0;
+let userClass = '';
+let solvedProblems = new Set();
+let usedTargetInCurrentProblem = false;
+let nextSpawnLane = 0;
+
+const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+// =========================================================================
+// Wasm 초기화 및 인증
+// =========================================================================
+
+async function initWasm() {
+    try {
+        const wasm = await init();
+        wasmModule = wasm;
+
+        if (!wasmModule.verify_location()) {
+            console.error("Location verification failed. Code might be running in an unauthorized domain.");
+            alert("보안 검증 실패: 허용되지 않은 위치에서 코드가 실행되었습니다. 웹사이트 주소를 확인해 주세요.");
+            return false;
+        }
+
+        // 👈 에러 수정: wasmModule.GameEngine.new()로 직접 호출
+        gameEngine = wasmModule.GameEngine.new(CONFIG.GRID_ROWS, CONFIG.GRID_COLS); 
+        
+        console.log(`Wasm Module Loaded (v${wasmModule.get_version()})`);
+        return true;
+    } catch (e) {
+        console.error("Error loading Wasm module:", e);
+        return false;
+    }
+}
+
+function checkLogin() {
+    try {
+        // Rust 함수 호출 (lib.rs/auth.rs에 있음)
+        if (wasmModule.check_login_status()) { 
+            userClass = wasmModule.get_cookie('studentClass');
+            return true;
+        }
+    } catch (e) {
+        console.log("Login check failed:", e);
+    }
+    return false;
+}
+
+// =========================================================================
+// 데이터 처리 (Wasm 엔진 호출)
+// =========================================================================
+
+/**
+ * 암호화된 JSON 데이터를 복호화하여 반환합니다.
+ */
+async function loadAndDecryptData(base64Data) {
+    try {
+        const decryptedJsonString = wasmModule.decrypt_xor_base64(base64Data);
+        return JSON.parse(decryptedJsonString);
+    } catch (e) {
+        console.error("Decryption or parsing failed:", e);
+        return null;
+    }
+}
+
+/**
+ * Rust 엔진을 사용하여 정답 텍스트를 파싱하고 정답 목록을 가져옵니다.
+ * @returns {{blocks: string[], correctAnswer: string}}
+ */
+function parseAnswer(answerText) {
+    try {
+        // 👈 에러 수정: wasmModule.parse_answer_rs 호출
+        const parsed = wasmModule.parse_answer_rs(answerText); 
+        return parsed;
+    } catch (e) {
+        console.error("Failed to parse answer in Rust:", e);
+        return { blocks: [], correctAnswer: answerText };
+    }
+}
+
+
+// =========================================================================
+// 게임 초기화/시작
+// =========================================================================
+
+window.selectLevel = async function(selectedClass, levelNum) {
+    const filePath = `data/${selectedClass}/단어/${levelNum}_encrypted.dat`;
+    
+    try {
+        const response = await fetch(filePath);
+        if (!response.ok) {
+            throw new Error(`Failed to load data for ${filePath}`);
+        }
+        const data = await response.text();
+        gameData = await loadAndDecryptData(data);
+
+        selectedLevel = levelNum;
+        document.getElementById('levelSelector').classList.add('hidden');
+        document.getElementById('gameArea').classList.remove('hidden');
+        resetGame();
+
+    } catch (e) {
+        console.error("Error setting up level:", e);
+        alert(`레벨 ${levelNum} 데이터를 불러오는데 실패했습니다.`);
+    }
+}
+
+function resetGame() {
+    gameState = 'ready';
+    stopGame();
+    document.getElementById('levelNum').textContent = '1';
+    document.getElementById('totalNum').textContent = gameData.length;
+    document.getElementById('message').textContent = '';
+    document.getElementById('buttons').innerHTML = '<button class="btn btn-start" onclick="startGame()">▶ 게임 시작</button>';
+    
+    // Rust 엔진 그리드 클리어
+    if (gameEngine) {
+        gameEngine.clear_grid();
+    }
+    grid = Array(CONFIG.GRID_ROWS).fill(null).map(() => Array(CONFIG.GRID_COLS).fill(null));
+    
+    fallingBlocks = [];
+    blockIdCounter = 0;
+    
+    updateDisplay();
+}
+
+window.startGame = function() {
+    if (gameState === 'ready' || gameState === 'stopped') {
+        gameState = 'playing';
+        gameStartTime = Date.now();
+        level = 1;
+        mistakeCount = 0;
+        currentLevelBombCount = 0;
+        wasmModule.reset_undo_count(); // 👈 Rust 함수 호출
+        wasmModule.reset_bomb_usage(); // 👈 Rust 함수 호출
+        loadProblem();
+        showButtons();
+    }
+};
+
+function loadProblem() {
+    if (level > gameData.length) {
+        showCompletionScreen();
+        return;
+    }
+
+    const problem = gameData[level - 1];
+    const parsedAnswer = parseAnswer(problem.answer);
+
+    correctAnswer = parsedAnswer.correctAnswer;
+    
+    // 상태 초기화
+    userAnswer = "";
+    answerHistory = [];
+    fallingBlocks = [];
+    alreadySentBlocks = [];
+    usedFakeBlocks = [];
+    blockIdCounter = 0;
+    usedTargetInCurrentProblem = false;
+    nextSpawnLane = 0;
+    
+    // Rust 엔진 그리드 클리어
+    if (gameEngine) {
+        gameEngine.clear_grid();
+    }
+    grid = Array(CONFIG.GRID_ROWS).fill(null).map(() => Array(CONFIG.GRID_COLS).fill(null));
+    
+    document.getElementById('answerDisplay').innerHTML = '<span class="blink">|</span>';
+    document.getElementById('target').textContent = correctAnswer;
+    document.getElementById('message').textContent = problem.question;
+    document.getElementById('levelNum').textContent = level;
+    document.getElementById('target').classList.remove('show');
+
+    // 👈 Rust 함수 호출 (난수 생성을 위해 generate_seed() 사용)
+    const seed = wasmModule.generate_seed();
+    
+    try {
+        // 👈 에러 수정: wasmModule.generate_initial_sequence 호출
+        const initialSequenceJson = wasmModule.generate_initial_sequence(
+            JSON.stringify(parsedAnswer.blocks),
+            JSON.stringify(problem.fake_blocks),
+            seed
+        );
+        const initialSequence = JSON.parse(initialSequenceJson);
+        availableBlocks = initialSequence.blocks;
+        usedFakeBlocks = initialSequence.used_fakes;
+    } catch (e) {
+        console.error("Failed to generate initial block sequence:", e);
+        availableBlocks = parsedAnswer.blocks; // Fallback
+    }
+
+    // 게임 인터벌 재시작
+    stopGame();
+    speed = CONFIG.FALL_SPEED;
+    fallInterval = setInterval(handleFall, speed);
+    spawnTimeout = setTimeout(spawnBlock, CONFIG.SPAWN_DELAY_MIN);
+    gravityInterval = setInterval(handleGravity, CONFIG.GRAVITY_SPEED);
+    
+    updateDisplay();
+}
+
+// =========================================================================
+// 블록 생성/제어 (Wasm 엔진 호출)
+// =========================================================================
+
+function spawnBlock() {
+    if (gameState !== 'playing' || availableBlocks.length === 0) {
+        spawnTimeout = setTimeout(spawnBlock, CONFIG.SPAWN_DELAY_MAX);
+        return;
+    }
+    
+    const blockText = availableBlocks.shift();
+    const len = blockText.length;
+    // 👈 에러 수정: wasmModule.get_block_color 호출
+    const color = wasmModule.get_block_color(blockText); 
+    
+    const seed = wasmModule.generate_seed();
+    try {
+        // 👈 에러 수정: wasmModule.generate_next_block 호출
+        const nextBlockDataJson = wasmModule.generate_next_block(
+            userAnswer,
+            correctAnswer,
+            JSON.stringify(alreadySentBlocks),
+            JSON.stringify(parseAnswer(gameData[level - 1].answer).blocks),
+            JSON.stringify(gameData[level - 1].fake_blocks),
+            JSON.stringify(usedFakeBlocks),
+            seed
+        );
+        const nextBlockData = JSON.parse(nextBlockDataJson);
+        
+        availableBlocks.push(...nextBlockData.blocks);
+        usedFakeBlocks.push(...nextBlockData.used_fakes);
+        
+        if (parseAnswer(gameData[level - 1].answer).blocks.includes(blockText)) {
+            alreadySentBlocks.push(blockText);
+        }
+
+    } catch (e) {
+        console.error("Failed to generate next block:", e);
+    }
+    
+    const block = {
+        id: blockIdCounter++,
+        text: blockText,
+        len: len,
+        row: -1, 
+        col: nextSpawnLane,
+        color: color,
+        isFalling: true,
+        isClicked: false,
+    };
+
+    if (gameEngine.check_collision(block.row + 1, block.col, block.len)) {
+        gameOver();
+        return;
+    }
+
+    fallingBlocks.push(block);
+    
+    nextSpawnLane = Math.floor(Math.random() * (CONFIG.GRID_COLS - 1));
+    
+    const delay = Math.random() * (CONFIG.SPAWN_DELAY_MAX - CONFIG.SPAWN_DELAY_MIN) + CONFIG.SPAWN_DELAY_MIN;
+    spawnTimeout = setTimeout(spawnBlock, delay);
+}
+
+// =========================================================================
+// 충돌/낙하 처리 (Wasm 엔진 호출)
+// =========================================================================
+
+function handleFall() {
+    if (gameState !== 'playing') return;
+
+    for (let i = fallingBlocks.length - 1; i >= 0; i--) {
+        const block = fallingBlocks[i];
+        if (!block.isFalling) continue;
+
+        if (gameEngine.check_collision(block.row + 1, block.col, block.len)) {
+            block.isFalling = false;
+            
+            gameEngine.stack_block(block.row, block.col, block.len, block.id);
+            
+            for (let c = block.col; c < block.col + block.len; c++) {
+                if (block.row >= 0 && block.row < CONFIG.GRID_ROWS) {
+                    grid[block.row][c] = block;
+                }
+            }
+        } else {
+            block.row++;
+        }
+    }
+    
+    updateDisplay();
+}
+
+function handleGravity() {
+    if (gameState !== 'playing') return;
+
+    let moved = false;
+    
+    for (let r = CONFIG.GRID_ROWS - 2; r >= 0; r--) {
+        for (let c = 0; c < CONFIG.GRID_COLS; c++) {
+            if (grid[r][c] && !grid[r][c].isFalling && (r + 1 >= CONFIG.GRID_ROWS || !grid[r + 1][c])) {
+                const block = grid[r][c];
+                
+                gameEngine.remove_block(block.id);
+                
+                for (let i = 0; i < block.len; i++) {
+                    grid[r][block.col + i] = null;
+                }
+                
+                block.row++;
+
+                gameEngine.stack_block(block.row, block.col, block.len, block.id);
+                
+                for (let i = 0; i < block.len; i++) {
+                    grid[block.row][block.col + i] = block;
+                }
+                
+                moved = true;
+            }
+        }
+    }
+
+    if (moved) {
+        updateDisplay();
+    }
+}
+
+// =========================================================================
+// 사용자 입력 처리
+// =========================================================================
+
+function handleBlockClick(blockId) {
+    if (gameState !== 'playing') return;
+    
+    const clickedBlockIndex = fallingBlocks.findIndex(b => b.id === blockId);
+    if (clickedBlockIndex === -1) return;
+    
+    const clickedBlock = fallingBlocks[clickedBlockIndex];
+
+    userAnswer += clickedBlock.text;
+    answerHistory.push(clickedBlock.text);
+    
+    clickedBlock.isFalling = false;
+    
+    gameEngine.remove_block(clickedBlock.id);
+    
+    for (let r = 0; r < CONFIG.GRID_ROWS; r++) {
+        for (let c = 0; c < CONFIG.GRID_COLS; c++) {
+            if (grid[r][c] && grid[r][c].id === blockId) {
+                grid[r][c] = null;
+            }
+        }
+    }
+
+    fallingBlocks.splice(clickedBlockIndex, 1);
+
+    updateAnswerDisplay();
+    checkAnswer();
+    updateDisplay();
+}
+
+window.handleUndo = function() {
+    if (wasmModule.can_undo() && answerHistory.length > 0) {
+        const lastBlock = answerHistory.pop();
+        userAnswer = userAnswer.slice(0, -lastBlock.length);
+        
+        wasmModule.increment_undo(); 
+        
+        updateAnswerDisplay();
+        updateDisplay();
+    }
+};
+
+window.handleBomb = function() {
+    if (wasmModule.can_use_bomb()) {
+        if (currentLevelBombCount === 0) {
+            for (let i = fallingBlocks.length - 1; i >= 0; i--) {
+                const block = fallingBlocks[i];
+                if (block.row < 1) { 
+                    gameEngine.remove_block(block.id);
+                    
+                    for (let r = 0; r < CONFIG.GRID_ROWS; r++) {
+                        for (let c = 0; c < CONFIG.GRID_COLS; c++) {
+                            if (grid[r][c] && grid[r][c].id === block.id) {
+                                grid[r][c] = null;
+                            }
+                        }
+                    }
+                    fallingBlocks.splice(i, 1);
+                }
+            }
+            
+            handleGravity(); 
+            
+            currentLevelBombCount++;
+            
+            document.getElementById('bombBtn').disabled = true;
+            document.getElementById('bombBtn').textContent = '💣 사용 완료';
+            
+            updateDisplay();
+        } else {
+            alert('이번 문제에서는 폭탄을 이미 사용했습니다.');
+        }
+    }
+};
+
+
+// =========================================================================
+// UI/헬퍼 함수 (로직 변경 없음)
+// =========================================================================
+
+function updateAnswerDisplay() {
+    document.getElementById('answerDisplay').textContent = userAnswer;
+    const currentText = document.getElementById('answerDisplay').textContent;
+    document.getElementById('answerDisplay').innerHTML = currentText + '<span class="blink">|</span>';
+}
+
+function checkAnswer() {
+    if (userAnswer.length > correctAnswer.length) {
+        handleMistake("정답 길이 초과");
+    } else if (userAnswer === correctAnswer) {
+        handleCorrectAnswer();
+    } else if (!correctAnswer.startsWith(userAnswer)) {
+        handleMistake("오답");
+    }
+}
+
+function handleMistake(reason) {
+    gameState = 'stopped';
+    stopGame();
+    mistakeCount++;
+    
+    document.getElementById('message').textContent = `❌ ${reason} - 다시 시도! (실수 ${mistakeCount}회)`;
+    
+    document.getElementById('buttons').innerHTML = '<button class="btn btn-reset" onclick="resetLevel()">🔄 재시작</button>';
+}
+
+function handleCorrectAnswer() {
+    gameState = 'solved';
+    stopGame();
+    
+    const endTime = Date.now();
+    const elapsedSeconds = Math.floor((endTime - gameStartTime) / 1000);
+    
+    const token = wasmModule.create_game_token(level, correctAnswer, endTime); 
+    const isTokenValid = wasmModule.verify_game_token(level, correctAnswer, endTime, token);
+    const isTimingValid = wasmModule.verify_timing(level, elapsedSeconds);
+    
+    if (isTokenValid && isTimingValid) {
+        solvedProblems.add(level);
+        document.getElementById('message').textContent = `✅ 정답! (${elapsedSeconds}초 소요)`;
+        
+        if (level < gameData.length) {
+            document.getElementById('buttons').innerHTML = '<button class="btn btn-next" onclick="nextLevel()">➡️ 다음 문제</button>';
+        } else {
+            showCompletionScreen();
+        }
+    } else {
+        document.getElementById('message').textContent = `🚨 치트 감지: 게임 결과를 전송할 수 없습니다.`;
+        document.getElementById('buttons').innerHTML = '<button class="btn btn-reset" onclick="resetLevel()">재시작</button>';
+    }
+}
+
+window.nextLevel = function() {
+    level++;
+    currentLevelBombCount = 0;
+    wasmModule.reset_undo_count();
+    wasmModule.reset_bomb_usage();
+    loadProblem();
+};
+
+window.resetLevel = function() {
+    currentLevelBombCount = 0;
+    wasmModule.reset_undo_count();
+    wasmModule.reset_bomb_usage();
+    loadProblem();
+};
+
+function showCompletionScreen() {
+    gameState = 'finished';
+    stopGame();
+    
+    document.getElementById('message').textContent = `🏆 모든 문제를 해결했습니다! (${solvedProblems.size}/${gameData.length})`;
+    document.getElementById('buttons').innerHTML = '<button class="btn btn-back" onclick="backToLevelSelect()">🏠 레벨 선택으로</button>';
+}
+
+function gameOver() {
+    gameState = 'gameOver';
+    stopGame();
+    document.getElementById('message').textContent = `☠️ GAME OVER! (그리드가 가득 찼습니다)`;
+    document.getElementById('buttons').innerHTML = '<button class="btn btn-reset" onclick="resetLevel()">🔄 재시작</button>';
+}
+
+function stopGame() {
+    if (fallInterval) clearInterval(fallInterval);
+    if (spawnTimeout) clearTimeout(spawnTimeout);
+    if (gravityInterval) clearInterval(gravityInterval);
+    fallInterval = null;
+    spawnTimeout = null;
+    gravityInterval = null;
+}
+
+function showButtons() {
+    document.getElementById('buttons').innerHTML = `
+        <button class="btn btn-pause" onclick="stopGameManually()">⏸ 일시 정지</button>
+    `;
+    document.getElementById('undoBtn').disabled = !wasmModule.can_undo();
+    document.getElementById('bombBtn').disabled = !wasmModule.can_use_bomb() || currentLevelBombCount > 0;
+    document.getElementById('undoBtn').textContent = `↶ (${20 - wasmModule.get_undo_count()})`;
+}
+
+function updateDisplay() {
+    const gridEl = document.getElementById('grid');
+    gridEl.innerHTML = '';
+    
+    const fullGrid = Array(CONFIG.GRID_ROWS).fill(null).map(() => Array(CONFIG.GRID_COLS).fill(null));
+
+    for (const block of fallingBlocks) {
+        if (!block.isFalling && block.row >= 0) {
+            for (let i = 0; i < block.len; i++) {
+                if (block.col + i < CONFIG.GRID_COLS) {
+                    fullGrid[block.row][block.col + i] = block;
+                }
+            }
+        }
+    }
+    
+    for (const block of fallingBlocks) {
+        if (block.isFalling) {
+            for (let i = 0; i < block.len; i++) {
+                if (block.row >= 0 && block.row < CONFIG.GRID_ROWS && block.col + i < CONFIG.GRID_COLS) {
+                    fullGrid[block.row][block.col + i] = block;
+                }
+            }
+        }
+    }
+
+    for (let r = 0; r < CONFIG.GRID_ROWS; r++) {
+        for (let c = 0; c < CONFIG.GRID_COLS; c++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            
+            const block = fullGrid[r][c];
+
+            if (block) {
+                if (c === block.col) {
+                    const blockEl = document.createElement('div');
+                    blockEl.className = 'block';
+                    blockEl.style.width = `${block.len * 40}px`; 
+                    blockEl.style.backgroundColor = block.color;
+                    blockEl.textContent = block.text;
+                    blockEl.dataset.id = block.id;
+
+                    if (!block.isFalling) {
+                        blockEl.classList.add('clickable');
+                        blockEl.onclick = () => handleBlockClick(block.id);
+                    }
+                    
+                    cell.appendChild(blockEl);
+                }
+            } else {
+                
+            }
+
+            gridEl.appendChild(cell);
+        }
+    }
+
+    showButtons(); 
+}
+
+function initGridEventListener() {
+    const gridEl = document.getElementById('grid');
+    gridEl.addEventListener('click', (e) => {
+        const blockEl = e.target.closest('.block.clickable');
+        if (blockEl) {
+            handleBlockClick(parseInt(blockEl.dataset.id));
+        }
+    });
+}
+
+window.logout = function() {
+    if (confirm('로그아웃 하시겠습니까?')) {
+        wasmModule.clear_all_cookies();
+        window.location.href = '../munpup.html?logout=true';
+    }
+};
+
+window.selectMainMenu = function(menu) {
+    selectedMainMenu = menu;
+    document.getElementById('mainMenu').classList.add('hidden');
+    document.getElementById('levelSelector').classList.remove('hidden');
+    document.getElementById('levelTitle').textContent = `${menu} 레벨 선택`;
+    createLevelButtons(menu);
+};
+
+function createLevelButtons(menu) {
+    const container = document.getElementById('levelButtons');
+    container.innerHTML = '';
+    
+    for (let i = 1; i <= 12; i++) {
+        const button = document.createElement('button');
+        button.className = 'level-btn';
+        button.textContent = `Level ${i}`;
+        button.onclick = () => selectLevel(menu, i.toString().padStart(2, '0'));
+        container.appendChild(button);
+    }
+}
+
+// =========================================================================
+// 시작
+// =========================================================================
+
+window.backToLevelSelect = function() {
+    document.getElementById('gameArea').classList.add('hidden');
+    document.getElementById('levelSelector').classList.remove('hidden');
+    resetGame();
+};
+
+window.toggleTarget = function() {
+    const target = document.getElementById('target');
+    if (!target.classList.contains('show')) usedTargetInCurrentProblem = true;
+    target.classList.toggle('show');
+};
+
+window.stopGameManually = function() {
+    gameState = 'stopped';
+    stopGame();
+    showButtons();
+};
+
+window.addEventListener('load', async () => {
+    // ⚠️ checkLogin() 전에 wasmModule.get_cookie()를 사용할 수 있도록
+    // wasmModule 로딩 후 인증 로직을 실행합니다.
+    if (await initWasm() && checkLogin()) {
+        document.getElementById('loadingScreen').style.display = 'none';
+        document.getElementById('gameContent').classList.remove('hidden');
+        initGridEventListener();
+        
+        document.getElementById('mainMenu').classList.remove('hidden'); 
+    }
+});
