@@ -3,94 +3,516 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>원고지</title>
-    <link rel="stylesheet" href="wongoji/style.css">
+    <title>원고지 - 학생용 (WASM)</title>
+    <link rel="stylesheet" href="./wongoji/teacher_style.css">
+    <style>
+        body { opacity: 0; transition: opacity 0.5s; }
+        body.loaded { opacity: 1; }
+        .login-area h1 { color: #2196F3; } 
+        .login-btn { background-color: #2196F3; }
+        .login-btn:hover { background-color: #1976D2; }
+        .header h1 { color: #2196F3; }
+        .header { border-bottom-color: #2196F3; }
+        
+        .cell.selected { background-color: transparent !important; border: 2px solid #2196F3 !important; z-index: 10 !important; }
+        .cell.active { background-color: transparent !important; border: 2px solid #4CAF50 !important; z-index: 20 !important; }
+        
+        .undo-btn, .redo-btn { background-color: #607d8b; color: white; margin-right: 5px; }
+        .undo-btn:hover, .redo-btn:hover { background-color: #546e7a; }
+
+        .create-section { display: flex; gap: 10px; align-items: center; margin-left: auto; }
+        .create-input { padding: 8px; border: 1px solid #555; border-radius: 5px; background: #2d2d2d; color: white; }
+        .create-select { padding: 8px; border: 1px solid #555; border-radius: 5px; background: #2d2d2d; color: white; }
+        .create-btn { padding: 8px 15px; background-color: #2196F3; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .create-btn:hover { background-color: #1976D2; }
+    </style>
 </head>
 <body>
     <div class="container">
-        <div class="setup-area">
-            <label for="classSelect">반:</label>
-            <select id="classSelect">
-                <option value="3A">3A</option>
-                <option value="3B">3B</option>
-                <option value="4A">4A</option>
-                <option value="4B">4B</option>
-            </select>
-            <label for="studentName">학생 이름:</label>
-            <input type="text" id="studentName" placeholder="이름을 입력하세요">
-            <label for="studentPassword">비밀번호:</label>
-            <input type="password" id="studentPassword" placeholder="비밀번호 4자리">
-            <label for="colsSelect">칸 수:</label>
-            <select id="colsSelect">
-                <option value="20">20칸 (400자)</option>
-                <option value="25-300">25칸 (300자)</option>
-                <option value="25-700">25칸 (700자)</option>
-            </select>
-            <button id="startBtn">시작</button>
+        <div class="login-area" id="loginArea">
+            <h1>🐣 학생 로그인</h1>
+            <div class="login-form">
+                <label for="studentClass">반 선택:</label>
+                <select id="studentClass">
+                    <option value="1A">1A</option><option value="1B">1B</option>
+                    <option value="2A">2A</option><option value="2B">2B</option>
+                    <option value="3A">3A</option><option value="3B">3B</option>
+                    <option value="4A">4A</option><option value="4B">4B</option>
+                </select>
+                <label for="studentName">이름:</label>
+                <input type="text" id="studentName" placeholder="이름을 입력하세요">
+                <label for="studentPassword">비밀번호 (학번 뒤 4자리):</label>
+                <input type="password" id="studentPassword" placeholder="1234">
+                <button id="loginBtn" class="login-btn">로그인</button>
+            </div>
         </div>
-        
-        <div id="workArea" class="work-area">
-            <div class="manuscript-memo-container">
-                <div class="manuscript-center">
-                    <div class="manuscript-wrapper">
-                        <div class="error-line-container">
-                            <svg id="errorLineSvg" class="error-line-svg"></svg>
-                        </div>
-                        <div id="manuscriptPaper" class="manuscript-paper cols-20"></div>
-                    </div>
-                </div>
-                
-                <div id="memoSidePanel" class="memo-side-panel" style="display:none;">
-                    <div class="memo-panel-header">
-                        <h3>📝 선생님 메모</h3>
-                    </div>
-                    <div id="memoSideContent" class="memo-side-content"></div>
+
+        <div class="teacher-area" id="studentArea" style="display:none;">
+            <div class="header">
+                <h1>📝 내 원고 보관함</h1>
+                <div class="teacher-info">
+                    <span id="currentStudentInfo"></span>
+                    <button id="logoutBtn" class="logout-logout_student">로그아웃</button>
                 </div>
             </div>
             
-            <div class="action-buttons">
-                <button class="supabase-save-btn" onclick="saveToSupabase()">서버에 저장</button>
-                <button class="supabase-load-btn" onclick="loadFromSupabase()">서버에서 불러오기</button>
-                <button class="file-save-btn" onclick="saveToFile()">파일로 저장</button>
-                <button class="file-load-btn" onclick="loadFromFile()">파일에서 불러오기</button>
-                <button class="logout-btn" onclick="logout()">로그아웃</button>
+            <div class="filter-section">
+                <button id="refreshBtn" class="refresh-btn">새로고침</button>
+                <div class="create-section">
+                    <input type="text" id="newTitle" class="create-input" placeholder="새 원고 제목">
+                    <select id="newCols" class="create-select">
+                        <option value="20_400">20칸 (400자)</option>
+                        <option value="25_300">25칸 (300자)</option>
+                        <option value="25_700">25칸 (700자)</option>
+                    </select>
+                    <button id="createBtn" class="create-btn">원고 생성</button>
+                </div>
             </div>
-        </div>
-    </div>
-    
-    <div id="saveModal" class="modal">
-        <div class="modal-content save-modal-content">
-            <div class="save-modal-left">
-                <h3>저장된 파일</h3>
-                <ul id="existingFilesList" class="existing-files-list"></ul>
+
+            <div class="manuscripts-section">
+                <h2>내가 쓴 원고</h2>
+                <div id="manuscriptsList" class="manuscripts-list"></div>
             </div>
-            <div class="save-modal-right">
-                <h2>원고 저장</h2>
-                <input type="text" id="saveTitle" placeholder="제목을 입력하세요 (예: 첫번째 작문)">
-                <div class="btn-group">
-                    <button class="confirm-btn" onclick="confirmSave()">저장</button>
-                    <button class="cancel-btn" onclick="closeSaveModal()">취소</button>
+            
+            <div id="editModal" class="modal">
+                <div class="modal-content-large">
+                    <div class="modal-header">
+                        <h2 id="editTitle">원고 쓰기</h2>
+                        <button id="closeModalBtn" class="close-btn">✕</button>
+                    </div>
+                    <div class="layer-switch">
+                        <div class="layer-button-container">
+                            <button id="layerToggleBtn" class="layer-toggle-btn student-active">학생모드 ( Tab )</button>
+                            <label class="empty-row-label">
+                                <input type="checkbox" id="hideEmptyRowsCheck" class="empty-row-checkbox">
+                                <span class="empty-row-text">빈 줄<br>숨기기</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="manuscript-memo-container">
+                        <div class="manuscript-center">
+                            <div class="manuscript-wrapper">
+                                <div class="error-line-container">
+                                    <svg id="errorLineSvg" class="error-line-svg"></svg>
+                                </div>
+                                <div id="manuscriptPaper" class="manuscript-paper"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="edit-controls">
+                        <button id="undoBtn" class="undo-btn">↩️ 실행취소</button>
+                        <button id="redoBtn" class="redo-btn">↪️ 다시실행</button>
+                        <span style="width: 20px;"></span>
+                        <button id="saveBtn" class="save-btn">💾 저장하기</button>
+                        <button id="closeBtnBottom" class="cancel-btn">닫기</button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-    
-    <div id="loadModal" class="modal">
-        <div class="modal-content">
-            <h2>저장된 원고 목록</h2>
-            <ul id="savedList" class="saved-list"></ul>
-            <div class="btn-group">
-                <button class="cancel-btn" onclick="closeLoadModal()">닫기</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- 일반 JS 파일들 (순서 중요!) -->
-    <script src="wongoji/1_config.js"></script>
-    <script src="wongoji/3_manuscript_correct.js"></script>
-    
-    <!-- 모듈 JS 파일들 -->
-    <script type="module" src="wongoji/4_input_correct.js"></script>
-    <script type="module" src="wongoji/5_storage_wasm.js"></script>
+
+    <script type="module">
+        import init, { 
+            init_app, login_student, logout_student, fetch_my_manuscripts, save_student_content, create_new_manuscript,
+            render_paper_rs, switch_layer_rs, fill_grid_content, read_grid_content, load_full_data_rs,
+            draw_markings_rs, clear_markings_rs, init_input_state, set_cursor_pos,
+            handle_composition_start, handle_composition_update, handle_composition_end,
+            handle_input_event, handle_keydown, force_stop_composition, toggle_empty_rows_rs,
+            handle_cell_mousedown, handle_cell_mouseenter, handle_global_mouseup,
+            get_selected_text, paste_text_at_cursor, delete_selected_cells,
+            undo, redo, get_cookie
+        } from './wongoji/pkg/wongoji.js';
+
+        let currentCols = 20;
+        let currentRows = 20;
+        let currentManuscriptId = null;
+        let currentErrorText = "[]";
+        let currentLayer = "student";
+        let hasUnsavedChanges = false;
+        let originalContent = "";
+
+        async function run() {
+            try {
+                await init();
+                init_app();
+                document.body.classList.add('loaded');
+                checkLogin();
+                setupEventListeners();
+            } catch (e) {
+                alert("WASM 초기화 실패: " + e);
+            }
+        }
+
+        run();
+
+        function checkLogin() {
+            try {
+                const name = get_cookie("studentName");
+                const cls = get_cookie("studentClass");
+                if (name && cls) showStudentArea(name, cls);
+                else showLoginArea();
+            } catch (e) { showLoginArea(); }
+        }
+
+        function showStudentArea(name, cls) {
+            document.getElementById('loginArea').style.display = 'none';
+            document.getElementById('studentArea').style.display = 'block';
+            document.getElementById('currentStudentInfo').textContent = `${decodeURIComponent(cls)} ${decodeURIComponent(name)}`;
+            loadData();
+        }
+
+        function showLoginArea() {
+            document.getElementById('loginArea').style.display = 'block';
+            document.getElementById('studentArea').style.display = 'none';
+        }
+
+        async function loadData() {
+            try {
+                const data = await fetch_my_manuscripts();
+                renderManuscriptList(data);
+                return data; 
+            } catch (err) { alert(err); return []; }
+        }
+
+        function renderManuscriptList(data) {
+            const list = document.getElementById('manuscriptsList');
+            list.innerHTML = '';
+            if (data.length === 0) {
+                list.innerHTML = '<p style="padding:20px; text-align:center;">작성된 원고가 없습니다.</p>';
+                return;
+            }
+            data.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'manuscript-card';
+                let typeStr = item.cols + "칸 원고지";
+                div.innerHTML = `
+                    <div class="card-header"><div class="class-badge">${item.class}</div></div>
+                    <div class="title">${item.title}</div>
+                    <div class="info">${typeStr} | ${item.approval_status ? '✅ 선생님 확인완료' : '작성중'}</div>
+                `;
+                div.onclick = () => openModal(item);
+                list.appendChild(div);
+            });
+        }
+
+        function focusAndScroll(allowAutoScroll) {
+            const input = document.getElementById('compositionInput');
+            if (input) {
+                input.focus({ preventScroll: true });
+            }
+
+            if (allowAutoScroll) {
+                const activeCell = document.querySelector('.student-cell.active');
+                if (activeCell) {
+                    const rect = activeCell.getBoundingClientRect();
+                    const viewHeight = (window.innerHeight || document.documentElement.clientHeight);
+                    const margin = 60; 
+
+                    const isOutOfView = (rect.top < margin) || (rect.bottom > viewHeight - margin);
+
+                    if (isOutOfView) {
+                        activeCell.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+                }
+            }
+        }
+
+        async function openModal(item) {
+            currentManuscriptId = item.id;
+            currentCols = item.cols;
+            
+            if (currentCols === 20) {
+                currentRows = 20; 
+            } else if (currentCols === 25) {
+                currentRows = 28; 
+            } else {
+                currentRows = 20;
+            }
+
+            document.getElementById('editTitle').textContent = item.title;
+            document.getElementById('editModal').classList.add('show');
+            
+            render_paper_rs(currentRows, currentCols);
+            init_input_state(currentRows, currentCols); 
+            
+            const studentContent = item.content || "";
+            originalContent = studentContent;
+            hasUnsavedChanges = false;
+            
+            let teacherContent = "";
+            let markingContent = "[]";
+
+            if (item.approval_status) {
+                if (item.modified_text) teacherContent = item.modified_text;
+                if (item.error_text) markingContent = item.error_text;
+            }
+            
+            currentErrorText = markingContent;
+
+            try {
+                load_full_data_rs(studentContent, teacherContent, markingContent, currentCols); 
+            } catch (e) {
+                console.error("데이터 로드 중 오류:", e);
+                fill_grid_content(studentContent, "student", currentCols);
+            }
+            
+            currentLayer = "student";
+            switch_layer_rs("student");
+            updateLayerButton();
+            document.getElementById('hideEmptyRowsCheck').checked = false;
+
+            set_cursor_pos(0);
+            
+            setTimeout(() => {
+                focusAndScroll(true);
+            }, 100);
+        }
+        
+        function updateLayerButton() {
+            const btn = document.getElementById('layerToggleBtn');
+            if (currentLayer === "student") {
+                btn.className = 'layer-toggle-btn student-active';
+                btn.textContent = '학생모드 ( Tab )';
+            } else {
+                btn.className = 'layer-toggle-btn teacher-active';
+                btn.textContent = '첨삭 모드 ( Tab )';
+            }
+        }
+        
+        function toggleLayer() {
+            force_stop_composition();
+            if (currentLayer === "student") {
+                currentLayer = "teacher";
+                switch_layer_rs('teacher');
+                setTimeout(() => { 
+                    draw_markings_rs(currentErrorText, currentCols); 
+                    focusAndScroll(false); 
+                }, 350);
+            } else {
+                currentLayer = "student";
+                switch_layer_rs('student');
+                clear_markings_rs(); 
+                setTimeout(() => {
+                    focusAndScroll(false); 
+                }, 50);
+            }
+            updateLayerButton();
+        }
+
+        function closeModal() {
+            force_stop_composition();
+            
+            if (hasUnsavedChanges) {
+                if (!confirm("저장하지 않은 변경사항이 있습니다. 정말 닫으시겠습니까?")) {
+                    return;
+                }
+            }
+            
+            document.getElementById('editModal').classList.remove('show');
+            currentManuscriptId = null;
+            currentLayer = "student";
+            hasUnsavedChanges = false;
+            originalContent = "";
+        }
+
+        function markAsChanged() {
+            hasUnsavedChanges = true;
+        }
+
+        function setupEventListeners() {
+            document.getElementById('loginBtn').addEventListener('click', async () => {
+                const cls = document.getElementById('studentClass').value;
+                const name = document.getElementById('studentName').value;
+                const pw = document.getElementById('studentPassword').value;
+                try {
+                    const res = await login_student(name, cls, pw);
+                    showStudentArea(res.student_name, res.class);
+                } catch (err) { alert(err); }
+            });
+            
+            document.getElementById('logoutBtn').addEventListener('click', () => { 
+                logout_student(); 
+                showLoginArea(); 
+            });
+            
+            document.getElementById('refreshBtn').addEventListener('click', loadData);
+            
+            document.getElementById('createBtn').addEventListener('click', async () => {
+                const title = document.getElementById('newTitle').value.trim();
+                const typeVal = document.getElementById('newCols').value; 
+                if (!title) { alert("제목을 입력해주세요."); return; }
+                const cols = parseInt(typeVal.split('_')[0]);
+                
+                try {
+                    const newManuscript = await create_new_manuscript(title, cols);
+                    alert("원고가 생성되었습니다.");
+                    document.getElementById('newTitle').value = "";
+                    loadData(); 
+                    if (newManuscript) {
+                        openModal(newManuscript);
+                    }
+                } catch(err) { alert(err); }
+            });
+
+            document.getElementById('closeModalBtn').addEventListener('click', closeModal);
+            document.getElementById('closeBtnBottom').addEventListener('click', closeModal);
+            document.getElementById('layerToggleBtn').addEventListener('click', toggleLayer);
+            
+            document.getElementById('undoBtn').addEventListener('click', () => {
+                undo();
+                markAsChanged();
+                setTimeout(() => focusAndScroll(true), 0); 
+            });
+            
+            document.getElementById('redoBtn').addEventListener('click', () => {
+                redo();
+                markAsChanged();
+                setTimeout(() => focusAndScroll(true), 0); 
+            });
+
+            document.addEventListener('keydown', (e) => {
+                const isModalOpen = document.getElementById('editModal').classList.contains('show');
+                if (e.key === 'Tab' && isModalOpen) {
+                    e.preventDefault();
+                    toggleLayer();
+                }
+                if (isModalOpen) {
+                    if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z')) { 
+                        e.preventDefault(); 
+                        if (e.shiftKey) redo(); 
+                        else undo(); 
+                        markAsChanged();
+                        return; 
+                    }
+                    if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || e.key === 'Y')) { 
+                        e.preventDefault(); 
+                        redo(); 
+                        markAsChanged();
+                        return; 
+                    }
+                    if ((e.ctrlKey || e.metaKey) && e.code === 'KeyC') { 
+                        e.preventDefault(); 
+                        const text = get_selected_text(); 
+                        if (text) navigator.clipboard.writeText(text); 
+                        return; 
+                    }
+                    if ((e.ctrlKey || e.metaKey) && e.code === 'KeyV') { 
+                        e.preventDefault(); 
+                        navigator.clipboard.readText().then(text => { 
+                            if (text) {
+                                paste_text_at_cursor(text); 
+                                markAsChanged();
+                            }
+                        }); 
+                        return; 
+                    }
+                    if ((e.ctrlKey || e.metaKey) && e.code === 'KeyX') { 
+                        e.preventDefault(); 
+                        const text = get_selected_text(); 
+                        if (text) { 
+                            navigator.clipboard.writeText(text).then(() => { 
+                                delete_selected_cells(); 
+                                markAsChanged();
+                            }); 
+                        } 
+                        return; 
+                    }
+                }
+            });
+            
+            document.getElementById('hideEmptyRowsCheck').addEventListener('change', (e) => {
+                toggle_empty_rows_rs(e.target.checked);
+                if (currentLayer === "teacher") {
+                    setTimeout(() => { draw_markings_rs(currentErrorText, currentCols); }, 350);
+                }
+            });
+
+            document.getElementById('saveBtn').addEventListener('click', async () => {
+                force_stop_composition();
+                if (!currentManuscriptId) return;
+                try {
+                    const content = read_grid_content(currentRows, currentCols);
+                    await save_student_content(currentManuscriptId, content);
+                    alert("원고가 저장되었습니다.");
+                    hasUnsavedChanges = false;
+                    originalContent = content;
+                    loadData();
+                } catch (err) { alert(err); }
+            });
+
+            const paper = document.getElementById('manuscriptPaper');
+            
+            paper.addEventListener('mousedown', (e) => {
+                const cell = e.target.closest('.student-cell');
+                if (cell) {
+                    const idx = parseInt(cell.dataset.index);
+                    if (!isNaN(idx)) {
+                        force_stop_composition();
+                        handle_cell_mousedown(idx, e.shiftKey);
+                        setTimeout(() => focusAndScroll(false), 0);
+                    }
+                }
+            });
+            
+            paper.addEventListener('mouseover', (e) => {
+                const cell = e.target.closest('.student-cell');
+                if (cell) {
+                    const idx = parseInt(cell.dataset.index);
+                    handle_cell_mouseenter(idx);
+                }
+            });
+            
+            window.addEventListener('mouseup', () => { handle_global_mouseup(); });
+
+            paper.addEventListener('compositionstart', (e) => {
+                if (e.target.id !== 'compositionInput') return; 
+                handle_composition_start();
+            });
+            
+            paper.addEventListener('compositionupdate', (e) => {
+                if (e.target.id !== 'compositionInput') return; 
+                handle_composition_update(e.data);
+            });
+            
+            paper.addEventListener('compositionend', (e) => {
+                if (e.target.id !== 'compositionInput') return; 
+                handle_composition_end(e.data);
+                markAsChanged();
+                setTimeout(() => focusAndScroll(true), 0);
+            });
+            
+            paper.addEventListener('input', (e) => {
+                if (e.target.id !== 'compositionInput') return;
+                if (e.isComposing) return;
+                if (e.data) {
+                    handle_input_event(e.data);
+                    markAsChanged();
+                    setTimeout(() => focusAndScroll(true), 0);
+                }
+            });
+            
+            paper.addEventListener('keydown', (e) => {
+                if (e.target.id !== 'compositionInput') return;
+                if (e.key === 'Tab') return; 
+                handle_keydown(e);
+                markAsChanged();
+                setTimeout(() => focusAndScroll(true), 0);
+            });
+            
+            paper.addEventListener('click', (e) => {
+                if (e.target.classList.contains('memo-toggle-btn')) {
+                    const idx = e.target.dataset.markIndex;
+                    const box = document.querySelector(`.memo-box[data-mark-index='${idx}']`);
+                    if (box) box.classList.toggle('expanded');
+                }
+            });
+        }
+        
+        window.addEventListener('resize', () => {
+            if (currentLayer === "teacher" && document.getElementById('editModal').classList.contains('show')) {
+                draw_markings_rs(currentErrorText, currentCols);
+            }
+        });
+    </script>
 </body>
 </html>
