@@ -1,0 +1,340 @@
+/* ===== 기본 스타일 ===== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Malgun Gothic', sans-serif; padding: 20px; background-color: #1a1a1a; color: #e0e0e0; }
+.container { max-width: 1600px; margin: 0 auto; }
+
+/* ===== 로그인 영역 ===== */
+.login-area { background-color: #2d2d2d; padding: 50px; border-radius: 10px; max-width: 500px; margin: 100px auto; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+.login-area h1 { text-align: center; margin-bottom: 30px; color: #2196F3; }
+.login-form { display: flex; flex-direction: column; gap: 15px; }
+.login-form label { font-weight: bold; color: #ffffff; }
+.login-form input, .login-form select { padding: 12px; border: 1px solid #555; border-radius: 5px; background-color: #3d3d3d; color: #ffffff; font-size: 16px; }
+.login-btn { padding: 15px; background-color: #2196F3; color: white; border: none; border-radius: 5px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+.login-btn:hover { background-color: #1976D2; }
+
+/* ===== 메인 영역 ===== */
+.teacher-area { background-color: #2d2d2d; padding: 30px; border-radius: 10px; box-shadow: 0 2px 20px rgba(0,0,0,0.5); }
+.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #2196F3; }
+.header h1 { color: #2196F3; }
+.teacher-info { display: flex; align-items: center; gap: 15px; }
+.teacher-info span { color: #ffffff; font-weight: bold; }
+.logout-btn { padding: 8px 20px; background-color: #EF4444; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+.logout-btn:hover { background-color: #DC2626; }
+
+/* ===== 필터/새로고침 영역 ===== */
+.filter-section { background-color: #3d3d3d; padding: 20px; border-radius: 5px; margin-bottom: 30px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
+.refresh-btn { padding: 8px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; background-color: #10B981; color: white; }
+.refresh-btn:hover { background-color: #059669; }
+
+/* ===== 원고 목록 ===== */
+.manuscripts-section h2 { color: #2196F3; margin-bottom: 20px; }
+.manuscripts-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px; }
+.manuscript-card { background-color: #3d3d3d; padding: 20px; border-radius: 8px; border: 2px solid #555; cursor: pointer; transition: all 0.3s; }
+.manuscript-card:hover { border-color: #2196F3; transform: translateY(-2px); box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3); }
+.manuscript-card .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.manuscript-card .class-badge { background-color: #2196F3; color: white; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+.manuscript-card .title { font-size: 16px; color: #ffffff; margin-bottom: 8px; }
+.manuscript-card .info { font-size: 13px; color: #aaa; margin-bottom: 5px; }
+
+/* ===== 모달 ===== */
+.modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); overflow-y: auto; padding: 20px 0; }
+.modal.show { display: block; }
+.modal-content-large { 
+    background-color: #2d2d2d; 
+    margin: 0 auto 40px auto; 
+    padding: 30px; 
+    border-radius: 10px; 
+    max-width: 1800px; 
+    border: 2px solid #2196F3; 
+    display: flex; 
+    flex-direction: column; 
+    min-height: auto; 
+    position: relative; 
+}
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #2196F3; flex-shrink: 0; }
+.modal-header h2 { color: #2196F3; margin: 0; }
+.close-btn { background-color: #EF4444; color: white; border: none; padding: 8px 15px; border-radius: 5px; font-size: 20px; cursor: pointer; font-weight: bold; }
+.close-btn:hover { background-color: #DC2626; }
+
+/* ===== 레이어 전환 영역 ===== */
+.layer-switch { background-color: #3d3d3d; padding: 15px; border-radius: 5px; margin: 0 auto 20px auto; text-align: center; width: fit-content; min-width: 400px; flex-shrink: 0; }
+.layer-button-container { display: flex; align-items: center; justify-content: center; gap: 15px; }
+.layer-toggle-btn { padding: 12px 30px; border: 2px solid transparent; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.3s; color: white; min-width: 200px; }
+.layer-toggle-btn.student-active { background-color: #4CAF50; border-color: #45a049; box-shadow: 0 0 15px rgba(76, 175, 80, 0.6); }
+.layer-toggle-btn.teacher-active { background-color: #dc3545; border-color: #c82333; box-shadow: 0 0 15px rgba(220, 53, 69, 0.6); }
+
+/* ===== 빈 줄 숨기기 ===== */
+.empty-row-label { display: flex; align-items: center; gap: 10px; color: #ffffff; font-size: 14px; cursor: pointer; padding: 12px 20px; background-color: #2a2a2a; border: 2px solid #555; border-radius: 5px; transition: all 0.3s; }
+.empty-row-label:hover { background-color: #3a3a3a; border-color: #777; }
+.empty-row-checkbox { width: 18px; height: 18px; cursor: pointer; }
+.empty-row-text { line-height: 1.2; text-align: center; }
+
+/* ===== 원고지 컨테이너 ===== */
+.manuscript-memo-container { display: flex; justify-content: center; width: 100%; overflow: visible; margin-bottom: 20px; flex-grow: 1; }
+.manuscript-center { display: flex; justify-content: center; width: 100%; }
+.manuscript-wrapper { position: relative; flex-shrink: 0; display: inline-block; }
+
+/* ===== 원고지 ===== */
+.manuscript-paper { 
+    display: flex; 
+    flex-direction: column; 
+    margin: 0 auto; 
+    border: 2px solid #555; 
+    background-color: #2d2d2d; 
+    padding: 10px; 
+    width: fit-content; 
+    position: relative; 
+    margin-bottom: 80px; 
+    transition: all 0.3s ease; 
+    box-sizing: border-box; /* 패딩 포함 */
+}
+
+/* 원고지 row */
+.manuscript-row { 
+    display: flex; 
+    width: fit-content; 
+    height: 42px; 
+    transition: height 0.3s ease, margin-bottom 0.3s ease; 
+}
+
+/* ⭐ 선생모드에서 row 높이 확장 */
+.manuscript-paper.teacher-mode-active .manuscript-row { 
+    height: 84px; 
+    margin-bottom: 10px; 
+}
+
+/* 셀 래퍼 */
+.cell-wrapper { 
+    position: relative; 
+    width: 42px; 
+    height: 100%; 
+    flex-shrink: 0; 
+}
+
+/* ===== 셀 기본 스타일 ===== */
+.cell { 
+    width: 42px; 
+    height: 42px; 
+    border-right: 1px solid #555; 
+    border-bottom: 1px solid #555; 
+    position: absolute; 
+    top: 0; 
+    left: 0; 
+    cursor: text; 
+}
+.cell-wrapper:first-child .cell { border-left: 1px solid #555; }
+
+/* 윗줄 테두리 처리 */
+.manuscript-row:first-child .cell { border-top: 1px solid #555; }
+.manuscript-paper.teacher-mode-active .cell { border-top: 1px solid #555 !important; }
+
+/* 학생 셀: 항상 클릭 가능 */
+.cell.student-cell { 
+    background-color: #1a1a1a; 
+    z-index: 5; 
+    cursor: text;
+}
+
+/* 활성 셀 */
+.cell.active { 
+    background-color: #1e3a5f !important; 
+    border: 2px solid #4CAF50; 
+    z-index: 20; 
+}
+
+/* 셀 십자선 */
+.cell::before { 
+    content: ''; 
+    position: absolute; 
+    top: 50%; 
+    left: 50%; 
+    transform: translate(-50%, -50%); 
+    width: 1px; 
+    height: 100%; 
+    background-color: #404040; 
+    z-index: 0; 
+    pointer-events: none; 
+}
+.cell::after { 
+    content: ''; 
+    position: absolute; 
+    top: 50%; 
+    left: 50%; 
+    transform: translate(-50%, -50%); 
+    width: 100%; 
+    height: 1px; 
+    background-color: #404040; 
+    z-index: 0; 
+    pointer-events: none; 
+}
+
+/* 셀 내용 */
+.cell-content { 
+    position: relative; 
+    width: 100%; 
+    height: 100%; 
+    z-index: 5; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    font-size: 28px; 
+    color: #ffffff; 
+    pointer-events: none; 
+}
+
+/* ===== 선생님 셀 스타일 ===== */
+/* ⭐ [핵심] pointer-events: none으로 설정하여 클릭이 투과되도록 함 */
+.cell.teacher-cell {
+    background-color: transparent !important;
+    z-index: 100 !important;
+    pointer-events: none; 
+}
+
+/* ⭐ 선생모드에서 teacher-cell 위치 (학생 셀 아래) */
+.manuscript-paper.teacher-mode-active .cell.teacher-cell {
+    top: 42px !important;
+}
+
+/* 선생님 글자 스타일 */
+.teacher-cell .cell-content { 
+    color: #FF6B6B; 
+    font-weight: bold;
+    text-shadow: 1px 1px 1px rgba(0,0,0,0.5);
+}
+
+/* ===== 입력창 ===== */
+.composition-input { 
+    position: absolute; 
+    background: transparent; 
+    border: none; 
+    outline: none; 
+    text-align: center; 
+    font-size: 28px; 
+    color: transparent; 
+    width: 43px; 
+    height: 43px; 
+    z-index: 30; 
+    line-height: 43px; 
+    pointer-events: auto; /* 입력창은 클릭 가능 */
+    caret-color: transparent;
+}
+
+/* ===== 에러 라인 (SVG) 컨테이너 ===== */
+.error-line-container { 
+    position: absolute; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%; 
+    pointer-events: none; 
+    z-index: 15; 
+}
+.error-line-svg { 
+    width: 100%; 
+    height: 100%; 
+}
+
+/* ===== 편집 컨트롤 (저장 버튼 영역) ===== */
+.edit-controls { 
+    display: flex; 
+    gap: 10px; 
+    justify-content: center; 
+    padding: 20px; 
+    background-color: #3d3d3d; 
+    border-radius: 5px; 
+    width: fit-content; 
+    align-self: center; 
+    margin-top: auto; 
+    z-index: 100; 
+    border: 1px solid #555; 
+}
+.edit-controls button { 
+    padding: 12px 25px; 
+    border: none; 
+    border-radius: 5px; 
+    font-size: 15px; 
+    font-weight: bold; 
+    cursor: pointer; 
+}
+.save-btn { background-color: #4CAF50; color: white; }
+.save-btn:hover { background-color: #45a049; }
+.cancel-btn { background-color: #6c757d; color: white; }
+.cancel-btn:hover { background-color: #5a6268; }
+
+/* ===== 메모 박스 ===== */
+.memo-box {
+    position: absolute;
+    background: rgba(255, 255, 200, 0.95);
+    border: 2px solid #e0c000;
+    border-radius: 4px;
+    z-index: 250;
+    overflow: hidden;
+    transition: height 0.3s ease;
+}
+
+.memo-box.expanded {
+    height: 126px !important;
+}
+
+.memo-textarea {
+    width: 100%;
+    height: 100%;
+    border: none;
+    resize: none;
+    background: transparent;
+    padding: 5px;
+    font-size: 14px;
+    color: #333;
+    outline: none;
+    overflow: hidden; 
+}
+
+.memo-toggle-btn {
+    position: absolute;
+    z-index: 260;
+    cursor: pointer;
+    background: #3d3d3d;
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+
+.memo-toggle-btn:hover {
+    background: #555;
+}
+
+/* ===== Undo/Redo 버튼 ===== */
+.undo-btn, .redo-btn {
+    background-color: #6c757d;
+    color: white;
+}
+.undo-btn:hover:not(:disabled), .redo-btn:hover:not(:disabled) {
+    background-color: #5a6268;
+}
+.undo-btn:disabled, .redo-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ===== 승인 배지 ===== */
+.approval-badge {
+    background-color: #10B981;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    margin-left: 8px;
+}
+
+.modified-status {
+    font-size: 12px;
+    margin-top: 8px;
+}
+.modified-status.has-modified {
+    color: #FF6B6B;
+}
+.modified-status.no-modified {
+    color: #888;
+}

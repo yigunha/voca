@@ -1,0 +1,15 @@
+{
+  "name": "wongoji",
+  "type": "module",
+  "version": "0.1.0",
+  "files": [
+    "wongoji_bg.wasm",
+    "wongoji.js",
+    "wongoji.d.ts"
+  ],
+  "main": "wongoji.js",
+  "types": "wongoji.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}
