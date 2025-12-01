@@ -1,6 +1,3 @@
-import { copy_to_clipboard } from './snippets/wongoji-92b25cb9c436c4cc/inline0.js';
-import * as __wbg_star0 from './snippets/wongoji-92b25cb9c436c4cc/inline0.js';
-
 let wasm;
 
 let cachedUint8ArrayMemory0 = null;
@@ -537,6 +534,10 @@ export function force_stop_composition() {
     wasm.force_stop_composition();
 }
 
+export function create_initial_snapshot() {
+    wasm.create_initial_snapshot();
+}
+
 /**
  * @param {string} markings_json
  * @param {number} cols
@@ -764,9 +765,6 @@ function __wbg_get_imports() {
         getDataViewMemory0().setInt32(arg0 + 4 * 1, len1, true);
         getDataViewMemory0().setInt32(arg0 + 4 * 0, ptr1, true);
     }, arguments) };
-    imports.wbg.__wbg_copy_to_clipboard_637111885b46d8ee = function(arg0, arg1) {
-        copy_to_clipboard(getStringFromWasm0(arg0, arg1));
-    };
     imports.wbg.__wbg_createElementNS_78de14b111af2832 = function() { return handleError(function (arg0, arg1, arg2, arg3, arg4) {
         const ret = arg0.createElementNS(arg1 === 0 ? undefined : getStringFromWasm0(arg1, arg2), getStringFromWasm0(arg3, arg4));
         return ret;
@@ -828,10 +826,6 @@ function __wbg_get_imports() {
         const ret = Reflect.get(arg0, arg1);
         return ret;
     }, arguments) };
-    imports.wbg.__wbg_hasAttribute_d827bd0036f975da = function(arg0, arg1, arg2) {
-        const ret = arg0.hasAttribute(getStringFromWasm0(arg1, arg2));
-        return ret;
-    };
     imports.wbg.__wbg_height_ba3edd16b1f48a4a = function(arg0) {
         const ret = arg0.height;
         return ret;
@@ -1219,14 +1213,14 @@ function __wbg_get_imports() {
         const ret = getStringFromWasm0(arg0, arg1);
         return ret;
     };
+    imports.wbg.__wbindgen_cast_75c370d51f9cd57d = function(arg0, arg1) {
+        // Cast intrinsic for `Closure(Closure { dtor_idx: 101, function: Function { arguments: [Externref], shim_idx: 102, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
+        const ret = makeMutClosure(arg0, arg1, wasm.wasm_bindgen__closure__destroy__h7478a835394e7be4, wasm_bindgen__convert__closures_____invoke__ha773d59f2f8084c9);
+        return ret;
+    };
     imports.wbg.__wbindgen_cast_9ae0607507abb057 = function(arg0) {
         // Cast intrinsic for `I64 -> Externref`.
         const ret = arg0;
-        return ret;
-    };
-    imports.wbg.__wbindgen_cast_af3ce77be917b34a = function(arg0, arg1) {
-        // Cast intrinsic for `Closure(Closure { dtor_idx: 102, function: Function { arguments: [Externref], shim_idx: 103, ret: Unit, inner_ret: Some(Unit) }, mutable: true }) -> Externref`.
-        const ret = makeMutClosure(arg0, arg1, wasm.wasm_bindgen__closure__destroy__h7478a835394e7be4, wasm_bindgen__convert__closures_____invoke__ha773d59f2f8084c9);
         return ret;
     };
     imports.wbg.__wbindgen_cast_d6cd19b81560fd6e = function(arg0) {
@@ -1244,7 +1238,6 @@ function __wbg_get_imports() {
         table.set(offset + 3, false);
         ;
     };
-    imports['./snippets/wongoji-92b25cb9c436c4cc/inline0.js'] = __wbg_star0;
 
     return imports;
 }
