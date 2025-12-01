@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>원고지 - 학생용 (WASM)</title>
-    <link rel="stylesheet" href="./wongoji/teacher_style.css">
+    <link rel="stylesheet" href="./wongoji/style.css">
     <style>
         body { opacity: 0; transition: opacity 0.5s; }
         body.loaded { opacity: 1; }
@@ -30,7 +30,7 @@
 <body>
     <div class="container">
         <div class="login-area" id="loginArea">
-            <h1>🐣 학생 로그인</h1>
+            <h1>🏫 학생 로그인</h1>
             <div class="login-form">
                 <label for="studentClass">반 선택:</label>
                 <select id="studentClass">
@@ -120,7 +120,7 @@
             handle_input_event, handle_keydown, force_stop_composition, toggle_empty_rows_rs,
             handle_cell_mousedown, handle_cell_mouseenter, handle_global_mouseup,
             get_selected_text, paste_text_at_cursor, delete_selected_cells,
-            undo, redo, get_cookie
+            undo, redo, get_cookie, create_initial_snapshot
         } from './wongoji/pkg/wongoji.js';
 
         let currentCols = 20;
@@ -195,7 +195,8 @@
             });
         }
 
-        function focusAndScroll(allowAutoScroll) {
+     
+function focusAndScroll(allowAutoScroll) {
             const input = document.getElementById('compositionInput');
             if (input) {
                 input.focus({ preventScroll: true });
@@ -251,9 +252,20 @@
 
             try {
                 load_full_data_rs(studentContent, teacherContent, markingContent, currentCols); 
+                
+                // ✅ 데이터 로드 완료 후 초기 스냅샷 생성
+                setTimeout(() => {
+                    create_initial_snapshot();
+                }, 50);
+                
             } catch (e) {
                 console.error("데이터 로드 중 오류:", e);
                 fill_grid_content(studentContent, "student", currentCols);
+                
+                // ✅ 오류 시에도 초기 스냅샷 생성
+                setTimeout(() => {
+                    create_initial_snapshot();
+                }, 50);
             }
             
             currentLayer = "student";
@@ -275,7 +287,7 @@
                 btn.textContent = '학생모드 ( Tab )';
             } else {
                 btn.className = 'layer-toggle-btn teacher-active';
-                btn.textContent = '첨삭 모드 ( Tab )';
+                btn.textContent = '선생모드 ( Tab )';
             }
         }
         
@@ -372,11 +384,14 @@
 
             document.addEventListener('keydown', (e) => {
                 const isModalOpen = document.getElementById('editModal').classList.contains('show');
+                
                 if (e.key === 'Tab' && isModalOpen) {
                     e.preventDefault();
                     toggleLayer();
                 }
+                
                 if (isModalOpen) {
+                    // 1. Undo / Redo 처리
                     if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z')) { 
                         e.preventDefault(); 
                         if (e.shiftKey) redo(); 
@@ -390,28 +405,36 @@
                         markAsChanged();
                         return; 
                     }
+                    
+                    // 2. 복사 (Copy)
                     if ((e.ctrlKey || e.metaKey) && e.code === 'KeyC') { 
                         e.preventDefault(); 
                         const text = get_selected_text(); 
-                        if (text) navigator.clipboard.writeText(text); 
+                        if (text) {
+                            navigator.clipboard.writeText(text); 
+                        }
                         return; 
                     }
+                    
+                    // 3. 붙여넣기 (Paste)
                     if ((e.ctrlKey || e.metaKey) && e.code === 'KeyV') { 
                         e.preventDefault(); 
                         navigator.clipboard.readText().then(text => { 
                             if (text) {
-                                paste_text_at_cursor(text); 
+                                paste_text_at_cursor(text);
                                 markAsChanged();
                             }
                         }); 
                         return; 
                     }
+                    
+                    // 4. 잘라내기 (Cut)
                     if ((e.ctrlKey || e.metaKey) && e.code === 'KeyX') { 
                         e.preventDefault(); 
                         const text = get_selected_text(); 
                         if (text) { 
                             navigator.clipboard.writeText(text).then(() => { 
-                                delete_selected_cells(); 
+                                delete_selected_cells();
                                 markAsChanged();
                             }); 
                         } 
@@ -494,9 +517,14 @@
             paper.addEventListener('keydown', (e) => {
                 if (e.target.id !== 'compositionInput') return;
                 if (e.key === 'Tab') return; 
-                handle_keydown(e);
-                markAsChanged();
-                setTimeout(() => focusAndScroll(true), 0);
+                
+                if (e.ctrlKey || e.metaKey || e.key === 'Shift' || e.key === 'Alt') {
+                    // Ctrl, Shift, Alt 조합은 WASM의 handle_keydown으로 전달하지 않음
+                } else {
+                    handle_keydown(e);
+                    markAsChanged();
+                    setTimeout(() => focusAndScroll(true), 0);
+                }
             });
             
             paper.addEventListener('click', (e) => {
@@ -516,3 +544,6 @@
     </script>
 </body>
 </html>
+
+
+
