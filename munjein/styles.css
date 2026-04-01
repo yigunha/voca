@@ -25,96 +25,473 @@ body {
     border-radius: 12px;
     padding: 15px;
     box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    position: relative;
 }
 
-.main-menu { background: #374151; border-radius: 8px; padding: 20px; text-align: center; }
-.main-menu h2 { color: #f3f4f6; margin-bottom: 20px; font-size: 1.3em; }
-.main-menu-buttons { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-.main-menu-btn { padding: 20px; border: none; border-radius: 8px; font-weight: bold; font-size: 1.2em; cursor: pointer; background: #3b82f6; color: white; transition: all 0.3s; }
+/* 메인 메뉴 */
+.main-menu {
+    background: #374151;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+}
 
-.level-selector { background: #374151; border-radius: 8px; padding: 20px; margin-bottom: 15px; }
-.level-title { background: #1f2937; color: #f3f4f6; padding: 15px; border-radius: 8px; text-align: center; font-size: 1.3em; font-weight: bold; margin-bottom: 15px; }
-.back-btn { width: 100%; padding: 10px; margin-bottom: 15px; border: none; border-radius: 6px; background: #6b7280; color: white; cursor: pointer; }
-.level-buttons { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-.level-btn { padding: 15px 10px; border: none; border-radius: 8px; font-weight: bold; background: #3b82f6; color: white; cursor: pointer; }
+.main-menu h2 {
+    color: #f3f4f6;
+    margin-bottom: 20px;
+    font-size: 1.3em;
+}
 
-/* 오디오 플레이어 & 슬라이더 한 줄 배치 */
-.audio-player { background: #374151; border-radius: 8px; padding: 12px; margin-bottom: 12px; }
-.audio-controls { display: flex; gap: 5px; justify-content: center; margin-bottom: 10px; }
-.audio-btn { padding: 8px 10px; border: none; border-radius: 6px; background: #3b82f6; color: white; font-size: 0.85em; font-weight: bold; cursor: pointer; }
-.speed-select { background: #4b5563; color: white; padding: 0 5px; border-radius: 6px; border: none; font-size: 0.85em; cursor: pointer; }
+.main-menu-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
 
-.audio-options.single-line {
+.main-menu-btn {
+    padding: 20px;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 1.2em;
+    cursor: pointer;
+    background: #3b82f6;
+    color: white;
+    transition: all 0.3s;
+}
+
+.main-menu-btn:hover {
+    background: #2563eb;
+    transform: scale(1.05);
+}
+
+/* 레벨 선택 */
+.level-selector {
+    background: #374151;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 15px;
+}
+
+.level-title {
+    background: #1f2937;
+    color: #f3f4f6;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 1.3em;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+.back-btn {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: none;
+    border-radius: 6px;
+    background: #6b7280;
+    color: white;
+    font-size: 1em;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.back-btn:hover {
+    background: #4b5563;
+}
+
+.level-buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+
+.level-btn {
+    padding: 15px 10px;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 1em;
+    cursor: pointer;
+    background: #3b82f6;
+    color: white;
+    transition: all 0.3s;
+}
+
+.level-btn:hover {
+    background: #2563eb;
+    transform: scale(1.05);
+}
+
+.level-btn.selected {
+    background: #22c55e;
+}
+
+/* 게임 영역 */
+.game-area {
+    position: relative;
+}
+
+/* 그림 오버레이 */
+.picture-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
     display: flex;
-    flex-direction: row; /* 무조건 가로 배치 */
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+    cursor: pointer;
+    padding: 20px;
+}
+
+.picture-overlay img {
+    max-width: 90%;
+    max-height: 80vh;
+    object-fit: contain;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    border: 3px solid #60a5fa;
+}
+
+.picture-overlay.hidden {
+    display: none;
+}
+
+/* 지문 오버레이 */
+.passage-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+    cursor: pointer;
+    padding: 20px;
+}
+
+.passage-overlay.hidden {
+    display: none;
+}
+
+.passage-content-wrapper {
+    background: #1f2937;
+    border-radius: 12px;
+    border: 3px solid #60a5fa;
+    max-width: 90%;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    cursor: default;
+}
+
+.passage-content {
+    color: #f3f4f6;
+    font-size: 1.1em;
+    line-height: 1.8;
+    padding: 30px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.passage-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.passage-content::-webkit-scrollbar-track {
+    background: #374151;
+    border-radius: 4px;
+}
+
+.passage-content::-webkit-scrollbar-thumb {
+    background: #60a5fa;
+    border-radius: 4px;
+}
+
+.passage-content::-webkit-scrollbar-thumb:hover {
+    background: #3b82f6;
+}
+
+.passage-close-btn {
+    margin: 15px 30px 30px;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    background: #3b82f6;
+    color: white;
+    font-size: 1em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.passage-close-btn:hover {
+    background: #2563eb;
+}
+
+/* 오디오 플레이어 */
+.audio-player {
+    background: #374151;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.audio-controls {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.audio-btn {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 6px;
+    background: #3b82f6;
+    color: white;
+    font-size: 0.9em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.audio-btn:hover {
+    background: #2563eb;
+}
+
+.audio-btn.loop-btn {
+    background: #6b7280;
+}
+
+.audio-btn.loop-btn.active {
+    background: #10b981;
+}
+
+.audio-btn.loop-btn:hover {
+    opacity: 0.9;
+}
+
+.audio-options {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
     gap: 10px;
-    align-items: center;
 }
 
-.time-group {
-    flex: 1;
-    display: flex;
-    flex-direction: row; /* 라벨과 슬라이더도 가로 배치 */
+.content-section {
+    background: #374151;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 15px;
+    transition: all 0.3s ease;
+}
+
+.content-section.hidden {
+    display: none;
+}
+
+.sentence {
+    color: #f3f4f6;
+    font-size: 1.2em;
+    line-height: 1.6;
+    margin-bottom: 15px;
+    white-space: pre-line;
+}
+
+.sentence .blank {
+    display: inline-block;
+    padding: 8px 16px;
+    background: #1f2937;
+    border: 2px solid #60a5fa;
+    border-radius: 6px;
+    color: #9ca3af;
+    font-size: 0.85em;
+    min-width: 120px;
+    text-align: center;
+}
+
+/* jimuns 모드 스타일 추가 */
+.jimuns-text {
+    white-space: pre-wrap;
+    display: inline;
+    color: #f3f4f6;
+}
+
+.jimuns-input-group {
+    display: inline-flex;
+    flex-direction: row;
     align-items: center;
+    position: relative;
+    overflow: visible;
+    z-index: 1;
+    vertical-align: middle;
     gap: 5px;
 }
 
-.time-group label {
-    font-size: 0.75em;
-    color: #9ca3af;
-    white-space: nowrap;
-    min-width: 45px;
-}
-
-.time-group input[type="range"] {
-    flex: 1;
-    height: 4px;
+.jimuns-input {
+    display: inline-block;
+    font-size: 1.2em;
+    font-weight: bold;
+    padding: 5px;
+    border: 3px solid #ddd;
+    border-radius: 8px;
+    width: auto;
+    text-align: center;
+    transition: border-color 0.3s, background-color 0.3s;
+    margin: 0px;
+    vertical-align: middle;
+    position: relative;
+    z-index: 1;
     background: #1f2937;
-    cursor: pointer;
+    color: #f3f4f6;
 }
 
-/* 문제 번호 선택 드롭다운 */
-.level-display {
-    background-color: #2b2f34;
-    padding: 5px 8px;
-    border-radius: 5px;
-    color: #e0e0e0;
-    font-size: 14px;
+.jimuns-input:focus {
+    outline: none;
+    border-color: #60a5fa;
+}
+
+.jimuns-answer-btn,
+.jimuns-hint-btn {
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    font-size: 1.2rem;
+    line-height: 1;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 3px;
+    justify-content: center;
+    transition: background-color 0.2s, transform 0.1s;
+    flex-shrink: 0;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
-.problem-select {
-    background: transparent;
-    color: #60a5fa;
-    border: none;
-    font-weight: bold;
-    font-size: 16px;
+.jimuns-answer-btn {
+    background-color: #28a745;
+    color: white;
+}
+
+.jimuns-hint-btn {
+    background-color: #007bff;
+    color: white;
+}
+
+.jimuns-answer-btn:hover,
+.jimuns-hint-btn:hover {
+    transform: scale(1.05);
+}
+
+.jimuns-answer-btn:active,
+.jimuns-hint-btn:active {
+    transform: scale(0.95);
+}
+
+.jimuns-answer-hint {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10000;
+    margin-top: 4px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border: 1px solid #28a745;
+    overflow: visible;
+    min-width: 120px;
+    padding: 1px 4px;
+    line-height: 1;
+}
+
+.jimuns-answer-current {
+    background-color: #e8f5e8;
+    color: #28a745;
+    padding: 6px 12px;
+    border-radius: 6px;
     cursor: pointer;
-    outline: none;
+    font-weight: bold;
+    white-space: nowrap;
+    font-size: 1rem;
 }
 
-.content-section { background: #374151; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
-.sentence { color: #f3f4f6; font-size: 1.2em; line-height: 1.6; }
-.answer-section { background: #374151; border: 2px solid #6b7280; border-radius: 8px; padding: 12px; margin-bottom: 15px; }
-.answer-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-.control-buttons { display: flex; gap: 6px; }
-.control-btn { padding: 6px 10px; border: none; border-radius: 5px; color: white; font-weight: bold; cursor: pointer; font-size: 0.85em; }
-.picture-btn { background: #f59e0b; } .hint-btn { background: #3b82f6; } .answer-btn { background: #10b981; }
-.answer-input { width: 100%; padding: 12px; border-radius: 6px; background: #1f2937; color: white; border: 2px solid #4b5563; }
+.jimuns-answer-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 5px;
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    display: none;
+    flex-direction: column;
+    z-index: 10002;
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 5px 0;
+}
 
-.message { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 30px; border-radius: 12px; z-index: 1001; opacity: 0; transition: opacity 0.3s; }
-.message.show { opacity: 1; }
-.message.success { color: #10b981; border: 3px solid #10b981; background: #1f2937; }
-.message.fail { color: #ef4444; border: 3px solid #ef4444; background: #1f2937; }
+.jimuns-answer-dropdown.show {
+    display: flex;
+}
 
-.buttons { display: flex; gap: 8px; justify-content: center; }
-.btn { flex: 1; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; border: none; }
-.btn-start { background: #22c55e; color: white; }
-.btn-stop { background: #ef4444; color: white; }
-.hidden { display: none; }
+.jimuns-answer-item {
+    padding: 8px 15px;
+    cursor: pointer;
+    white-space: nowrap;
+    line-height: 1;
+    color: #444;
+    font-size: 1rem;
+}
 
-.picture-overlay, .passage-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 999; }
-.passage-content-wrapper { background: #1f2937; border-radius: 12px; border: 3px solid #60a5fa; max-width: 90%; max-height: 85vh; padding: 20px; }
-.passage-content { color: white; overflow-y: auto; white-space: pre-wrap; }
+.jimuns-answer-item:hover,
+.jimuns-answer-item.selected {
+    background-color: #f0f0f0;
+}
+
+.jimuns-description-hint {
+    display: none;
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10000;
+    margin-bottom: 8px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border: 1px solid #007bff;
+    padding: 8px 12px;
+    white-space: nowrap;
+    color: #444;
+    font-size: 1rem;
+    line-height: 1.4;
+}
+
+.opt-description {
+    color: #fbbf24;
+    font-size: 0.95em;
+    margin-bottom: 10px;
+    padding: 8px;
+    background: #1f2937;
+    border-radius: 6px;
+}
+
+.options-grid {
+    display: grid;
+    grid-template-columns:

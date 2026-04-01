@@ -2,194 +2,210 @@ let wasmModule = null;
 let selectedMainMenu = null;
 let selectedLevel = null;
 let gameData = [];
-let level = 0; 
+let level = 0;
 let currentProblem = null;
 let gameState = 'ready';
+let gameStartTime = 0;
 let userClass = '';
 let solvedProblems = new Set();
+let usedHintOrAnswer = false;
 
 async function initWasm() {
     try {
         const wasm = await import('./pkg/korean_game_wasm.js');
         await wasm.default();
         wasmModule = wasm;
-        if (!wasm.verify_location()) return false;
+        console.log('WASM 초기화:', wasm.get_version());
+        
+        if (!wasm.verify_location()) {
+            document.body.innerHTML = '<div style="color: white; text-align: center; padding: 50px;">⚠️ 인증되지 않은 위치입니다.<br>이 페이지는 허가된 위치에서만 실행할 수 있습니다.</div>';
+            throw new Error('Unauthorized location');
+        }
+        
         return true;
-    } catch (e) { return false; }
+    } catch (error) {
+        console.error('WASM 로드 실패:', error);
+        alert('시스템을 초기화할 수 없습니다.');
+        return false;
+    }
 }
 
 function checkLogin() {
     if (!wasmModule) return false;
+    
     try {
-        if (!wasmModule.check_login_status()) { window.location.href = '../munjein.html'; return false; }
+        if (!wasmModule.check_login_status()) {
+            window.location.href = '../munjein.html'; 
+            return false;
+        }
+        
+        wasmModule.refresh_cookies();
+        
         const fullClass = wasmModule.get_cookie('studentClass');
         userClass = fullClass.substring(0, 2);
-        document.getElementById('mainMenuTitle').textContent = `${userClass} 학습 모드 선택`;
-        const saved = localStorage.getItem(`solved_${userClass}`);
-        if (saved) solvedProblems = new Set(JSON.parse(saved));
+        
+        const mainMenuTitle = document.getElementById('mainMenuTitle');
+        if (mainMenuTitle) {
+            mainMenuTitle.textContent = `${userClass} 학습 모드 선택`;
+        }
+        
+        loadSolvedProblems();
+        
         return true;
-    } catch (e) { return false; }
+    } catch (error) {
+        console.error('로그인 확인 실패:', error);
+        window.location.href = '../munjein.html';
+        return false;
+    }
 }
+
+function loadSolvedProblems() {
+    try {
+        const saved = localStorage.getItem(`solved_${userClass}`);
+        if (saved) {
+            solvedProblems = new Set(JSON.parse(saved));
+        }
+    } catch (e) {
+        console.error('해결한 문제 로드 실패:', e);
+    }
+}
+
+function saveSolvedProblems() {
+    try {
+        localStorage.setItem(`solved_${userClass}`, JSON.stringify([...solvedProblems]));
+    } catch (e) {
+        console.error('해결한 문제 저장 실패:', e);
+    }
+}
+
+function resetSolvedProblems() {
+    if (confirm('모든 학습 기록을 초기화하시겠습니까?')) {
+        solvedProblems.clear();
+        saveSolvedProblems();
+        alert('학습 기록이 초기화되었습니다.');
+        backToMainMenu();
+    }
+}
+
+window.logout = function() {
+    if (wasmModule) {
+        try {
+            wasmModule.delete_cookie('studentName');
+            wasmModule.delete_cookie('studentClass');
+            wasmModule.delete_cookie('studentPassword');
+        } catch (e) {
+            console.error('로그아웃 오류:', e);
+        }
+    }
+    window.location.href = '../munjein.html?logout=true'; 
+};
 
 window.selectMainMenu = function(menu) {
     selectedMainMenu = menu;
+    
     document.getElementById('mainMenu').classList.add('hidden');
     document.getElementById('levelSelector').classList.remove('hidden');
+    
     document.getElementById('levelTitle').textContent = `${userClass} ${menu}`;
-    const container = document.getElementById('levelButtons');
-    container.innerHTML = '';
+    
+    const levelButtonsContainer = document.getElementById('levelButtons');
+    levelButtonsContainer.innerHTML = '';
+    
     for (let i = 1; i <= 12; i++) {
         const btn = document.createElement('button');
         btn.className = 'level-btn';
         btn.textContent = `${i}과`;
         btn.onclick = () => selectLevel(menu, String(i).padStart(2, '0'));
-        container.appendChild(btn);
+        levelButtonsContainer.appendChild(btn);
     }
 };
 
-async function selectLevel(category, levelNum) {
-    selectedLevel = levelNum;
+window.backToMainMenu = function() {
+    document.getElementById('levelSelector').classList.add('hidden');
+    document.getElementById('gameArea').classList.add('hidden');
+    document.getElementById('mainMenu').classList.remove('hidden');
+    selectedMainMenu = null;
+    selectedLevel = null;
+    gameData = [];
+    resetGame();
+};
+
+async function loadEncryptedData(category, levelNum) {
     try {
         const fileName = `${userClass}/${category}/${levelNum}_encrypted.dat`;
         const response = await fetch(`./data/${fileName}`);
-        const bytes = new Uint8Array(await response.arrayBuffer());
-        gameData = JSON.parse(wasmModule.decrypt_xor(bytes));
+        const encryptedBytes = new Uint8Array(await response.arrayBuffer());
+        
+        const decryptedJson = wasmModule.decrypt_xor(encryptedBytes);
+        const fullData = JSON.parse(decryptedJson);
+        
+        return fullData;
+    } catch (error) {
+        console.error('데이터 로드 실패:', error);
+        throw error;
+    }
+}
+
+window.selectLevel = async function(category, levelNum) {
+    selectedLevel = levelNum;
+
+    try {
+        const data = await loadEncryptedData(category, levelNum);
+        
+        const unsolvedData = data.filter(item => !solvedProblems.has(item.id));
+        
+        if (unsolvedData.length === 0) {
+            if (confirm('모든 문제를 해결했습니다! 학습 기록을 초기화하시겠습니까?')) {
+                resetSolvedProblems();
+            }
+            return;
+        }
+        
+        gameData = unsolvedData;
         
         document.getElementById('levelSelector').classList.add('hidden');
         document.getElementById('gameArea').classList.remove('hidden');
         
-        level = 0; 
-        updateProblemDropdown(); 
         resetGame();
-    } catch (e) { alert('데이터 로드 실패'); }
-}
-
-// 문제 번호 드롭다운 갱신
-function updateProblemDropdown() {
-    const select = document.getElementById('problemSelect');
-    select.innerHTML = '';
-    gameData.forEach((_, index) => {
-        const opt = new Option(index + 1, index);
-        opt.selected = (index === level);
-        select.add(opt);
-    });
-    document.getElementById('totalNum').textContent = gameData.length;
-}
-
-// 특정 문제로 이동
-window.jumpToProblem = function() {
-    const select = document.getElementById('problemSelect');
-    level = parseInt(select.value);
-    hideAudioPlayer();
-    loadProblem();
-    if(gameState === 'ready') startGame();
+    } catch (error) {
+        alert(`데이터 파일을 불러올 수 없습니다: ${category}/${levelNum}`);
+        console.error(error);
+    }
 };
 
 window.startGame = function() {
+    if (gameData.length === 0) return;
+    
     gameState = 'playing';
+    gameStartTime = Date.now();
+    usedHintOrAnswer = false;
+    
     loadProblem();
-    document.getElementById('buttons').innerHTML = '<button class="btn btn-submit" onclick="checkAnswer()">확인</button><button class="btn btn-stop" onclick="stopGameManually()">중단</button>';
-};
-
-function loadProblem() {
-    currentProblem = gameData[level];
-    document.getElementById('sentence').innerHTML = currentProblem.sentence.replace(/\|([^|]+)\|/g, '<span class="blank">정답 입력</span>');
     
-    if (currentProblem.sentence.includes('[') || currentProblem.currentAudio) showAudioPlayer();
-    else hideAudioPlayer();
+    const currentProblem = gameData[level];
     
-    updateProblemDropdown(); 
-}
-
-function showAudioPlayer() {
-    const player = document.getElementById('audioPlayer');
-    const audio = document.getElementById('audioElement');
-    audio.src = `./data_mp3/${currentProblem.id}.mp3`; 
-    player.classList.remove('hidden');
-    audio.onloadedmetadata = () => {
-        const d = audio.duration;
-        document.getElementById('audioStartTime').max = d;
-        document.getElementById('audioEndTime').max = d;
-        document.getElementById('audioEndTime').value = d;
-        document.getElementById('endTimeDisplay').textContent = d.toFixed(1);
-        updateAudioSpeed(); 
-    };
-}
-
-function hideAudioPlayer() {
-    document.getElementById('audioPlayer').classList.add('hidden');
-    document.getElementById('audioElement').pause();
-}
-
-window.playAudio = () => document.getElementById('audioElement').play();
-window.stopAudio = () => {
-    const a = document.getElementById('audioElement');
-    a.pause();
-    a.currentTime = parseFloat(document.getElementById('audioStartTime').value);
-};
-
-window.updateAudioSpeed = () => {
-    document.getElementById('audioElement').playbackRate = parseFloat(document.getElementById('speedSelect').value);
-};
-
-window.updateStartTime = () => {
-    const a = document.getElementById('audioElement');
-    const v = parseFloat(document.getElementById('audioStartTime').value);
-    document.getElementById('startTimeDisplay').textContent = v.toFixed(1);
-    a.currentTime = v;
-};
-
-window.updateEndTime = () => {
-    document.getElementById('endTimeDisplay').textContent = parseFloat(document.getElementById('audioEndTime').value).toFixed(1);
-};
-
-window.toggleAudioLoop = () => {
-    const b = document.getElementById('audioLoopBtn');
-    b.classList.toggle('active');
-    b.textContent = b.classList.contains('active') ? '🔁 반복 ON' : '🔁 반복 OFF';
-};
-
-window.checkAnswer = function() {
-    const userAns = document.getElementById('answerInput').value.trim();
-    const isCorrect = currentProblem.answer.includes(userAns);
-    const msg = document.getElementById('message');
-    msg.textContent = isCorrect ? '🎉 정답!' : '❌ 오답!';
-    msg.className = `message ${isCorrect ? 'success' : 'fail'} show`;
-    setTimeout(() => {
-        msg.classList.remove('show');
-        if (isCorrect) {
-            if (level < gameData.length - 1) { level++; loadProblem(); }
-            else { alert('완료!'); backToMainMenu(); }
-        }
-    }, 1000);
-};
-
-window.backToMainMenu = function() {
-    document.getElementById('gameArea').classList.add('hidden');
-    document.getElementById('mainMenu').classList.remove('hidden');
-    gameState = 'ready';
-    hideAudioPlayer();
-};
-
-window.stopGameManually = () => { gameState = 'stopped'; hideAudioPlayer(); backToMainMenu(); };
-
-window.addEventListener('load', async () => {
-    if (await initWasm() && checkLogin()) {
-        document.getElementById('loadingScreen').style.display = 'none';
-        document.getElementById('gameContent').classList.remove('hidden');
+    // jimuns 모드 확인
+    if (isJimunsMode(currentProblem)) {
+        document.getElementById('buttons').innerHTML = '<button class="btn btn-submit" onclick="checkJimunsAnswer()">정답 확인</button><button class="btn btn-stop" onclick="stopGameManually()">▢ 게임 중단</button>';
+    } else if (currentProblem.number && currentProblem.number.length > 0) {
+        document.getElementById('buttons').innerHTML = '<button class="btn btn-stop" onclick="stopGameManually()">▢ 게임 중단</button>';
+    } else {
+        document.getElementById('buttons').innerHTML = '<button class="btn btn-submit" onclick="checkAnswer()">정답 확인</button><button class="btn btn-stop" onclick="stopGameManually()">▢ 게임 중단</button>';
     }
-    const audio = document.getElementById('audioElement');
-    audio.addEventListener('timeupdate', () => {
-        const s = parseFloat(document.getElementById('audioStartTime').value);
-        const e = parseFloat(document.getElementById('audioEndTime').value);
-        if (audio.currentTime >= e) {
-            if (document.getElementById('audioLoopBtn').classList.contains('active')) {
-                audio.currentTime = s;
-                audio.play();
-            } else {
-                audio.pause();
-                audio.currentTime = s;
-            }
-        }
+};
+
+// [추가] 문제 번호 드롭다운 업데이트 함수
+function updateProblemDropdown() {
+    const select = document.getElementById('problemSelect');
+    if (!select) return;
+    select.innerHTML = '';
+    gameData.forEach((_, index) => {
+        const opt = new Option(index + 1, index);
+        if (index === level) opt.selected = true;
+        select.add(opt);
     });
-});
+}
+
+// [추가] 특정 문제로 바로 점프하는 함수
+window.jumpToProblem = function() {
+    const select = document.getElementById('problemSelect');
