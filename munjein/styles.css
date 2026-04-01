@@ -239,7 +239,7 @@ body {
     background: #2563eb;
 }
 
-/* 오디오 플레이어 기본 */
+/* 오디오 플레이어 */
 .audio-player {
     background: #374151;
     border-radius: 8px;
@@ -282,6 +282,58 @@ body {
     opacity: 0.9;
 }
 
+.audio-options {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.audio-option-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #f3f4f6;
+    font-size: 0.9em;
+}
+
+.start-time-control {
+    flex-direction: column;
+    align-items: stretch;
+}
+
+.start-time-control label {
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+.start-time-control input[type="range"] {
+    width: 100%;
+    height: 6px;
+    background: #1f2937;
+    border-radius: 3px;
+    outline: none;
+    cursor: pointer;
+}
+
+.start-time-control input[type="range"]::-webkit-slider-thumb {
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #3b82f6;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.start-time-control input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: #3b82f6;
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+}
+
 .content-section {
     background: #374151;
     border-radius: 8px;
@@ -314,6 +366,7 @@ body {
     text-align: center;
 }
 
+/* jimuns 모드 스타일 추가 */
 .jimuns-text {
     white-space: pre-wrap;
     display: inline;
@@ -696,6 +749,172 @@ body {
     margin: 0 1px;
 }
 
+.message {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    font-size: 1.5em;
+    font-weight: bold;
+    background: rgba(31, 41, 55, 0.98);
+    padding: 30px 50px;
+    border-radius: 12px;
+    border: 3px solid;
+    z-index: 1001;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease-in-out;
+}
+
+.message.show {
+    opacity: 1;
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+.message.success { 
+    color: #10b981;
+    border-color: #10b981;
+    box-shadow: 0 0 30px rgba(16, 185, 129, 0.3);
+}
+
+.message.fail { 
+    color: #ef4444;
+    border-color: #ef4444;
+    box-shadow: 0 0 30px rgba(239, 68, 68, 0.3);
+}
+
+.buttons {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 0.9em;
+    cursor: pointer;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 100px;
+}
+
+.btn-start {
+    background: #22c55e;
+    color: white;
+}
+
+.btn-start:hover {
+    background: #16a34a;
+}
+
+.btn-stop {
+    background: #ef4444;
+    color: white;
+}
+
+.btn-stop:hover {
+    background: #dc2626;
+}
+
+.btn-reset {
+    background: #3b82f6;
+    color: white;
+}
+
+.btn-reset:hover {
+    background: #2563eb;
+}
+
+.btn-submit {
+    background: #8b5cf6;
+    color: white;
+}
+
+.btn-submit:hover {
+    background: #7c3aed;
+}
+
+.hidden {
+    display: none;
+}
+
+.loading {
+    text-align: center;
+    color: white;
+    padding: 40px;
+}
+
+.loading-spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #667eea;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@media (max-width: 480px) {
+    .answer-controls {
+        flex-wrap: wrap;
+    }
+    
+    .media-buttons,
+    .control-buttons {
+        flex-wrap: wrap;
+    }
+    
+    .level-display {
+        order: -1;
+        width: 100%;
+        margin-bottom: 8px;
+    }
+    
+    .audio-controls {
+        gap: 6px;
+    }
+    
+    .audio-btn {
+        padding: 8px 12px;
+        font-size: 0.85em;
+    }
+    
+    .passage-content {
+        font-size: 1em;
+        padding: 20px;
+    }
+    
+    .jimuns-input-group {
+        flex-direction: column;
+    }
+    
+    .jimuns-answer-current {
+        max-width: 70px;
+        font-size: 0.8rem;
+        padding: 3px 6px;
+    }
+    
+    .jimuns-answer-item {
+        font-size: 0.8rem;
+        padding: 3px 6px;
+    }
+    
+    .jimuns-answer-dropdown {
+        max-height: 150px;
+    }
+}
+
 .diff-space-correct {
     color: #10b981;
     font-weight: bold;
@@ -958,176 +1177,7 @@ body {
     padding: 5px;
 }
 
-.message {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    text-align: center;
-    font-size: 1.5em;
-    font-weight: bold;
-    background: rgba(31, 41, 55, 0.98);
-    padding: 30px 50px;
-    border-radius: 12px;
-    border: 3px solid;
-    z-index: 1001;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.3s ease-in-out;
-}
-
-.message.show {
-    opacity: 1;
-    pointer-events: auto;
-    cursor: pointer;
-}
-
-.message.success { 
-    color: #10b981;
-    border-color: #10b981;
-    box-shadow: 0 0 30px rgba(16, 185, 129, 0.3);
-}
-
-.message.fail { 
-    color: #ef4444;
-    border-color: #ef4444;
-    box-shadow: 0 0 30px rgba(239, 68, 68, 0.3);
-}
-
-.buttons {
-    display: flex;
-    gap: 6px;
-    justify-content: center;
-    flex-wrap: wrap;
-}
-
-.btn {
-    padding: 12px 20px;
-    border: none;
-    border-radius: 8px;
-    font-weight: bold;
-    font-size: 0.9em;
-    cursor: pointer;
-    white-space: nowrap;
-    flex: 1;
-    min-width: 100px;
-}
-
-.btn-start {
-    background: #22c55e;
-    color: white;
-}
-
-.btn-start:hover {
-    background: #16a34a;
-}
-
-.btn-stop {
-    background: #ef4444;
-    color: white;
-}
-
-.btn-stop:hover {
-    background: #dc2626;
-}
-
-.btn-reset {
-    background: #3b82f6;
-    color: white;
-}
-
-.btn-reset:hover {
-    background: #2563eb;
-}
-
-.btn-submit {
-    background: #8b5cf6;
-    color: white;
-}
-
-.btn-submit:hover {
-    background: #7c3aed;
-}
-
-.hidden {
-    display: none;
-}
-
-.loading {
-    text-align: center;
-    color: white;
-    padding: 40px;
-}
-
-.loading-spinner {
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid #667eea;
-    border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    animation: spin 1s linear infinite;
-    margin: 0 auto 20px;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-@media (max-width: 480px) {
-    .answer-controls {
-        flex-wrap: wrap;
-    }
-    
-    .media-buttons,
-    .control-buttons {
-        flex-wrap: wrap;
-    }
-    
-    .level-display {
-        order: -1;
-        width: 100%;
-        margin-bottom: 8px;
-        justify-content: center;
-    }
-    
-    .audio-controls {
-        gap: 6px;
-    }
-    
-    .audio-btn {
-        padding: 8px 12px;
-        font-size: 0.85em;
-    }
-    
-    .passage-content {
-        font-size: 1em;
-        padding: 20px;
-    }
-    
-    .jimuns-input-group {
-        flex-direction: column;
-    }
-    
-    .jimuns-answer-current {
-        max-width: 70px;
-        font-size: 0.8rem;
-        padding: 3px 6px;
-    }
-    
-    .jimuns-answer-item {
-        font-size: 0.8rem;
-        padding: 3px 6px;
-    }
-    
-    .jimuns-answer-dropdown {
-        max-height: 150px;
-    }
-}
-
-/* =========================================
-   [추가] 배속 드롭다운 및 문제 번호 선택 디자인
-   ========================================= */
+/* 배속 및 문제 선택 드롭다운 */
 .speed-select {
     background: #4b5563;
     color: white;
@@ -1138,30 +1188,23 @@ body {
     cursor: pointer;
     outline: none;
 }
-.speed-select option {
-    background: #2b2f34;
-}
+.speed-select option { background: #2b2f34; }
 
 .problem-select {
-    background: #1f2937;
+    background: transparent;
     color: #60a5fa;
     border: 1px solid #4b5563;
     border-radius: 4px;
     padding: 2px 5px;
     font-weight: bold;
-    font-size: 0.95em;
+    font-size: 14px;
     cursor: pointer;
     outline: none;
     margin: 0 4px;
 }
-.problem-select option {
-    background: #2b2f34;
-    color: #e0e0e0;
-}
+.problem-select option { background: #2b2f34; color: #e0e0e0; }
 
-/* =========================================
-   [수정 완료] 글자 없는 단일 구간 슬라이더 (완벽한 겹침)
-   ========================================= */
+/* 단일 구간 슬라이더 (A/B) */
 .dual-range-container {
     display: flex;
     align-items: center;
@@ -1172,7 +1215,6 @@ body {
     padding: 10px 15px;
     border-radius: 8px;
 }
-
 .time-label {
     font-size: 0.85em;
     color: #9ca3af;
@@ -1180,14 +1222,11 @@ body {
     min-width: 35px;
     text-align: center;
 }
-
 .slider-wrapper {
     position: relative;
     flex: 1;
-    height: 24px; /* 손잡이가 잘리지 않게 높이 확보 */
+    height: 24px;
 }
-
-/* 회색 전체 트랙 */
 .track-background {
     position: absolute;
     top: 50%;
@@ -1199,8 +1238,6 @@ body {
     border-radius: 3px;
     z-index: 1;
 }
-
-/* 파란색 선택 구간 트랙 */
 .track-fill {
     position: absolute;
     top: 50%;
@@ -1210,10 +1247,8 @@ body {
     border-radius: 3px;
     z-index: 2;
     left: 0;
-    width: 100%; /* JS가 조절함 */
+    width: 100%;
 }
-
-/* 2개의 input 바를 top:50%로 완벽하게 포개버림 */
 .slider-wrapper input[type="range"] {
     position: absolute;
     top: 50%;
@@ -1223,16 +1258,14 @@ body {
     -webkit-appearance: none;
     appearance: none;
     background: transparent;
-    pointer-events: none; /* 트랙 클릭 무시하고 손잡이만 잡히게 */
+    pointer-events: none;
     z-index: 3;
     margin: 0;
 }
-
-/* 슬라이더 동그라미(손잡이) */
 .slider-wrapper input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    pointer-events: auto; /* 손잡이는 드래그 가능 */
+    pointer-events: auto;
     width: 18px;
     height: 18px;
     background: #3b82f6;
@@ -1240,7 +1273,6 @@ body {
     cursor: pointer;
     border: 2px solid white;
 }
-
 .slider-wrapper input[type="range"]::-moz-range-thumb {
     pointer-events: auto;
     width: 18px;
