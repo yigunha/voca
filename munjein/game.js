@@ -2,1202 +2,194 @@ let wasmModule = null;
 let selectedMainMenu = null;
 let selectedLevel = null;
 let gameData = [];
-let level = 0;
+let level = 0; 
 let currentProblem = null;
 let gameState = 'ready';
-let gameStartTime = 0;
 let userClass = '';
 let solvedProblems = new Set();
-let usedHintOrAnswer = false;
 
 async function initWasm() {
     try {
         const wasm = await import('./pkg/korean_game_wasm.js');
         await wasm.default();
         wasmModule = wasm;
-        console.log('WASM 초기화:', wasm.get_version());
-        
-        if (!wasm.verify_location()) {
-            document.body.innerHTML = '<div style="color: white; text-align: center; padding: 50px;">⚠️ 인증되지 않은 위치입니다.<br>이 페이지는 허가된 위치에서만 실행할 수 있습니다.</div>';
-            throw new Error('Unauthorized location');
-        }
-        
+        if (!wasm.verify_location()) return false;
         return true;
-    } catch (error) {
-        console.error('WASM 로드 실패:', error);
-        alert('시스템을 초기화할 수 없습니다.');
-        return false;
-    }
+    } catch (e) { return false; }
 }
 
 function checkLogin() {
     if (!wasmModule) return false;
-    
     try {
-        if (!wasmModule.check_login_status()) {
-            window.location.href = '../munjein.html'; 
-            return false;
-        }
-        
-        wasmModule.refresh_cookies();
-        
+        if (!wasmModule.check_login_status()) { window.location.href = '../munjein.html'; return false; }
         const fullClass = wasmModule.get_cookie('studentClass');
         userClass = fullClass.substring(0, 2);
-        
-        const mainMenuTitle = document.getElementById('mainMenuTitle');
-        if (mainMenuTitle) {
-            mainMenuTitle.textContent = `${userClass} 학습 모드 선택`;
-        }
-        
-        loadSolvedProblems();
-        
-        return true;
-    } catch (error) {
-        console.error('로그인 확인 실패:', error);
-        window.location.href = '../munjein.html';
-        return false;
-    }
-}
-
-function loadSolvedProblems() {
-    try {
+        document.getElementById('mainMenuTitle').textContent = `${userClass} 학습 모드 선택`;
         const saved = localStorage.getItem(`solved_${userClass}`);
-        if (saved) {
-            solvedProblems = new Set(JSON.parse(saved));
-        }
-    } catch (e) {
-        console.error('해결한 문제 로드 실패:', e);
-    }
+        if (saved) solvedProblems = new Set(JSON.parse(saved));
+        return true;
+    } catch (e) { return false; }
 }
-
-function saveSolvedProblems() {
-    try {
-        localStorage.setItem(`solved_${userClass}`, JSON.stringify([...solvedProblems]));
-    } catch (e) {
-        console.error('해결한 문제 저장 실패:', e);
-    }
-}
-
-function resetSolvedProblems() {
-    if (confirm('모든 학습 기록을 초기화하시겠습니까?')) {
-        solvedProblems.clear();
-        saveSolvedProblems();
-        alert('학습 기록이 초기화되었습니다.');
-        backToMainMenu();
-    }
-}
-
-window.logout = function() {
-    if (wasmModule) {
-        try {
-            wasmModule.delete_cookie('studentName');
-            wasmModule.delete_cookie('studentClass');
-            wasmModule.delete_cookie('studentPassword');
-        } catch (e) {
-            console.error('로그아웃 오류:', e);
-        }
-    }
-    window.location.href = '../munjein.html?logout=true'; 
-};
 
 window.selectMainMenu = function(menu) {
     selectedMainMenu = menu;
-    
     document.getElementById('mainMenu').classList.add('hidden');
     document.getElementById('levelSelector').classList.remove('hidden');
-    
     document.getElementById('levelTitle').textContent = `${userClass} ${menu}`;
-    
-    const levelButtonsContainer = document.getElementById('levelButtons');
-    levelButtonsContainer.innerHTML = '';
-    
+    const container = document.getElementById('levelButtons');
+    container.innerHTML = '';
     for (let i = 1; i <= 12; i++) {
         const btn = document.createElement('button');
         btn.className = 'level-btn';
         btn.textContent = `${i}과`;
         btn.onclick = () => selectLevel(menu, String(i).padStart(2, '0'));
-        levelButtonsContainer.appendChild(btn);
+        container.appendChild(btn);
     }
 };
 
-window.backToMainMenu = function() {
-    document.getElementById('levelSelector').classList.add('hidden');
-    document.getElementById('gameArea').classList.add('hidden');
-    document.getElementById('mainMenu').classList.remove('hidden');
-    selectedMainMenu = null;
-    selectedLevel = null;
-    gameData = [];
-    resetGame();
-};
-
-async function loadEncryptedData(category, levelNum) {
+async function selectLevel(category, levelNum) {
+    selectedLevel = levelNum;
     try {
         const fileName = `${userClass}/${category}/${levelNum}_encrypted.dat`;
         const response = await fetch(`./data/${fileName}`);
-        const encryptedBytes = new Uint8Array(await response.arrayBuffer());
-        
-        const decryptedJson = wasmModule.decrypt_xor(encryptedBytes);
-        const fullData = JSON.parse(decryptedJson);
-        
-        return fullData;
-    } catch (error) {
-        console.error('데이터 로드 실패:', error);
-        throw error;
-    }
-}
-
-window.selectLevel = async function(category, levelNum) {
-    selectedLevel = levelNum;
-
-    try {
-        const data = await loadEncryptedData(category, levelNum);
-        
-        const unsolvedData = data.filter(item => !solvedProblems.has(item.id));
-        
-        if (unsolvedData.length === 0) {
-            if (confirm('모든 문제를 해결했습니다! 학습 기록을 초기화하시겠습니까?')) {
-                resetSolvedProblems();
-            }
-            return;
-        }
-        
-        gameData = unsolvedData;
+        const bytes = new Uint8Array(await response.arrayBuffer());
+        gameData = JSON.parse(wasmModule.decrypt_xor(bytes));
         
         document.getElementById('levelSelector').classList.add('hidden');
         document.getElementById('gameArea').classList.remove('hidden');
         
-        updateLessonDropdown(); // 레벨 선택 드롭다운 업데이트
+        level = 0; 
+        updateProblemDropdown(); 
         resetGame();
-    } catch (error) {
-        alert(`데이터 파일을 불러올 수 없습니다: ${category}/${levelNum}`);
-        console.error(error);
-    }
-};
+    } catch (e) { alert('데이터 로드 실패'); }
+}
 
-// 새로 추가된 레벨(과) 드롭다운 조작 및 갱신 함수
-window.changeLesson = async function() {
-    const select = document.getElementById('lessonSelect');
-    const newLesson = select.value;
-    if (newLesson && selectedMainMenu && newLesson !== selectedLevel) {
-        hideAudioPlayer();
-        await selectLevel(selectedMainMenu, newLesson);
-        startGame(); 
-    }
-};
-
-window.updateLessonDropdown = function() {
-    const select = document.getElementById('lessonSelect');
-    if(!select) return;
+// 문제 번호 드롭다운 갱신
+function updateProblemDropdown() {
+    const select = document.getElementById('problemSelect');
     select.innerHTML = '';
-    for(let i=1; i<=12; i++) {
-        const opt = document.createElement('option');
-        const val = String(i).padStart(2, '0');
-        opt.value = val;
-        opt.textContent = `${i}과`;
-        if(val === selectedLevel) opt.selected = true;
-        select.appendChild(opt);
-    }
+    gameData.forEach((_, index) => {
+        const opt = new Option(index + 1, index);
+        opt.selected = (index === level);
+        select.add(opt);
+    });
+    document.getElementById('totalNum').textContent = gameData.length;
+}
+
+// 특정 문제로 이동
+window.jumpToProblem = function() {
+    const select = document.getElementById('problemSelect');
+    level = parseInt(select.value);
+    hideAudioPlayer();
+    loadProblem();
+    if(gameState === 'ready') startGame();
 };
 
 window.startGame = function() {
-    if (gameData.length === 0) return;
-    
     gameState = 'playing';
-    gameStartTime = Date.now();
-    usedHintOrAnswer = false;
-    
     loadProblem();
-    
-    const currentProblem = gameData[level];
-    
-    if (isJimunsMode(currentProblem)) {
-        document.getElementById('buttons').innerHTML = '<button class="btn btn-submit" onclick="checkJimunsAnswer()">정답 확인</button><button class="btn btn-stop" onclick="stopGameManually()">▢ 게임 중단</button>';
-    } else if (currentProblem.number && currentProblem.number.length > 0) {
-        document.getElementById('buttons').innerHTML = '<button class="btn btn-stop" onclick="stopGameManually()">▢ 게임 중단</button>';
-    } else {
-        document.getElementById('buttons').innerHTML = '<button class="btn btn-submit" onclick="checkAnswer()">정답 확인</button><button class="btn btn-stop" onclick="stopGameManually()">▢ 게임 중단</button>';
-    }
+    document.getElementById('buttons').innerHTML = '<button class="btn btn-submit" onclick="checkAnswer()">확인</button><button class="btn btn-stop" onclick="stopGameManually()">중단</button>';
 };
-
-function isJimunsMode(problem) {
-    return problem.jimuns && problem.answers && problem.hints && 
-           Array.isArray(problem.answers) && Array.isArray(problem.hints);
-}
-
-function preserveWhitespace(text) {
-    return text
-        .split('\n')
-        .map(line => {
-            return line.replace(/^( +)/, (match) => '&nbsp;'.repeat(match.length));
-        })
-        .join('<br>');
-}
 
 function loadProblem() {
     currentProblem = gameData[level];
-    usedHintOrAnswer = false;
+    document.getElementById('sentence').innerHTML = currentProblem.sentence.replace(/\|([^|]+)\|/g, '<span class="blank">정답 입력</span>');
     
-    currentProblem.currentPicture = null;
-    currentProblem.currentAudio = null;
-    currentProblem.currentPassage = null;
+    if (currentProblem.sentence.includes('[') || currentProblem.currentAudio) showAudioPlayer();
+    else hideAudioPlayer();
     
-    if (isJimunsMode(currentProblem)) {
-        loadJimunsProblem();
-        return;
-    }
-    
-    let sentenceHtml = currentProblem.sentence.replace(/\|([^|]+)\|/g, (match, content) => {
-        content = content.trim();
-        
-        if (content.startsWith('<') && content.endsWith('>')) {
-            const pictureName = content.slice(1, -1);
-            currentProblem.currentPicture = pictureName;
-            return '<span class="blank">그림을 보세요</span>';
-        }
-        
-        if (content.startsWith('[') && content.endsWith(']')) {
-            const audioName = content.slice(1, -1);
-            currentProblem.currentAudio = audioName;
-            return '<span class="blank">소리를 들으세요</span>';
-        }
-        
-        if (content.startsWith('{') && content.endsWith('}')) {
-            const passageName = content.slice(1, -1);
-            currentProblem.currentPassage = passageName;
-            return '<span class="blank">지문을 보세요</span>';
-        }
-        
-        return '<span class="blank">정답을 쓰세요</span>';
-    });
-    
-    document.getElementById('sentence').innerHTML = sentenceHtml;
-    
-    const pictureBtn = document.getElementById('pictureBtn');
-    if (currentProblem.currentPicture) {
-        pictureBtn.classList.remove('hidden');
-    } else {
-        pictureBtn.classList.add('hidden');
-    }
-    
-    const passageBtn = document.getElementById('passageBtn');
-    if (currentProblem.currentPassage) {
-        passageBtn.classList.remove('hidden');
-    } else {
-        passageBtn.classList.add('hidden');
-    }
-    
-    const audioToggleBtn = document.getElementById('audioToggleBtn');
-    if (currentProblem.currentAudio) {
-        audioToggleBtn.classList.add('hidden');
-        showAudioPlayer();
-    } else {
-        audioToggleBtn.classList.add('hidden');
-        hideAudioPlayer();
-    }
-    
-    const optDesc = document.getElementById('optDescription');
-    if (currentProblem.opt) {
-        optDesc.textContent = currentProblem.opt;
-        optDesc.style.display = 'block';
-    } else {
-        optDesc.style.display = 'none';
-    }
-    
-    const optionsGrid = document.getElementById('optionsGrid');
-    optionsGrid.innerHTML = '';
-    if (currentProblem.options && currentProblem.options.length > 0) {
-        currentProblem.options.forEach((option, index) => {
-            const div = document.createElement('div');
-            div.className = 'option-item';
-            div.textContent = `${index + 1}) ${option}`;
-            optionsGrid.appendChild(div);
-        });
-    }
-    
-    const conditionText = document.getElementById('conditionText');
-    if (currentProblem.condition) {
-        conditionText.textContent = currentProblem.condition;
-        conditionText.style.display = 'block';
-    } else {
-        conditionText.style.display = 'none';
-    }
-    
-    const numberGrid = document.getElementById('numberGrid');
-    const answerInputSection = document.getElementById('answerInputSection');
-    
-    if (currentProblem.number && currentProblem.number.length > 0) {
-        const circleNumbers = ['⓪', '①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨', '⑩', '⑪', '⑫', '⑬', '⑭', '⑮', '⑯', '⑰', '⑱', '⑲', '⑳'];
-        
-        numberGrid.innerHTML = '';
-        currentProblem.number.forEach((item, index) => {
-            const btn = document.createElement('button');
-            btn.className = 'number-btn';
-            btn.innerHTML = `<span class="number-circle">${circleNumbers[index]}</span> ${item}`;
-            btn.onclick = () => checkNumberAnswer(item);
-            numberGrid.appendChild(btn);
-        });
-        
-        numberGrid.classList.remove('hidden');
-        answerInputSection.classList.add('hidden');
-    } else {
-        numberGrid.classList.add('hidden');
-        answerInputSection.classList.remove('hidden');
-        document.getElementById('answerInput').value = '';
-        document.getElementById('answerInput').focus();
-    }
-    
-    document.getElementById('answerSection').style.display = 'block';
-    document.getElementById('jimunsContainer').classList.add('hidden');
-    document.getElementById('contentSection').classList.remove('hidden');
-    
-    document.getElementById('hintDisplay').classList.remove('show');
-    document.getElementById('correctAnswerDisplay').classList.remove('show');
-    document.getElementById('comparisonDisplay').classList.remove('show');
-    document.getElementById('levelNum').textContent = level + 1;
-    document.getElementById('totalNum').textContent = gameData.length;
-    
-    window.hidePicture();
-    window.hidePassage();
+    updateProblemDropdown(); 
 }
-
-function loadJimunsProblem() {
-    const jimunsText = currentProblem.jimuns;
-    const questionParts = jimunsText.split('|     |');  
-    
-    const optDesc = document.getElementById('optDescription');
-    if (currentProblem.opt) {
-        optDesc.textContent = currentProblem.opt;
-        optDesc.style.display = 'block';
-    } else {
-        optDesc.style.display = 'none';
-    }
-    
-    const optionsGrid = document.getElementById('optionsGrid');
-    optionsGrid.innerHTML = '';
-    if (currentProblem.options && currentProblem.options.length > 0) {
-        currentProblem.options.forEach((option, index) => {
-            const div = document.createElement('div');
-            div.className = 'option-item';
-            div.textContent = `${index + 1}) ${option}`;
-            optionsGrid.appendChild(div);
-        });
-    }
-    
-    const conditionText = document.getElementById('conditionText');
-    if (currentProblem.condition) {
-        conditionText.textContent = currentProblem.condition;
-        conditionText.style.display = 'block';
-    } else {
-        conditionText.style.display = 'none';
-    }
-    
-    let jimunsHTML = '';
-    for (let i = 0; i < questionParts.length; i++) {
-        const textPart = preserveWhitespace(questionParts[i]);
-        jimunsHTML += `<span class="jimuns-text">${textPart}</span>`;
-        
-        if (i < currentProblem.answers.length) {
-            const correctAnswer = currentProblem.answers[i] || "";
-            const hintText = currentProblem.hints[i] || '';
-            
-            jimunsHTML += `
-                <span class="input-wrapper" data-index="${i}" style="position: relative; display: inline;">
-                    <span class="visual-display" data-index="${i}" 
-                          style="display: inline;
-                                 padding: 2px 6px; 
-                                 background: #1f2937; 
-                                 border: 2px solid #60a5fa; 
-                                 border-radius: 4px; 
-                                 cursor: pointer; 
-                                 color: #9ca3af;
-                                 word-break: break-all;">
-                        <span class="user-input-overlay" style="color: #6b7280; font-weight: normal; font-size: 0.9em; opacity: 0.7;">정답${i + 1}</span>
-                    </span>
-                    <div class="real-input-group" data-index="${i}" style="display:none; position: fixed; z-index: 10000; background: #374151; padding: 8px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); width: calc(100% - 40px); max-width: 460px;">
-                        <button class="answer-btn" data-index="${i}" title="정답 보기" style="width: 28px; height: 28px; flex-shrink: 0; border-radius: 50%; background: #10b981; color: white; border: none; cursor: pointer; font-size: 1em; display: flex; align-items: center; justify-content: center;">💡</button>
-                        <input type="text" 
-                               class="answerInput" 
-                               placeholder="정답 ${i + 1}" 
-                               data-index="${i}"
-                               style="flex: 1; padding: 6px 8px; background: #1f2937; color: #f3f4f6; border: 2px solid #93c5fd; border-radius: 4px; font-size: 1em; height: 32px;">
-                        <button class="description-btn" data-index="${i}" title="힌트 보기" style="width: 28px; height: 28px; flex-shrink: 0; border-radius: 50%; background: #3b82f6; color: white; border: none; cursor: pointer; font-size: 1em; display: flex; align-items: center; justify-content: center;">❓</button>
-                        <div class="answer-hint" data-index="${i}" style="display: none; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 4px; background: white; border: 1px solid #28a745; border-radius: 8px; padding: 6px 12px; color: #28a745; font-weight: bold; white-space: nowrap; z-index: 10001;"></div>
-                        <div class="description-hint" data-index="${i}" style="display: none; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); margin-bottom: 8px; background: white; border: 1px solid #007bff; border-radius: 8px; padding: 8px 12px; color: #444; white-space: normal; max-width: 250px; z-index: 10001;">${hintText}</div>
-                    </div>
-                </span>
-            `;
-        }
-    }
-    
-    document.getElementById('sentence').style.display = 'none';
-
-    const jimunsContainer = document.getElementById('jimunsContainer');
-    jimunsContainer.innerHTML = jimunsHTML;
-    jimunsContainer.classList.remove('hidden');
-    
-    jimunsContainer.querySelectorAll('.visual-display').forEach(display => {
-        display.addEventListener('click', (event) => {
-            event.stopPropagation();
-            const index = display.dataset.index;
-            const wrapper = display.closest('.input-wrapper');
-            const realInputGroup = wrapper.querySelector('.real-input-group');
-            const input = realInputGroup.querySelector('.answerInput');
-            
-            jimunsContainer.querySelectorAll('.real-input-group').forEach(group => {
-                group.style.display = 'none';
-            });
-            
-            const rect = display.getBoundingClientRect();
-            realInputGroup.style.display = 'flex';
-            realInputGroup.style.gap = '6px';
-            realInputGroup.style.alignItems = 'center';
-            realInputGroup.style.left = '50%';
-            realInputGroup.style.top = (rect.bottom + 5) + 'px';
-            realInputGroup.style.transform = 'translateX(-50%)';
-            input.focus();
-        });
-    });
-    
-    const allInputs = jimunsContainer.querySelectorAll(".answerInput");
-    allInputs.forEach((input) => {
-        input.addEventListener("keydown", (event) => {
-            if (event.key === "Enter") {
-                event.preventDefault();
-                const inputIndex = parseInt(input.dataset.index);
-                const wrapper = input.closest('.input-wrapper');
-                const visualDisplay = wrapper.querySelector('.visual-display');
-                const overlay = visualDisplay.querySelector('.user-input-overlay');
-                const realInputGroup = wrapper.querySelector('.real-input-group');
-                
-                if (input.value) {
-                    overlay.textContent = input.value;
-                    overlay.style.color = '#f3f4f6';
-                    overlay.style.fontWeight = 'bold';
-                    overlay.style.fontSize = '1em';
-                    overlay.style.opacity = '1';
-                } else {
-                    overlay.textContent = '정답' + (inputIndex + 1);
-                    overlay.style.color = '#6b7280';
-                    overlay.style.fontWeight = 'normal';
-                    overlay.style.fontSize = '0.9em';
-                    overlay.style.opacity = '0.7';
-                }
-                
-                realInputGroup.style.display = 'none';
-                
-                if (inputIndex === allInputs.length - 1) {
-                    checkJimunsAnswer();
-                } else {
-                    const nextWrapper = jimunsContainer.querySelector(`.input-wrapper[data-index="${inputIndex + 1}"]`);
-                    if (nextWrapper) {
-                        const nextDisplay = nextWrapper.querySelector('.visual-display');
-                        nextDisplay.click();
-                    }
-                }
-            }
-        });
-        
-        input.addEventListener("blur", () => {
-            setTimeout(() => {
-                const inputIndex = parseInt(input.dataset.index);
-                const wrapper = input.closest('.input-wrapper');
-                const visualDisplay = wrapper.querySelector('.visual-display');
-                const overlay = visualDisplay.querySelector('.user-input-overlay');
-                const realInputGroup = wrapper.querySelector('.real-input-group');
-                
-                if (input.value) {
-                    overlay.textContent = input.value;
-                    overlay.style.color = '#f3f4f6';
-                    overlay.style.fontWeight = 'bold';
-                    overlay.style.fontSize = '1em';
-                    overlay.style.opacity = '1';
-                } else {
-                    overlay.textContent = '정답' + (inputIndex + 1);
-                    overlay.style.color = '#6b7280';
-                    overlay.style.fontWeight = 'normal';
-                    overlay.style.fontSize = '0.9em';
-                    overlay.style.opacity = '0.7';
-                }
-                
-                realInputGroup.style.display = 'none';
-            }, 200);
-        });
-    });
-    
-    jimunsContainer.querySelectorAll('.answer-btn').forEach(button => {
-        button.addEventListener('mousedown', (event) => {
-            event.preventDefault();
-            const index = event.target.dataset.index;
-            toggleJimunsAnswer(index);
-        });
-    });
-    
-    jimunsContainer.querySelectorAll('.description-btn').forEach(button => {
-        button.addEventListener('mousedown', (event) => {
-            event.preventDefault();
-            const index = event.target.dataset.index;
-            toggleJimunsHint(index);
-        });
-    });
-    
-    document.getElementById('numberGrid').classList.add('hidden');
-    document.getElementById('answerInputSection').classList.add('hidden');
-    document.getElementById('answerSection').style.display = 'none';
-    
-    document.getElementById('pictureBtn').classList.add('hidden');
-    document.getElementById('passageBtn').classList.add('hidden');
-    document.getElementById('audioToggleBtn').classList.add('hidden');
-    
-    document.getElementById('levelNum').textContent = level + 1;
-    document.getElementById('totalNum').textContent = gameData.length;
-}
-
-function toggleJimunsAnswer(index) {
-    const hint = document.querySelector(`.answer-hint[data-index="${index}"]`);
-    const correctAnswer = currentProblem.answers[index] || "";
-    
-    const isVisible = (hint.style.display === 'block');
-    
-    closeAllJimunsDropdowns();
-    closeAllJimunsHints();
-    
-    if (isVisible) {
-        hint.innerHTML = "";
-        hint.style.display = "none";
-    } else {
-        if (correctAnswer) {
-            hint.innerHTML = '';
-            const answerDiv = document.createElement('div');
-            answerDiv.className = 'answer-current';
-            answerDiv.textContent = correctAnswer;
-            hint.appendChild(answerDiv);
-            hint.style.display = "block";
-            
-            usedHintOrAnswer = true;
-        }
-    }
-}
-
-function toggleJimunsHint(index) {
-    const hint = document.querySelector(`.description-hint[data-index="${index}"]`);
-    
-    closeAllJimunsDropdowns();
-    closeAllJimunsHints(index);
-    
-    if (hint.style.display === 'block') {
-        hint.style.display = 'none';
-    } else {
-        hint.style.display = 'block';
-        usedHintOrAnswer = true;
-    }
-}
-
-function closeAllJimunsDropdowns() {
-    document.querySelectorAll('.jimuns-answer-dropdown').forEach(dd => dd.classList.remove('show'));
-    document.querySelectorAll('.answer-hint').forEach(hint => {
-        hint.innerHTML = "";
-        hint.style.display = 'none';
-    });
-}
-
-function closeAllJimunsHints(keepIndex = -1) {
-    document.querySelectorAll('.description-hint').forEach(hint => {
-        if (hint.dataset.index !== String(keepIndex)) {
-            hint.style.display = 'none';
-        }
-    });
-}
-
-window.checkJimunsAnswer = function() {
-    if (gameState !== 'playing') return;
-    
-    const jimunsContainer = document.getElementById('jimunsContainer');
-    const allWrappers = jimunsContainer.querySelectorAll('.input-wrapper');
-    const messageEl = document.getElementById('message');
-    
-    let allCorrect = true;
-    
-    allWrappers.forEach((wrapper, index) => {
-        const visualDisplay = wrapper.querySelector('.visual-display');
-        const input = wrapper.querySelector('.answerInput');
-        
-        if (input.disabled) return;
-        
-        const userAnswer = input.value.trim();
-        const correctAnswer = currentProblem.answers[index] || "";
-        
-        let isCorrect = (userAnswer.toLowerCase() === correctAnswer.toLowerCase());
-        
-        if (isCorrect && userAnswer !== "") {
-            visualDisplay.style.borderColor = "#22c55e";
-            visualDisplay.style.borderWidth = "3px";
-            input.disabled = true;
-        } else {
-            visualDisplay.style.borderColor = "#ef4444";
-            visualDisplay.style.borderWidth = "3px";
-            allCorrect = false;
-        }
-    });
-    
-    if (allCorrect) {
-        if (!usedHintOrAnswer) {
-            solvedProblems.add(currentProblem.id);
-            saveSolvedProblems();
-        }
-        
-        messageEl.textContent = '🎉 정답입니다!';
-        messageEl.className = 'message success show';
-        
-        setTimeout(() => {
-            messageEl.classList.remove('show');
-            
-            if (level < gameData.length - 1) {
-                level++;
-                gameStartTime = Date.now();
-                loadProblem();
-            } else {
-                hideAudioPlayer();
-                
-                let studentName = '학생';
-                try {
-                    studentName = wasmModule.get_cookie('studentName');
-                } catch (e) {}
-                
-                const completionInfo = `${userClass} ${selectedMainMenu} ${selectedLevel}과`;
-                
-                messageEl.innerHTML = `🏆 ${studentName}<br>${completionInfo}<br>축하합니다!`;
-                messageEl.className = 'message success show';
-                gameState = 'complete';
-                
-                messageEl.onclick = () => {
-                    messageEl.classList.remove('show');
-                    messageEl.onclick = null;
-                    showButtons();
-                };
-            }
-        }, 500);
-    } else {
-        usedHintOrAnswer = true;
-        
-        messageEl.textContent = '❌ 틀렸습니다!';
-        messageEl.className = 'message fail show';
-        
-        setTimeout(() => {
-            messageEl.classList.remove('show');
-        }, 500);
-    }
-};
-
-window.checkNumberAnswer = function(selectedAnswer) {
-    if (gameState !== 'playing') return;
-    
-    const isCorrect = currentProblem.answer.some(ans => 
-        selectedAnswer.toLowerCase() === ans.toLowerCase()
-    );
-    
-    const messageEl = document.getElementById('message');
-    
-    if (isCorrect) {
-        if (!usedHintOrAnswer) {
-            solvedProblems.add(currentProblem.id);
-            saveSolvedProblems();
-        }
-        
-        messageEl.textContent = '🎉 정답입니다!';
-        messageEl.className = 'message success show';
-        
-        setTimeout(() => {
-            messageEl.classList.remove('show');
-            
-            if (level < gameData.length - 1) {
-                level++;
-                gameStartTime = Date.now();
-                loadProblem();
-            } else {
-                hideAudioPlayer();
-                
-                let studentName = '학생';
-                try {
-                    studentName = wasmModule.get_cookie('studentName');
-                } catch (e) {}
-                
-                const completionInfo = `${userClass} ${selectedMainMenu} ${selectedLevel}과`;
-                
-                messageEl.innerHTML = `🏆 ${studentName}<br>${completionInfo}<br>축하합니다!`;
-                messageEl.className = 'message success show';
-                gameState = 'complete';
-                
-                messageEl.onclick = () => {
-                    messageEl.classList.remove('show');
-                    messageEl.onclick = null;
-                    showButtons();
-                };
-            }
-        }, 500);
-    } else {
-        usedHintOrAnswer = true;
-        
-        messageEl.textContent = '❌ 틀렸습니다!';
-        messageEl.className = 'message fail show';
-        
-        setTimeout(() => {
-            messageEl.classList.remove('show');
-        }, 500);
-    }
-};
-
-window.togglePicture = function() {
-    const overlay = document.getElementById('pictureOverlay');
-    if (overlay.classList.contains('hidden')) {
-        window.showPicture();
-    } else {
-        window.hidePicture();
-    }
-};
-
-window.showPicture = function() {
-    if (!currentProblem || !currentProblem.currentPicture) return;
-    
-    const overlay = document.getElementById('pictureOverlay');
-    const img = document.getElementById('pictureImage');
-    
-    img.onerror = null;
-    img.src = '';
-    
-    const jpgPath = `./data_picture/${currentProblem.currentPicture}.jpg`;
-    
-    img.onerror = function() {
-        const jpegPath = `./data_picture/${currentProblem.currentPicture}.jpeg`;
-        
-        img.onerror = function() {
-            console.error('이미지 로드 실패:', currentProblem.currentPicture);
-            alert(`이미지를 불러올 수 없습니다.\n파일명: ${currentProblem.currentPicture}`);
-            window.hidePicture();
-        };
-        
-        img.src = jpegPath;
-    };
-    
-    img.src = jpgPath;
-    overlay.classList.remove('hidden');
-}
-
-window.hidePicture = function() {
-    const overlay = document.getElementById('pictureOverlay');
-    const img = document.getElementById('pictureImage');
-    
-    img.onerror = null;
-    img.src = '';
-    
-    overlay.classList.add('hidden');
-};
-
-window.togglePassage = function() {
-    const overlay = document.getElementById('passageOverlay');
-    if (overlay.classList.contains('hidden')) {
-        window.showPassage();
-    } else {
-        window.hidePassage();
-    }
-};
-
-window.showPassage = function() {
-    if (!currentProblem || !currentProblem.currentPassage) return;
-    
-    const overlay = document.getElementById('passageOverlay');
-    const content = document.getElementById('passageContent');
-    
-    content.textContent = currentProblem.currentPassage;
-    
-    overlay.classList.remove('hidden');
-}
-
-window.hidePassage = function() {
-    const overlay = document.getElementById('passageOverlay');
-    overlay.classList.add('hidden');
-}
-
-window.toggleAudioPlayer = function() {
-    const player = document.getElementById('audioPlayer');
-    if (player.classList.contains('hidden')) {
-        showAudioPlayer();
-    } else {
-        hideAudioPlayer();
-    }
-};
 
 function showAudioPlayer() {
-    if (!currentProblem || !currentProblem.currentAudio) return;
-    
     const player = document.getElementById('audioPlayer');
     const audio = document.getElementById('audioElement');
-    
-    audio.src = `./data_mp3/${currentProblem.currentAudio}.mp3`;
-    
-    // 기본 반복 끄기
-    const loopBtn = document.getElementById('audioLoopBtn');
-    audio.loop = false; 
-    
-    const startTimeSlider = document.getElementById('audioStartTime');
-    const endTimeSlider = document.getElementById('audioEndTime');
-    
-    startTimeSlider.value = 0;
-    document.getElementById('startTimeDisplay').textContent = '0.0초';
-    
+    audio.src = `./data_mp3/${currentProblem.id}.mp3`; 
     player.classList.remove('hidden');
-    
-    audio.addEventListener('loadedmetadata', function() {
-        const maxTime = Math.floor(audio.duration * 10) / 10;
-        
-        startTimeSlider.max = maxTime;
-        endTimeSlider.max = maxTime;
-        
-        endTimeSlider.value = maxTime;
-        document.getElementById('endTimeDisplay').textContent = maxTime.toFixed(1) + '초';
-        
-        updateAudioSpeed(); // 메타데이터 로드 시 배속 동기화
-    }, { once: true });
+    audio.onloadedmetadata = () => {
+        const d = audio.duration;
+        document.getElementById('audioStartTime').max = d;
+        document.getElementById('audioEndTime').max = d;
+        document.getElementById('audioEndTime').value = d;
+        document.getElementById('endTimeDisplay').textContent = d.toFixed(1);
+        updateAudioSpeed(); 
+    };
 }
 
 function hideAudioPlayer() {
-    const player = document.getElementById('audioPlayer');
-    const audio = document.getElementById('audioElement');
-    
-    audio.pause();
-    audio.currentTime = 0;
-    player.classList.add('hidden');
+    document.getElementById('audioPlayer').classList.add('hidden');
+    document.getElementById('audioElement').pause();
 }
 
-window.playAudio = function() {
-    const audio = document.getElementById('audioElement');
-    const startTime = parseFloat(document.getElementById('audioStartTime').value);
-    
-    // 만약 현재 재생 위치가 B(끝) 위치를 넘었거나 같다면 다시 A(시작)부터 재생
-    const endTime = parseFloat(document.getElementById('audioEndTime').value);
-    if (audio.currentTime >= endTime) {
-        audio.currentTime = startTime;
-    }
-    
-    audio.play();
+window.playAudio = () => document.getElementById('audioElement').play();
+window.stopAudio = () => {
+    const a = document.getElementById('audioElement');
+    a.pause();
+    a.currentTime = parseFloat(document.getElementById('audioStartTime').value);
 };
 
-// 정지 버튼 로직 변경 (A 시작 위치로 돌아가서 멈춤)
-window.stopAudio = function() {
-    const audio = document.getElementById('audioElement');
-    audio.pause();
-    const startTime = parseFloat(document.getElementById('audioStartTime').value);
-    audio.currentTime = startTime;
+window.updateAudioSpeed = () => {
+    document.getElementById('audioElement').playbackRate = parseFloat(document.getElementById('speedSelect').value);
 };
 
-window.toggleAudioLoop = function() {
-    const loopBtn = document.getElementById('audioLoopBtn');
-    loopBtn.classList.toggle('active');
-    
-    if (loopBtn.classList.contains('active')) {
-        loopBtn.textContent = '🔁 반복 ON';
-    } else {
-        loopBtn.textContent = '🔁 반복 OFF';
-    }
+window.updateStartTime = () => {
+    const a = document.getElementById('audioElement');
+    const v = parseFloat(document.getElementById('audioStartTime').value);
+    document.getElementById('startTimeDisplay').textContent = v.toFixed(1);
+    a.currentTime = v;
 };
 
-// 배속 조절 함수 추가
-window.updateAudioSpeed = function() {
-    const audio = document.getElementById('audioElement');
-    const speedSelect = document.getElementById('speedSelect');
-    if (audio && speedSelect) {
-        audio.playbackRate = parseFloat(speedSelect.value);
-    }
+window.updateEndTime = () => {
+    document.getElementById('endTimeDisplay').textContent = parseFloat(document.getElementById('audioEndTime').value).toFixed(1);
 };
 
-window.updateStartTime = function() {
-    const audio = document.getElementById('audioElement');
-    let startTime = parseFloat(document.getElementById('audioStartTime').value);
-    const endTime = parseFloat(document.getElementById('audioEndTime').value);
-    
-    // A 위치가 B 위치를 넘지 못하게 방지
-    if (startTime > endTime) {
-        startTime = endTime;
-        document.getElementById('audioStartTime').value = startTime;
-    }
-    
-    document.getElementById('startTimeDisplay').textContent = startTime.toFixed(1) + '초';
-    
-    const isPlaying = !audio.paused;
-    audio.currentTime = startTime;
-    
-    if (isPlaying) {
-        audio.play();
-    }
+window.toggleAudioLoop = () => {
+    const b = document.getElementById('audioLoopBtn');
+    b.classList.toggle('active');
+    b.textContent = b.classList.contains('active') ? '🔁 반복 ON' : '🔁 반복 OFF';
 };
-
-window.updateEndTime = function() {
-    let startTime = parseFloat(document.getElementById('audioStartTime').value);
-    let endTime = parseFloat(document.getElementById('audioEndTime').value);
-    
-    // B 위치가 A 위치보다 앞으로 가지 못하게 방지
-    if (endTime < startTime) {
-        endTime = startTime;
-        document.getElementById('audioEndTime').value = endTime;
-    }
-    
-    document.getElementById('endTimeDisplay').textContent = endTime.toFixed(1) + '초';
-};
-
-window.toggleHint = function() {
-    const hintDisplay = document.getElementById('hintDisplay');
-    const correctDisplay = document.getElementById('correctAnswerDisplay');
-    const comparisonDisplay = document.getElementById('comparisonDisplay');
-    
-    correctDisplay.classList.remove('show');
-    comparisonDisplay.classList.remove('show');
-    
-    if (hintDisplay.classList.contains('show')) {
-        hintDisplay.classList.remove('show');
-    } else {
-        hintDisplay.textContent = `💡 힌트: ${currentProblem.hint}`;
-        hintDisplay.classList.add('show');
-        usedHintOrAnswer = true;
-    }
-};
-
-window.toggleCorrectAnswer = function() {
-    const correctDisplay = document.getElementById('correctAnswerDisplay');
-    const hintDisplay = document.getElementById('hintDisplay');
-    
-    hintDisplay.classList.remove('show');
-    
-    if (correctDisplay.classList.contains('show')) {
-        correctDisplay.classList.remove('show');
-    } else {
-        correctDisplay.textContent = `${currentProblem.answer[0]}`;
-        correctDisplay.classList.add('show');
-        usedHintOrAnswer = true;
-    }
-};
-
-function compareStrings(userAnswer, correctAnswer) {
-    const maxLen = Math.max(userAnswer.length, correctAnswer.length);
-    let result = '';
-    
-    for (let i = 0; i < maxLen; i++) {
-        const userChar = userAnswer[i] || '';
-        const correctChar = correctAnswer[i] || '';
-        
-        if (userChar === correctChar) {
-            if (userChar === ' ') {
-                result += `<span class="diff-space-correct">[ ]</span>`;
-            } else {
-                result += `<span class="diff-correct">✓</span>`;
-            }
-        } else if (userChar && !correctChar) {
-            if (userChar === ' ') {
-                result += `<span class="diff-extra">[ ]</span>`;
-            } else {
-                result += `<span class="diff-extra">${userChar}</span>`;
-            }
-        } else if (!userChar && correctChar) {
-            if (correctChar === ' ') {
-                result += `<span class="diff-missing">[ ]</span>`;
-            } else {
-                result += `<span class="diff-missing">[${correctChar}]</span>`;
-            }
-        } else {
-            if (userChar === ' ') {
-                result += `<span class="diff-wrong">[ ]</span>`;
-            } else if (correctChar === ' ') {
-                result += `<span class="diff-wrong">${userChar}</span>`;
-            } else {
-                result += `<span class="diff-wrong">${userChar}</span>`;
-            }
-        }
-    }
-    
-    return result;
-}
 
 window.checkAnswer = function() {
-    if (gameState !== 'playing') return;
-    
-    const userAnswer = document.getElementById('answerInput').value.trim();
-    
-    if (!userAnswer) {
-        alert('답을 입력해주세요.');
-        return;
-    }
-    
-    const isCorrect = currentProblem.answer.some(ans => 
-        userAnswer.toLowerCase() === ans.toLowerCase()
-    );
-    
-    const messageEl = document.getElementById('message');
-    const comparisonDisplay = document.getElementById('comparisonDisplay');
-    const correctDisplay = document.getElementById('correctAnswerDisplay');
-    
-    if (isCorrect) {
-        if (!usedHintOrAnswer) {
-            solvedProblems.add(currentProblem.id);
-            saveSolvedProblems();
+    const userAns = document.getElementById('answerInput').value.trim();
+    const isCorrect = currentProblem.answer.includes(userAns);
+    const msg = document.getElementById('message');
+    msg.textContent = isCorrect ? '🎉 정답!' : '❌ 오답!';
+    msg.className = `message ${isCorrect ? 'success' : 'fail'} show`;
+    setTimeout(() => {
+        msg.classList.remove('show');
+        if (isCorrect) {
+            if (level < gameData.length - 1) { level++; loadProblem(); }
+            else { alert('완료!'); backToMainMenu(); }
         }
-        
-        messageEl.textContent = '🎉 정답입니다!';
-        messageEl.className = 'message success show';
-        comparisonDisplay.classList.remove('show');
-        correctDisplay.classList.remove('show');
-        
-        setTimeout(() => {
-            messageEl.classList.remove('show');
-            
-            if (level < gameData.length - 1) {
-                level++;
-                gameStartTime = Date.now();
-                loadProblem();
-            } else {
-                hideAudioPlayer();
-                
-                let studentName = '학생';
-                try {
-                    studentName = wasmModule.get_cookie('studentName');
-                } catch (e) {}
-                
-                const completionInfo = `${userClass} ${selectedMainMenu} ${selectedLevel}과`;
-                
-                messageEl.innerHTML = `🏆 ${studentName}<br>${completionInfo}<br>축하합니다!`;
-                messageEl.className = 'message success show';
-                gameState = 'complete';
-                
-                messageEl.onclick = () => {
-                    messageEl.classList.remove('show');
-                    messageEl.onclick = null;
-                    showButtons();
-                };
-            }
-        }, 500);
-    } else {
-        usedHintOrAnswer = true;
-        
-        messageEl.textContent = '❌ 틀렸습니다!';
-        messageEl.className = 'message fail show';
-        
-        const userAnswerFull = document.getElementById('answerInput').value;
-        const correctAnswer = currentProblem.answer[0];
-        const comparison = compareStrings(userAnswerFull, correctAnswer);
-        
-        comparisonDisplay.innerHTML = `
-            <div style="margin-bottom: 8px;">${comparison}</div>
-        `;
-        comparisonDisplay.classList.add('show');
-        
-        setTimeout(() => {
-            messageEl.classList.remove('show');
-        }, 500);
-    }
+    }, 1000);
 };
 
-window.stopGameManually = function() {
-    gameState = 'stopped';
-    hideAudioPlayer();
-    showButtons();
-};
-
-function showButtons() {
-    const buttonsEl = document.getElementById('buttons');
-    buttonsEl.innerHTML = `
-        <button class="btn btn-reset" onclick="backToMainMenu()">닫기</button>
-        <button class="btn btn-start" onclick="startGame()">▶ 다시 시도</button>
-        <button class="btn btn-stop" onclick="logout()">로그아웃</button>
-    `;
-}
-
-function resetGame() {
-    level = 0;
-    gameState = 'ready';
-    
-    document.getElementById('sentence').innerHTML = '';
-    document.getElementById('sentence').style.display = 'block';
-    document.getElementById('optDescription').style.display = 'none';
-    document.getElementById('optionsGrid').innerHTML = '';
-    document.getElementById('conditionText').style.display = 'none';
-    document.getElementById('numberGrid').innerHTML = '';
-    document.getElementById('numberGrid').classList.add('hidden');
-    document.getElementById('answerInputSection').classList.remove('hidden');
-    document.getElementById('jimunsContainer').innerHTML = '';
-    document.getElementById('jimunsContainer').classList.add('hidden');
-    document.getElementById('answerSection').style.display = 'block';
-    
-    document.getElementById('levelNum').textContent = '1';
-    document.getElementById('totalNum').textContent = gameData.length;
-    document.getElementById('buttons').innerHTML = '<button class="btn btn-start" onclick="startGame()">▶ 게임 시작</button>';
-    document.getElementById('answerInput').value = '';
-    document.getElementById('hintDisplay').classList.remove('show');
-    document.getElementById('correctAnswerDisplay').classList.remove('show');
-    document.getElementById('comparisonDisplay').classList.remove('show');
-    document.getElementById('contentSection').classList.remove('hidden');
-    
-    window.hidePicture();
-    window.hidePassage();
-    hideAudioPlayer();
-    
-    document.getElementById('pictureBtn').classList.add('hidden');
-    document.getElementById('passageBtn').classList.add('hidden');
-    document.getElementById('audioToggleBtn').classList.add('hidden');
-    
-    document.getElementById('message').classList.remove('show');
-}
-
-window.backToLevelSelect = function() {
-    hideAudioPlayer();
+window.backToMainMenu = function() {
     document.getElementById('gameArea').classList.add('hidden');
-    document.getElementById('levelSelector').classList.remove('hidden');
-    selectedLevel = null;
-    gameData = [];
-    resetGame();
+    document.getElementById('mainMenu').classList.remove('hidden');
+    gameState = 'ready';
+    hideAudioPlayer();
 };
 
-document.addEventListener('keydown', function(event) {
-    if (gameState !== 'playing') return;
-    
-    const answerInput = document.getElementById('answerInput');
-    if (document.activeElement === answerInput) {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            checkAnswer();
-        }
-    }
-});
+window.stopGameManually = () => { gameState = 'stopped'; hideAudioPlayer(); backToMainMenu(); };
 
-// Load 및 초기 세팅
 window.addEventListener('load', async () => {
-    const wasmReady = await initWasm();
-    if (!wasmReady) return;
-    
-    if (!checkLogin()) return;
-    
-    document.getElementById('loadingScreen').style.display = 'none';
-    document.getElementById('gameContent').classList.remove('hidden');
-
-    // A-B 구간 반복을 위한 전역 리스너 등록
-    const audio = document.getElementById('audioElement');
-    if (audio) {
-        audio.addEventListener('timeupdate', function() {
-            const endTimeElement = document.getElementById('audioEndTime');
-            const startTimeElement = document.getElementById('audioStartTime');
-            if (!endTimeElement || !startTimeElement) return;
-
-            const endTime = parseFloat(endTimeElement.value);
-            const startTime = parseFloat(startTimeElement.value);
-            const loopBtn = document.getElementById('audioLoopBtn');
-
-            // B 위치(끝점)를 지나갔을 때의 동작
-            if (audio.currentTime >= endTime && !audio.paused) {
-                if (loopBtn.classList.contains('active')) {
-                    // 반복 ON일 경우 A로 되돌려서 계속 재생
-                    audio.currentTime = startTime;
-                } else {
-                    // 반복 OFF일 경우 정지 후 A로 되돌림
-                    audio.pause();
-                    audio.currentTime = startTime;
-                }
-            }
-        });
+    if (await initWasm() && checkLogin()) {
+        document.getElementById('loadingScreen').style.display = 'none';
+        document.getElementById('gameContent').classList.remove('hidden');
     }
+    const audio = document.getElementById('audioElement');
+    audio.addEventListener('timeupdate', () => {
+        const s = parseFloat(document.getElementById('audioStartTime').value);
+        const e = parseFloat(document.getElementById('audioEndTime').value);
+        if (audio.currentTime >= e) {
+            if (document.getElementById('audioLoopBtn').classList.contains('active')) {
+                audio.currentTime = s;
+                audio.play();
+            } else {
+                audio.pause();
+                audio.currentTime = s;
+            }
+        }
+    });
 });
