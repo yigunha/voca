@@ -1160,76 +1160,88 @@ body {
 }
 
 /* =========================================
-   [추가 핵심] 글자 없는 단일 구간 슬라이더 디자인
+   [수정 완료] 글자 없는 단일 구간 슬라이더 (완벽한 겹침)
    ========================================= */
-.range-slider {
-    position: relative;
+.dual-range-container {
     display: flex;
     align-items: center;
     width: 100%;
-    height: 40px;
     gap: 15px;
-    margin-top: 10px;
-    background: rgba(0, 0, 0, 0.15);
-    padding: 0 15px;
+    margin-top: 15px;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 10px 15px;
     border-radius: 8px;
 }
 
-.slider-time {
+.time-label {
     font-size: 0.85em;
     color: #9ca3af;
     font-weight: bold;
-    min-width: 30px;
+    min-width: 35px;
     text-align: center;
 }
 
-.slider-track-container {
+.slider-wrapper {
     position: relative;
     flex: 1;
-    height: 100%;
-    display: flex;
-    align-items: center;
+    height: 24px; /* 손잡이가 잘리지 않게 높이 확보 */
 }
 
-.slider-track {
+/* 회색 전체 트랙 */
+.track-background {
     position: absolute;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
     width: 100%;
     height: 6px;
-    background: #1f2937; /* 기본 회색 트랙 */
+    background: #1f2937;
     border-radius: 3px;
     z-index: 1;
 }
 
-/* 실제 input 바 2개를 완전히 겹치게 만듦 */
-.slider-track-container input[type="range"] {
+/* 파란색 선택 구간 트랙 */
+.track-fill {
     position: absolute;
-    width: 100%;
+    top: 50%;
+    transform: translateY(-50%);
     height: 6px;
+    background: #3b82f6;
+    border-radius: 3px;
+    z-index: 2;
+    left: 0;
+    width: 100%; /* JS가 조절함 */
+}
+
+/* 2개의 input 바를 top:50%로 완벽하게 포개버림 */
+.slider-wrapper input[type="range"] {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+    width: 100%;
     -webkit-appearance: none;
     appearance: none;
-    background: transparent; /* 배경을 투명하게 해서 slider-track이 보이게 함 */
-    pointer-events: none; /* 트랙 클릭은 무시하고 손잡이만 잡히게 설정 */
-    z-index: 2;
-    outline: none;
+    background: transparent;
+    pointer-events: none; /* 트랙 클릭 무시하고 손잡이만 잡히게 */
+    z-index: 3;
     margin: 0;
 }
 
-/* 슬라이더 동그라미(손잡이) 디자인 */
-.slider-track-container input[type="range"]::-webkit-slider-thumb {
+/* 슬라이더 동그라미(손잡이) */
+.slider-wrapper input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    pointer-events: auto; /* 동그라미는 클릭/드래그 가능 */
+    pointer-events: auto; /* 손잡이는 드래그 가능 */
     width: 18px;
     height: 18px;
     background: #3b82f6;
     border-radius: 50%;
     cursor: pointer;
-    position: relative;
-    z-index: 3;
-    border: 2px solid white; /* 손잡이 구분을 위해 흰색 테두리 추가 */
+    border: 2px solid white;
 }
 
-.slider-track-container input[type="range"]::-moz-range-thumb {
+.slider-wrapper input[type="range"]::-moz-range-thumb {
     pointer-events: auto;
     width: 18px;
     height: 18px;
@@ -1237,5 +1249,4 @@ body {
     border-radius: 50%;
     cursor: pointer;
     border: 2px solid white;
-    z-index: 3;
 }

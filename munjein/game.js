@@ -100,7 +100,6 @@ window.logout = function() {
     window.location.href = '../munjein.html?logout=true'; 
 };
 
-// 원본 메뉴 흐름 1: 메인 메뉴 선택
 window.selectMainMenu = function(menu) {
     selectedMainMenu = menu;
     
@@ -147,7 +146,6 @@ async function loadEncryptedData(category, levelNum) {
     }
 }
 
-// 원본 메뉴 흐름 2: 과 선택 -> 게임 영역 진입(게임 시작 대기 상태)
 window.selectLevel = async function(category, levelNum) {
     selectedLevel = levelNum;
 
@@ -168,14 +166,13 @@ window.selectLevel = async function(category, levelNum) {
         document.getElementById('levelSelector').classList.add('hidden');
         document.getElementById('gameArea').classList.remove('hidden');
         
-        resetGame(); // 여기서 게임 시작 버튼이 표시됨
+        resetGame(); 
     } catch (error) {
         alert(`데이터 파일을 불러올 수 없습니다: ${category}/${levelNum}`);
         console.error(error);
     }
 };
 
-// 원본 메뉴 흐름 3: "게임 시작" 버튼 클릭 시 문제 로드
 window.startGame = function() {
     if (gameData.length === 0) return;
     
@@ -196,7 +193,6 @@ window.startGame = function() {
     }
 };
 
-// [추가] 문제 번호 드롭다운 업데이트
 window.updateProblemDropdown = function() {
     const select = document.getElementById('problemSelect');
     if (!select) return;
@@ -213,7 +209,6 @@ window.updateProblemDropdown = function() {
     }
 };
 
-// [추가] 드롭다운에서 문제 선택 시 이동
 window.jumpToProblem = function() {
     const select = document.getElementById('problemSelect');
     if (!select) return;
@@ -856,7 +851,7 @@ function showAudioPlayer() {
         }
         
         updateAudioSpeed(); 
-        updateSliderTrack(); // 트랙 색상 초기화
+        updateSliderTrack(); // 트랙 색상 업데이트
     }, { once: true });
 }
 
@@ -907,8 +902,8 @@ window.toggleAudioLoop = function() {
     }
 };
 
-// [추가 핵심] 슬라이더 사이의 파란색 트랙 그려주는 함수
-function updateSliderTrack() {
+// [수정 핵심] 슬라이더 사이 파란색 트랙 조절
+window.updateSliderTrack = function() {
     const start = document.getElementById('audioStartTime');
     const end = document.getElementById('audioEndTime');
     const track = document.getElementById('sliderTrack');
@@ -916,16 +911,18 @@ function updateSliderTrack() {
     if(start && end && track) {
         const min = parseFloat(start.min) || 0;
         const max = parseFloat(start.max) || 10;
+        if(max === 0) return;
+        
         const startVal = parseFloat(start.value);
         const endVal = parseFloat(end.value);
         
         const percent1 = ((startVal - min) / (max - min)) * 100;
         const percent2 = ((endVal - min) / (max - min)) * 100;
         
-        // 시작과 끝 사이를 파란색(#3b82f6)으로 칠함
-        track.style.background = `linear-gradient(to right, #1f2937 ${percent1}%, #3b82f6 ${percent1}%, #3b82f6 ${percent2}%, #1f2937 ${percent2}%)`;
+        track.style.left = percent1 + '%';
+        track.style.width = (percent2 - percent1) + '%';
     }
-}
+};
 
 window.updateStartTime = function() {
     const audio = document.getElementById('audioElement');
@@ -933,14 +930,13 @@ window.updateStartTime = function() {
     const endTimeSlider = document.getElementById('audioEndTime');
     let endTime = endTimeSlider ? parseFloat(endTimeSlider.value) : audio.duration;
     
-    // 시작값이 끝값을 넘지 못하게 방지
     if (startTime > endTime) {
         startTime = endTime;
         document.getElementById('audioStartTime').value = startTime;
     }
     
     document.getElementById('startTimeDisplay').textContent = startTime.toFixed(1);
-    updateSliderTrack(); // 트랙 색상 업데이트
+    updateSliderTrack();
     
     const isPlaying = !audio.paused;
     audio.currentTime = startTime;
@@ -954,14 +950,13 @@ window.updateEndTime = function() {
     let startTime = parseFloat(document.getElementById('audioStartTime').value);
     let endTime = parseFloat(document.getElementById('audioEndTime').value);
     
-    // 끝값이 시작값보다 작아지지 못하게 방지
     if (endTime < startTime) {
         endTime = startTime;
         document.getElementById('audioEndTime').value = endTime;
     }
     
     document.getElementById('endTimeDisplay').textContent = endTime.toFixed(1);
-    updateSliderTrack(); // 트랙 색상 업데이트
+    updateSliderTrack();
 };
 
 window.toggleHint = function() {
@@ -1129,7 +1124,7 @@ function showButtons() {
     `;
 }
 
-// [원본 복원] resetGame: 게임 초기화 및 "▶ 게임 시작" 버튼 표시
+// [원본 복원]
 function resetGame() {
     level = 0;
     gameState = 'ready';
@@ -1144,13 +1139,11 @@ function resetGame() {
     document.getElementById('answerInputSection').classList.remove('hidden');
     document.getElementById('jimunsContainer').innerHTML = '';
     document.getElementById('jimunsContainer').classList.add('hidden');
-    
-    // 이 상태에서는 정답 영역을 보여줌
     document.getElementById('answerSection').style.display = 'block';
     
     updateProblemDropdown();
     
-    // [원본 복원] 과 선택 직후 버튼은 '게임 시작'으로 세팅
+    // 이 시점에서 게임시작 버튼이 나타남
     document.getElementById('buttons').innerHTML = '<button class="btn btn-start" onclick="startGame()">▶ 게임 시작</button>';
     document.getElementById('answerInput').value = '';
     document.getElementById('hintDisplay').classList.remove('show');
