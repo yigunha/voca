@@ -193,7 +193,6 @@ window.startGame = function() {
     }
 };
 
-// [추가] 문제 번호 드롭다운 업데이트
 window.updateProblemDropdown = function() {
     const select = document.getElementById('problemSelect');
     if (!select) return;
@@ -210,7 +209,6 @@ window.updateProblemDropdown = function() {
     }
 };
 
-// [추가] 드롭다운에서 문제 선택
 window.jumpToProblem = function() {
     const select = document.getElementById('problemSelect');
     if (!select) return;
@@ -825,6 +823,7 @@ window.toggleAudioPlayer = function() {
     }
 };
 
+// [수정 핵심] 문제 로드 시 반복 버튼 무조건 'ON'으로 초기화
 function showAudioPlayer() {
     if (!currentProblem || !currentProblem.currentAudio) return;
     
@@ -833,8 +832,13 @@ function showAudioPlayer() {
     
     audio.src = `./data_mp3/${currentProblem.currentAudio}.mp3`;
     
+    // 반복 버튼을 무조건 켜짐 상태로 강제 세팅
     const loopBtn = document.getElementById('audioLoopBtn');
-    audio.loop = false; // 커스텀 루프를 사용하므로 기본 loop는 끕니다.
+    if (loopBtn) {
+        loopBtn.classList.add('active');
+        loopBtn.textContent = '🔁 반복 ON';
+    }
+    audio.loop = false; // 커스텀 반복 로직을 위해 오디오 자체 루프는 끕니다.
     
     const startTimeSlider = document.getElementById('audioStartTime');
     const endTimeSlider = document.getElementById('audioEndTime');
@@ -846,18 +850,19 @@ function showAudioPlayer() {
     
     audio.addEventListener('loadedmetadata', function() {
         const maxTime = Math.floor(audio.duration * 10) / 10;
+        
         startTimeSlider.max = maxTime;
         if(endTimeSlider) {
             endTimeSlider.max = maxTime;
             endTimeSlider.value = maxTime;
             document.getElementById('endTimeDisplay').textContent = maxTime.toFixed(1);
         }
-        updateAudioSpeed();
+        
+        updateAudioSpeed(); 
         updateSliderTrack();
     }, { once: true });
 }
 
-// [추가] 오디오 배속 변경
 window.updateAudioSpeed = function() {
     const audio = document.getElementById('audioElement');
     const speedSelect = document.getElementById('speedSelect');
@@ -866,7 +871,6 @@ window.updateAudioSpeed = function() {
     }
 };
 
-// [추가] 두 슬라이더 사이의 트랙 색상을 파란색으로 채워주는 함수
 window.updateSliderTrack = function() {
     const start = document.getElementById('audioStartTime');
     const end = document.getElementById('audioEndTime');
@@ -894,7 +898,6 @@ function hideAudioPlayer() {
     
     audio.pause();
     audio.currentTime = 0;
-    
     player.classList.add('hidden');
 }
 
@@ -913,14 +916,12 @@ window.playAudio = function() {
 window.stopAudio = function() {
     const audio = document.getElementById('audioElement');
     audio.pause();
-    
     const startTime = parseFloat(document.getElementById('audioStartTime').value);
     audio.currentTime = startTime;
 };
 
 window.toggleAudioLoop = function() {
     const loopBtn = document.getElementById('audioLoopBtn');
-    
     loopBtn.classList.toggle('active');
     
     if (loopBtn.classList.contains('active')) {
@@ -1196,7 +1197,6 @@ window.addEventListener('load', async () => {
     document.getElementById('loadingScreen').style.display = 'none';
     document.getElementById('gameContent').classList.remove('hidden');
 
-    // [추가] 오디오 A-B 구간 반복 체크
     const audio = document.getElementById('audioElement');
     if (audio) {
         audio.addEventListener('timeupdate', function() {
@@ -1208,12 +1208,14 @@ window.addEventListener('load', async () => {
             const startTime = parseFloat(startTimeElement.value);
             const loopBtn = document.getElementById('audioLoopBtn');
 
+            // 지정된 B구간에 도달했을 때
             if (audio.currentTime >= endTime && !audio.paused) {
                 if (loopBtn && loopBtn.classList.contains('active')) {
                     audio.currentTime = startTime;
+                    audio.play(); // 루프가 ON이면 A로 되돌아간 뒤 재생 유지
                 } else {
                     audio.pause();
-                    audio.currentTime = startTime;
+                    audio.currentTime = startTime; // 루프가 OFF면 정지
                 }
             }
         });

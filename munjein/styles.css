@@ -239,7 +239,7 @@ body {
     background: #2563eb;
 }
 
-/* 오디오 플레이어 */
+/* 오디오 플레이어 기본 */
 .audio-player {
     background: #374151;
     border-radius: 8px;
@@ -282,58 +282,6 @@ body {
     opacity: 0.9;
 }
 
-.audio-options {
-    margin-top: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.audio-option-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: #f3f4f6;
-    font-size: 0.9em;
-}
-
-.start-time-control {
-    flex-direction: column;
-    align-items: stretch;
-}
-
-.start-time-control label {
-    margin-bottom: 6px;
-    font-weight: 600;
-}
-
-.start-time-control input[type="range"] {
-    width: 100%;
-    height: 6px;
-    background: #1f2937;
-    border-radius: 3px;
-    outline: none;
-    cursor: pointer;
-}
-
-.start-time-control input[type="range"]::-webkit-slider-thumb {
-    appearance: none;
-    width: 16px;
-    height: 16px;
-    background: #3b82f6;
-    border-radius: 50%;
-    cursor: pointer;
-}
-
-.start-time-control input[type="range"]::-moz-range-thumb {
-    width: 16px;
-    height: 16px;
-    background: #3b82f6;
-    border-radius: 50%;
-    cursor: pointer;
-    border: none;
-}
-
 .content-section {
     background: #374151;
     border-radius: 8px;
@@ -366,7 +314,6 @@ body {
     text-align: center;
 }
 
-/* jimuns 모드 스타일 추가 */
 .jimuns-text {
     white-space: pre-wrap;
     display: inline;
@@ -589,9 +536,6 @@ body {
 }
 
 .level-display {
-    display: flex;
-    align-items: center;
-    gap: 5px;
     background-color: #2b2f34;
     padding: 6px 10px;
     border-radius: 5px;
@@ -599,6 +543,7 @@ body {
     font-weight: bold;
     font-size: 14px;
     flex: 0 0 auto;
+    text-align: center;
 }
 
 .control-buttons {
@@ -1177,7 +1122,7 @@ body {
     padding: 5px;
 }
 
-/* 배속 및 문제 선택 드롭다운 */
+/* 배속 선택 드롭다운 */
 .speed-select {
     background: #4b5563;
     color: white;
@@ -1188,8 +1133,11 @@ body {
     cursor: pointer;
     outline: none;
 }
-.speed-select option { background: #2b2f34; }
+.speed-select option {
+    background: #2b2f34;
+}
 
+/* 문제 번호 드롭다운 */
 .problem-select {
     background: transparent;
     color: #60a5fa;
@@ -1202,9 +1150,12 @@ body {
     outline: none;
     margin: 0 4px;
 }
-.problem-select option { background: #2b2f34; color: #e0e0e0; }
+.problem-select option {
+    background: #2b2f34;
+    color: #e0e0e0;
+}
 
-/* 단일 구간 슬라이더 (A/B) */
+/* 단일 구간(A/B) 슬라이더 */
 .dual-range-container {
     display: flex;
     align-items: center;
@@ -1215,6 +1166,7 @@ body {
     padding: 10px 15px;
     border-radius: 8px;
 }
+
 .time-label {
     font-size: 0.85em;
     color: #9ca3af;
@@ -1222,11 +1174,13 @@ body {
     min-width: 35px;
     text-align: center;
 }
+
 .slider-wrapper {
     position: relative;
     flex: 1;
     height: 24px;
 }
+
 .track-background {
     position: absolute;
     top: 50%;
@@ -1238,6 +1192,7 @@ body {
     border-radius: 3px;
     z-index: 1;
 }
+
 .track-fill {
     position: absolute;
     top: 50%;
@@ -1249,6 +1204,7 @@ body {
     left: 0;
     width: 100%;
 }
+
 .slider-wrapper input[type="range"] {
     position: absolute;
     top: 50%;
@@ -1262,6 +1218,7 @@ body {
     z-index: 3;
     margin: 0;
 }
+
 .slider-wrapper input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
@@ -1273,6 +1230,7 @@ body {
     cursor: pointer;
     border: 2px solid white;
 }
+
 .slider-wrapper input[type="range"]::-moz-range-thumb {
     pointer-events: auto;
     width: 18px;
