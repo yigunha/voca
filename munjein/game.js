@@ -166,7 +166,6 @@ window.selectLevel = async function(category, levelNum) {
         document.getElementById('levelSelector').classList.add('hidden');
         document.getElementById('gameArea').classList.remove('hidden');
         
-        level = 0; // 과 선택 시 1번 문제부터 시작
         resetGame();
     } catch (error) {
         alert(`데이터 파일을 불러올 수 없습니다: ${category}/${levelNum}`);
@@ -185,7 +184,6 @@ window.startGame = function() {
     
     const currentProblem = gameData[level];
     
-    // jimuns 모드 확인
     if (isJimunsMode(currentProblem)) {
         document.getElementById('buttons').innerHTML = '<button class="btn btn-submit" onclick="checkJimunsAnswer()">정답 확인</button><button class="btn btn-stop" onclick="stopGameManually()">▢ 게임 중단</button>';
     } else if (currentProblem.number && currentProblem.number.length > 0) {
@@ -195,22 +193,27 @@ window.startGame = function() {
     }
 };
 
-// [추가] 문제 번호 드롭다운 업데이트 함수
-function updateProblemDropdown() {
+// [추가] 문제 번호(1, 2, 3...) 드롭다운 업데이트 함수
+window.updateProblemDropdown = function() {
     const select = document.getElementById('problemSelect');
     if (!select) return;
     select.innerHTML = '';
-    gameData.forEach((_, index) => {
-        const opt = new Option(index + 1, index);
-        if (index === level) opt.selected = true;
-        select.add(opt);
-    });
-    document.getElementById('totalNum').textContent = gameData.length;
-}
+    if (gameData && gameData.length > 0) {
+        gameData.forEach((_, index) => {
+            const opt = document.createElement('option');
+            opt.value = index;
+            opt.textContent = index + 1;
+            if (index === level) opt.selected = true;
+            select.appendChild(opt);
+        });
+        document.getElementById('totalNum').textContent = gameData.length;
+    }
+};
 
-// [추가] 특정 문제로 바로 점프하는 함수
+// [추가] 드롭다운에서 문제 선택 시 이동 함수
 window.jumpToProblem = function() {
     const select = document.getElementById('problemSelect');
+    if (!select) return;
     level = parseInt(select.value);
     hideAudioPlayer();
     loadProblem();
@@ -238,13 +241,11 @@ function loadProblem() {
     currentProblem.currentAudio = null;
     currentProblem.currentPassage = null;
     
-    // jimuns 모드 처리
     if (isJimunsMode(currentProblem)) {
         loadJimunsProblem();
         return;
     }
     
-    // 기존 sentence 모드 처리
     let sentenceHtml = currentProblem.sentence.replace(/\|([^|]+)\|/g, (match, content) => {
         content = content.trim();
         
@@ -321,7 +322,6 @@ function loadProblem() {
         conditionText.style.display = 'none';
     }
     
-    // number 타입 처리
     const numberGrid = document.getElementById('numberGrid');
     const answerInputSection = document.getElementById('answerInputSection');
     
@@ -354,7 +354,8 @@ function loadProblem() {
     document.getElementById('correctAnswerDisplay').classList.remove('show');
     document.getElementById('comparisonDisplay').classList.remove('show');
     
-    updateProblemDropdown(); // 문제 번호 갱신
+    // [수정] 기존 텍스트 대신 드롭다운 업데이트 호출
+    updateProblemDropdown();
     
     window.hidePicture();
     window.hidePassage();
@@ -362,7 +363,7 @@ function loadProblem() {
 
 function loadJimunsProblem() {
     const jimunsText = currentProblem.jimuns;
-    const questionParts = jimunsText.split('|     |');
+    const questionParts = jimunsText.split('|     |');  
     
     const optDesc = document.getElementById('optDescription');
     if (currentProblem.opt) {
@@ -548,7 +549,8 @@ function loadJimunsProblem() {
     document.getElementById('passageBtn').classList.add('hidden');
     document.getElementById('audioToggleBtn').classList.add('hidden');
     
-    updateProblemDropdown(); // 문제 번호 갱신
+    // [수정] 드롭다운 업데이트 호출
+    updateProblemDropdown();
 }
 
 function toggleJimunsAnswer(index) {
@@ -825,7 +827,6 @@ window.toggleAudioPlayer = function() {
     }
 };
 
-// 오디오 초기화 및 배속, A/B 슬라이더 세팅
 function showAudioPlayer() {
     if (!currentProblem || !currentProblem.currentAudio) return;
     
@@ -833,6 +834,7 @@ function showAudioPlayer() {
     const audio = document.getElementById('audioElement');
     
     audio.src = `./data_mp3/${currentProblem.currentAudio}.mp3`;
+    
     audio.loop = false; 
     
     const startTimeSlider = document.getElementById('audioStartTime');
@@ -853,11 +855,12 @@ function showAudioPlayer() {
             document.getElementById('endTimeDisplay').textContent = maxTime.toFixed(1);
         }
         
-        updateAudioSpeed(); // 메타데이터 로드 시 배속 동기화
+        // [수정] 오디오 로드 시 배속 동기화
+        updateAudioSpeed();
     }, { once: true });
 }
 
-// 배속 업데이트 함수
+// [추가] 배속 변경 함수
 window.updateAudioSpeed = function() {
     const audio = document.getElementById('audioElement');
     const speedSelect = document.getElementById('speedSelect');
@@ -878,12 +881,15 @@ function hideAudioPlayer() {
 window.playAudio = function() {
     const audio = document.getElementById('audioElement');
     const startTime = parseFloat(document.getElementById('audioStartTime').value);
+    
+    // [추가] 끝 시간 제어
     const endTimeElement = document.getElementById('audioEndTime');
     const endTime = endTimeElement ? parseFloat(endTimeElement.value) : audio.duration;
     
     if (audio.currentTime >= endTime) {
         audio.currentTime = startTime;
     }
+    
     audio.play();
 };
 
@@ -908,6 +914,7 @@ window.toggleAudioLoop = function() {
 window.updateStartTime = function() {
     const audio = document.getElementById('audioElement');
     let startTime = parseFloat(document.getElementById('audioStartTime').value);
+    
     const endTimeSlider = document.getElementById('audioEndTime');
     let endTime = endTimeSlider ? parseFloat(endTimeSlider.value) : audio.duration;
     
@@ -926,6 +933,7 @@ window.updateStartTime = function() {
     }
 };
 
+// [추가] 끝나는 시간 업데이트
 window.updateEndTime = function() {
     let startTime = parseFloat(document.getElementById('audioStartTime').value);
     let endTime = parseFloat(document.getElementById('audioEndTime').value);
@@ -1119,7 +1127,8 @@ function resetGame() {
     document.getElementById('jimunsContainer').classList.add('hidden');
     document.getElementById('answerSection').style.display = 'block';
     
-    updateProblemDropdown(); // 문제 번호 초기화
+    // [수정] 드롭다운 호출로 변경
+    updateProblemDropdown();
     
     document.getElementById('buttons').innerHTML = '<button class="btn btn-start" onclick="startGame()">▶ 게임 시작</button>';
     document.getElementById('answerInput').value = '';
@@ -1169,7 +1178,7 @@ window.addEventListener('load', async () => {
     document.getElementById('loadingScreen').style.display = 'none';
     document.getElementById('gameContent').classList.remove('hidden');
 
-    // A-B 구간 반복 이벤트 리스너
+    // [추가] A-B 구간 반복 시간 제어
     const audio = document.getElementById('audioElement');
     if (audio) {
         audio.addEventListener('timeupdate', function() {

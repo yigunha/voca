@@ -45,7 +45,7 @@
                             <button class="audio-btn" onclick="playAudio()">▶ 재생</button>
                             <button class="audio-btn" onclick="stopAudio()">⏹ 정지</button>
                             <button class="audio-btn loop-btn" id="audioLoopBtn" onclick="toggleAudioLoop()">🔁 반복 OFF</button>
-                            <select id="speedSelect" class="audio-btn" onchange="updateAudioSpeed()" style="background-color: #4b5563; color: white; border: none; font-size: 0.9em; font-weight: bold; cursor: pointer; outline: none; padding: 0 5px; border-radius: 6px;">
+                            <select id="speedSelect" class="audio-btn speed-select" onchange="updateAudioSpeed()">
                                 <option value="1.0">1.0x</option>
                                 <option value="0.9">0.9x</option>
                                 <option value="0.8" selected>0.8x</option>
@@ -55,14 +55,14 @@
                             </select>
                         </div>
                         
-                        <div class="audio-options" style="display: flex; flex-direction: row; gap: 15px; align-items: center; margin-top: 15px;">
-                            <div class="time-control" style="flex: 1; display: flex; flex-direction: row; align-items: center; gap: 5px;">
-                                <label for="audioStartTime" style="min-width: 40px; color: #9ca3af; font-size: 0.85em; font-weight: bold; margin: 0;">A: <span id="startTimeDisplay">0.0</span></label>
-                                <input type="range" id="audioStartTime" min="0" max="10" step="0.1" value="0" oninput="updateStartTime()" style="flex: 1; height: 6px; background: #1f2937; border-radius: 3px; outline: none; cursor: pointer;">
+                        <div class="audio-options">
+                            <div class="time-control">
+                                <label>A: <span id="startTimeDisplay">0.0</span></label>
+                                <input type="range" id="audioStartTime" min="0" max="10" step="0.1" value="0" oninput="updateStartTime()">
                             </div>
-                            <div class="time-control" style="flex: 1; display: flex; flex-direction: row; align-items: center; gap: 5px;">
-                                <label for="audioEndTime" style="min-width: 40px; color: #9ca3af; font-size: 0.85em; font-weight: bold; margin: 0;">B: <span id="endTimeDisplay">0.0</span></label>
-                                <input type="range" id="audioEndTime" min="0" max="10" step="0.1" value="10" oninput="updateEndTime()" style="flex: 1; height: 6px; background: #1f2937; border-radius: 3px; outline: none; cursor: pointer;">
+                            <div class="time-control">
+                                <label>B: <span id="endTimeDisplay">0.0</span></label>
+                                <input type="range" id="audioEndTime" min="0" max="10" step="0.1" value="10" oninput="updateEndTime()">
                             </div>
                         </div>
                     </div>
@@ -75,9 +75,7 @@
                                 <button class="control-btn audio-toggle-btn hidden" id="audioToggleBtn" onclick="toggleAudioPlayer()">듣기</button>
                             </div>
                             <div class="level-display">
-                                문제 
-                                <select id="problemSelect" onchange="jumpToProblem()" style="background: #1f2937; color: #60a5fa; border: 1px solid #4b5563; border-radius: 4px; padding: 2px 5px; font-weight: bold; font-size: 14px; cursor: pointer; outline: none; margin: 0 5px;"></select> 
-                                / <span id="totalNum">12</span>
+                                <span>| 문제 <select id="problemSelect" class="problem-select" onchange="jumpToProblem()"></select> / <span id="totalNum">12</span></span>
                             </div>
                             <div class="control-buttons">
                                 <button class="control-btn hint-btn" onclick="toggleHint()">힌트</button>
