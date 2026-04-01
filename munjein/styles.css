@@ -282,33 +282,45 @@ body {
     opacity: 0.9;
 }
 
-.audio-options {
-    margin-top: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+/* 배속 선택 드롭다운 스타일 추가 */
+.speed-select {
+    background: #4b5563;
+    outline: none;
 }
 
-.audio-option-item {
+.speed-select:hover {
+    background: #374151;
+}
+
+.speed-select option {
+    background: #2b2f34;
+}
+
+.audio-options {
+    margin-top: 15px;
     display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* 구간 반복 슬라이더 스타일 변경 */
+.time-control {
+    display: flex;
+    flex-direction: row;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     color: #f3f4f6;
     font-size: 0.9em;
 }
 
-.start-time-control {
-    flex-direction: column;
-    align-items: stretch;
-}
-
-.start-time-control label {
-    margin-bottom: 6px;
+.time-control label {
+    min-width: 90px;
     font-weight: 600;
+    margin-bottom: 0;
 }
 
-.start-time-control input[type="range"] {
-    width: 100%;
+.time-control input[type="range"] {
+    flex: 1;
     height: 6px;
     background: #1f2937;
     border-radius: 3px;
@@ -316,7 +328,7 @@ body {
     cursor: pointer;
 }
 
-.start-time-control input[type="range"]::-webkit-slider-thumb {
+.time-control input[type="range"]::-webkit-slider-thumb {
     appearance: none;
     width: 16px;
     height: 16px;
@@ -325,7 +337,7 @@ body {
     cursor: pointer;
 }
 
-.start-time-control input[type="range"]::-moz-range-thumb {
+.time-control input[type="range"]::-moz-range-thumb {
     width: 16px;
     height: 16px;
     background: #3b82f6;
@@ -366,7 +378,6 @@ body {
     text-align: center;
 }
 
-/* jimuns 모드 스타일 추가 */
 .jimuns-text {
     white-space: pre-wrap;
     display: inline;
@@ -589,6 +600,9 @@ body {
 }
 
 .level-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     background-color: #2b2f34;
     padding: 6px 10px;
     border-radius: 5px;
@@ -596,7 +610,23 @@ body {
     font-weight: bold;
     font-size: 14px;
     flex: 0 0 auto;
-    text-align: center;
+}
+
+/* 레벨(과) 선택 드롭다운 스타일 추가 */
+.lesson-select {
+    background: transparent;
+    color: #60a5fa;
+    border: 1px solid #4b5563;
+    border-radius: 4px;
+    padding: 2px 5px;
+    font-weight: bold;
+    font-size: 14px;
+    cursor: pointer;
+    outline: none;
+}
+.lesson-select option {
+    background: #2b2f34;
+    color: #e0e0e0;
 }
 
 .control-buttons {
@@ -878,6 +908,7 @@ body {
         order: -1;
         width: 100%;
         margin-bottom: 8px;
+        justify-content: center;
     }
     
     .audio-controls {
@@ -920,7 +951,6 @@ body {
     margin: 0 1px;
 }
 
-/* number 버튼 스타일 */
 .number-grid {
     display: flex;
     flex-direction: column;
@@ -960,7 +990,6 @@ body {
     min-width: 24px;
 }
 
-/* jimuns 컨테이너 스타일 */
 .jimuns-container {
     background: #374151;
     border-radius: 8px;
@@ -976,14 +1005,6 @@ body {
     display: none;
 }
 
-/* jimuns 텍스트 스타일 */
-.jimuns-text {
-    white-space: pre-wrap;
-    display: inline;
-    color: #f3f4f6;
-}
-
-/* jimuns 입력 그룹 스타일 */
 .input-group {
     display: inline-flex;
     flex-direction: row;
@@ -995,7 +1016,6 @@ body {
     gap: 5px;
 }
 
-/* jimuns 입력창 스타일 - answerInput 클래스 사용 */
 .jimuns-container .answerInput {
     display: inline-block;
     font-size: 1.2em;
@@ -1051,7 +1071,6 @@ body {
 .input-group .description-btn:hover {
     transform: scale(1.05);
 }
-
 
 .answer-hint {
     display: none;
@@ -1118,7 +1137,6 @@ body {
     background-color: #f0f0f0;
 }
 
-/* 설명 보기 드롭다운 스타일 */
 .description-hint {
     display: none;
     position: absolute;
@@ -1142,7 +1160,6 @@ body {
     z-index: 10001;
 }
 
-/* 반응형 - jimuns 모드 추가 */
 @media (max-width: 768px) {
     .input-group {
         flex-direction: column;
@@ -1169,4 +1186,51 @@ body {
     .answer-dropdown {
         max-height: 150px;
     }
+}
+
+.visual-display {
+    display: inline;
+    padding: 2px 8px;
+    background: #1f2937;
+    border: 2px solid #60a5fa;
+    border-radius: 4px;
+    cursor: pointer;
+    color: #f3f4f6;
+    font-weight: bold;
+}
+
+.visual-display:hover {
+    background: #374151;
+    border-color: #93c5fd;
+}
+
+.input-wrapper {
+    display: inline-block;
+    vertical-align: middle;
+    position: relative;
+}
+
+.real-input-group {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 10000;
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    margin-top: 5px;
+    padding: 8px;
+    background: #374151;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.real-input-group .answerInput {
+    font-size: 1.2em;
+    line-height: 2;
+    color: #f3f4f6;
+    background: #1f2937;
+    border: 2px solid #60a5fa;
+    border-radius: 4px;
+    padding: 5px;
 }

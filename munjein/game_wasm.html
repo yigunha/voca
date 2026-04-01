@@ -15,7 +15,6 @@
             </div>
 
             <div id="gameContent" class="hidden">
-                <!-- 메인 메뉴 -->
                 <div class="main-menu" id="mainMenu">
                     <h2 id="mainMenuTitle">학습 모드 선택</h2>
                     <div class="main-menu-buttons">
@@ -26,14 +25,12 @@
                     </div>
                 </div>
 
-                <!-- 레벨 선택 -->
                 <div class="level-selector hidden" id="levelSelector">
                     <div class="level-title" id="levelTitle"></div>
                     <button class="back-btn" onclick="backToMainMenu()">← 메인 메뉴</button>
                     <div class="level-buttons" id="levelButtons"></div>
                 </div>
 
-                <!-- 게임 영역 -->
                 <div id="gameArea" class="hidden game-area">
                     <div class="content-section" id="contentSection">
                         <div class="sentence" id="sentence"></div>
@@ -42,19 +39,29 @@
                         <div id="conditionText" class="condition-text" style="display: none;"></div>
                     </div>
                     
-                    <!-- 오디오 플레이어 -->
                     <div class="audio-player hidden" id="audioPlayer">
                         <audio id="audioElement" src=""></audio>
                         <div class="audio-controls">
                             <button class="audio-btn" onclick="playAudio()">▶ 재생</button>
-                            <button class="audio-btn" onclick="pauseAudio()">⏸ 일시정지</button>
                             <button class="audio-btn" onclick="stopAudio()">⏹ 정지</button>
                             <button class="audio-btn loop-btn" id="audioLoopBtn" onclick="toggleAudioLoop()">🔁 반복 OFF</button>
+                            <select id="speedSelect" class="audio-btn speed-select" onchange="updateAudioSpeed()">
+                                <option value="1.0">1.0x (정상)</option>
+                                <option value="0.9">0.9x</option>
+                                <option value="0.8">0.8x</option>
+                                <option value="0.7">0.7x</option>
+                                <option value="0.6">0.6x</option>
+                                <option value="0.5">0.5x</option>
+                            </select>
                         </div>
                         <div class="audio-options">
-                            <div class="audio-option-item start-time-control">
-                                <label for="audioStartTime">시작 위치: <span id="startTimeDisplay">0.0초</span></label>
+                            <div class="audio-option-item time-control">
+                                <label for="audioStartTime">A 시작: <span id="startTimeDisplay">0.0초</span></label>
                                 <input type="range" id="audioStartTime" min="0" max="10" step="0.1" value="0" oninput="updateStartTime()">
+                            </div>
+                            <div class="audio-option-item time-control">
+                                <label for="audioEndTime">B 끝: <span id="endTimeDisplay">0.0초</span></label>
+                                <input type="range" id="audioEndTime" min="0" max="10" step="0.1" value="10" oninput="updateEndTime()">
                             </div>
                         </div>
                     </div>
@@ -66,17 +73,18 @@
                                 <button class="control-btn passage-btn hidden" id="passageBtn" onclick="togglePassage()">지문</button>
                                 <button class="control-btn audio-toggle-btn hidden" id="audioToggleBtn" onclick="toggleAudioPlayer()">듣기</button>
                             </div>
-                            <div class="level-display">레벨 <span id="levelNum">1</span> / <span id="totalNum">12</span></div>
+                            <div class="level-display">
+                                <select id="lessonSelect" class="lesson-select" onchange="changeLesson()"></select>
+                                <span>| 문제 <span id="levelNum">1</span> / <span id="totalNum">12</span></span>
+                            </div>
                             <div class="control-buttons">
                                 <button class="control-btn hint-btn" onclick="toggleHint()">힌트</button>
                                 <button class="control-btn answer-btn" onclick="toggleCorrectAnswer()">정답</button>
                             </div>
                         </div>
                         
-                        <!-- number 버튼 그리드 -->
                         <div class="number-grid hidden" id="numberGrid"></div>
                         
-                        <!-- 기존 입력 섹션 -->
                         <div id="answerInputSection">
                             <input type="text" class="answer-input" id="answerInput" placeholder="정답을 입력하세요...">
                         </div>
@@ -86,7 +94,6 @@
                         <div class="comparison-display" id="comparisonDisplay"></div>
                     </div>
 
-                    <!-- jimuns 전용 영역 (버튼 바로 위) -->
                     <div class="jimuns-container hidden" id="jimunsContainer"></div>
 
                     <div class="buttons" id="buttons">
@@ -95,12 +102,10 @@
                 </div>
             </div>
 
-            <!-- 그림 오버레이 -->
             <div class="picture-overlay hidden" id="pictureOverlay" onclick="hidePicture()">
                 <img id="pictureImage" src="" alt="문제 그림">
             </div>
 
-            <!-- 지문 오버레이 -->
             <div class="passage-overlay hidden" id="passageOverlay" onclick="hidePassage()">
                 <div class="passage-content-wrapper" onclick="event.stopPropagation()">
                     <div class="passage-content" id="passageContent"></div>
@@ -108,7 +113,6 @@
                 </div>
             </div>
 
-            <!-- 메시지 -->
             <div class="message" id="message"></div>
         </div>
     </div>
