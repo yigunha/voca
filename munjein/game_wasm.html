@@ -54,12 +54,12 @@
                                 <option value="0.5">0.5x</option>
                             </select>
                         </div>
-                        
                         <div class="dual-range-container">
                             <span id="startTimeDisplay" class="time-label">0.0</span>
                             <div class="slider-wrapper">
                                 <div class="track-background"></div>
                                 <div class="track-fill" id="sliderTrack"></div>
+                                <div class="progress-indicator" id="progressIndicator"></div>
                                 <input type="range" id="audioStartTime" min="0" max="10" step="0.1" value="0" oninput="updateStartTime()">
                                 <input type="range" id="audioEndTime" min="0" max="10" step="0.1" value="10" oninput="updateEndTime()">
                             </div>
@@ -75,7 +75,7 @@
                                 <button class="control-btn audio-toggle-btn hidden" id="audioToggleBtn" onclick="toggleAudioPlayer()">듣기</button>
                             </div>
                             <div class="level-display">
-                                <span>| 문제 <select id="problemSelect" class="problem-select" onchange="jumpToProblem()"></select> / <span id="totalNum">12</span></span>
+                                문제 <select id="problemSelect" class="problem-select" onchange="jumpToProblem()"></select> / <span id="totalNum">12</span>
                             </div>
                             <div class="control-buttons">
                                 <button class="control-btn hint-btn" onclick="toggleHint()">힌트</button>

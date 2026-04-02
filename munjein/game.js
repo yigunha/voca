@@ -184,6 +184,7 @@ window.startGame = function() {
     
     const currentProblem = gameData[level];
     
+    // jimuns 모드 확인
     if (isJimunsMode(currentProblem)) {
         document.getElementById('buttons').innerHTML = '<button class="btn btn-submit" onclick="checkJimunsAnswer()">정답 확인</button><button class="btn btn-stop" onclick="stopGameManually()">▢ 게임 중단</button>';
     } else if (currentProblem.number && currentProblem.number.length > 0) {
@@ -823,7 +824,6 @@ window.toggleAudioPlayer = function() {
     }
 };
 
-// [수정 핵심] 문제 로드 시 반복 버튼 무조건 'ON'으로 초기화
 function showAudioPlayer() {
     if (!currentProblem || !currentProblem.currentAudio) return;
     
@@ -832,13 +832,12 @@ function showAudioPlayer() {
     
     audio.src = `./data_mp3/${currentProblem.currentAudio}.mp3`;
     
-    // 반복 버튼을 무조건 켜짐 상태로 강제 세팅
     const loopBtn = document.getElementById('audioLoopBtn');
     if (loopBtn) {
         loopBtn.classList.add('active');
         loopBtn.textContent = '🔁 반복 ON';
     }
-    audio.loop = false; // 커스텀 반복 로직을 위해 오디오 자체 루프는 끕니다.
+    audio.loop = false;
     
     const startTimeSlider = document.getElementById('audioStartTime');
     const endTimeSlider = document.getElementById('audioEndTime');
@@ -858,7 +857,10 @@ function showAudioPlayer() {
             document.getElementById('endTimeDisplay').textContent = maxTime.toFixed(1);
         }
         
-        updateAudioSpeed(); 
+        const progress = document.getElementById('progressIndicator');
+        if (progress) progress.style.left = '0%';
+        
+        updateAudioSpeed();
         updateSliderTrack();
     }, { once: true });
 }
@@ -898,6 +900,7 @@ function hideAudioPlayer() {
     
     audio.pause();
     audio.currentTime = 0;
+    
     player.classList.add('hidden');
 }
 
@@ -910,18 +913,21 @@ window.playAudio = function() {
     if (audio.currentTime >= endTime) {
         audio.currentTime = startTime;
     }
+    
     audio.play();
 };
 
 window.stopAudio = function() {
     const audio = document.getElementById('audioElement');
     audio.pause();
+    
     const startTime = parseFloat(document.getElementById('audioStartTime').value);
     audio.currentTime = startTime;
 };
 
 window.toggleAudioLoop = function() {
     const loopBtn = document.getElementById('audioLoopBtn');
+    
     loopBtn.classList.toggle('active');
     
     if (loopBtn.classList.contains('active')) {
@@ -945,9 +951,14 @@ window.updateStartTime = function() {
     document.getElementById('startTimeDisplay').textContent = startTime.toFixed(1);
     updateSliderTrack();
     
-    const isPlaying = !audio.paused;
     audio.currentTime = startTime;
     
+    const progress = document.getElementById('progressIndicator');
+    if (progress && audio.duration) {
+        progress.style.left = `${(audio.currentTime / audio.duration) * 100}%`;
+    }
+    
+    const isPlaying = !audio.paused;
     if (isPlaying) {
         audio.play();
     }
@@ -1199,24 +1210,44 @@ window.addEventListener('load', async () => {
 
     const audio = document.getElementById('audioElement');
     if (audio) {
-        audio.addEventListener('timeupdate', function() {
-            const endTimeElement = document.getElementById('audioEndTime');
-            const startTimeElement = document.getElementById('audioStartTime');
-            if (!endTimeElement || !startTimeElement) return;
-
-            const endTime = parseFloat(endTimeElement.value);
-            const startTime = parseFloat(startTimeElement.value);
+        audio.addEventListener('timeupdate', () => {
+            const startElement = document.getElementById('audioStartTime');
+            const endElement = document.getElementById('audioEndTime');
             const loopBtn = document.getElementById('audioLoopBtn');
+            const progress = document.getElementById('progressIndicator');
+            
+            if (!startElement || !endElement) return;
 
-            // 지정된 B구간에 도달했을 때
-            if (audio.currentTime >= endTime && !audio.paused) {
-                if (loopBtn && loopBtn.classList.contains('active')) {
-                    audio.currentTime = startTime;
-                    audio.play(); // 루프가 ON이면 A로 되돌아간 뒤 재생 유지
-                } else {
-                    audio.pause();
-                    audio.currentTime = startTime; // 루프가 OFF면 정지
+            const start = parseFloat(startElement.value);
+            const end = parseFloat(endElement.value);
+            
+            if (progress && audio.duration) {
+                const pct = (audio.currentTime / audio.duration) * 100;
+                progress.style.left = `${pct}%`;
+            }
+            
+            if (audio.currentTime >= end && audio.currentTime < audio.duration && !audio.paused) {
+                if (loopBtn && loopBtn.classList.contains('active')) { 
+                    audio.currentTime = start; 
+                    audio.play(); 
+                } else { 
+                    audio.pause(); 
+                    audio.currentTime = start; 
                 }
+            }
+        });
+
+        audio.addEventListener('ended', () => {
+            const startElement = document.getElementById('audioStartTime');
+            const loopBtn = document.getElementById('audioLoopBtn');
+            if (!startElement) return;
+            
+            const start = parseFloat(startElement.value);
+            if (loopBtn && loopBtn.classList.contains('active')) {
+                audio.currentTime = start;
+                audio.play();
+            } else {
+                audio.currentTime = start;
             }
         });
     }
