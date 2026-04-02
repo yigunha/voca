@@ -879,7 +879,7 @@ function showAudioPlayer() {
         if (progress) progress.style.left = 'calc(0% + 9px)';
         
         updateAudioSpeed();
-        updateSliderTrack();
+        updateUIProgress(); // 초기화 시 UI 갱신
     };
 }
 
@@ -891,24 +891,19 @@ window.updateAudioSpeed = function() {
     }
 };
 
-window.updateSliderTrack = function() {
-    const start = document.getElementById('audioStartTime');
-    const track = document.getElementById('sliderTrack');
+// UI 업데이트 함수 (파란 막대 및 빨간 점)
+function updateUIProgress() {
+    const audio = document.getElementById('audioElement');
+    const progress = document.getElementById('progressIndicator');
+    const trackFill = document.getElementById('trackFill'); // CSS 선택자 수정 필요 가능성
+    const realTrackFill = document.getElementById('sliderTrack');
     
-    if(start && track) {
-        const min = parseFloat(start.min) || 0;
-        const max = parseFloat(start.max) || 10;
-        if(max === 0) return;
-        
-        const startVal = parseFloat(start.value);
-        
-        const percent1 = ((startVal - min) / (max - min)) * 100;
-        
-        // 썸(18px)의 넓이에 맞춰 트랙 위치와 너비를 픽셀 단위로 완벽하게 보정 (끝까지 채움)
-        track.style.left = `calc(${percent1}% + ${9 - percent1 * 0.18}px)`;
-        track.style.width = `calc(${100 - percent1}% - ${(100 - percent1) * 0.18}px)`;
+    if (audio.duration) {
+        const pct = (audio.currentTime / audio.duration) * 100;
+        if (progress) progress.style.left = `calc(${pct}% + ${9 - pct * 0.18}px)`;
+        if (realTrackFill) realTrackFill.style.width = `${pct}%`;
     }
-};
+}
 
 function hideAudioPlayer() {
     const player = document.getElementById('audioPlayer');
@@ -924,7 +919,7 @@ window.playAudio = function() {
     const audio = document.getElementById('audioElement');
     const startTime = parseFloat(document.getElementById('audioStartTime').value);
     
-    if (audio.currentTime >= audio.duration) {
+    if (audio.currentTime >= audio.duration || audio.currentTime < startTime) {
         audio.currentTime = startTime;
     }
     
@@ -937,6 +932,7 @@ window.stopAudio = function() {
     
     const startTime = parseFloat(document.getElementById('audioStartTime').value);
     audio.currentTime = startTime;
+    updateUIProgress();
 };
 
 window.toggleAudioLoop = function() {
@@ -956,17 +952,10 @@ window.updateStartTime = function() {
     let startTime = parseFloat(document.getElementById('audioStartTime').value);
     
     document.getElementById('startTimeDisplay').textContent = startTime.toFixed(1);
-    updateSliderTrack();
     
     audio.currentTime = startTime;
+    updateUIProgress();
     
-    const progress = document.getElementById('progressIndicator');
-    if (progress && audio.duration) {
-        const pct = (audio.currentTime / audio.duration) * 100;
-        progress.style.left = `calc(${pct}% + ${9 - pct * 0.18}px)`;
-    }
-    
-    // 클릭(또는 드래그) 시 이미 재생 중이었다면 계속 재생
     if (!audio.paused) {
         audio.play().catch(e => console.log('재생 지연:', e));
     }
@@ -1206,12 +1195,7 @@ window.addEventListener('load', async () => {
     const audio = document.getElementById('audioElement');
     if (audio) {
         audio.addEventListener('timeupdate', () => {
-            const progress = document.getElementById('progressIndicator');
-            
-            if (progress && audio.duration) {
-                const pct = (audio.currentTime / audio.duration) * 100;
-                progress.style.left = `calc(${pct}% + ${9 - pct * 0.18}px)`;
-            }
+            updateUIProgress();
         });
 
         audio.addEventListener('ended', () => {
@@ -1225,6 +1209,7 @@ window.addEventListener('load', async () => {
                 audio.play().catch(e => console.log('재생 지연:', e));
             } else {
                 audio.currentTime = start;
+                updateUIProgress();
             }
         });
     }
