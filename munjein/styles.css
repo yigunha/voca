@@ -65,6 +65,11 @@ body {
     transform: scale(1.05);
 }
 
+/* 홀수 개의 마지막 버튼(5번째 버튼)이 가로 2칸을 모두 차지하도록 설정 */
+.main-menu-btn:last-child:nth-child(odd) {
+    grid-column: span 2;
+}
+
 /* 레벨 선택 */
 .level-selector {
     background: #374151;
