@@ -879,7 +879,7 @@ function showAudioPlayer() {
         if (progress) progress.style.left = 'calc(0% + 9px)';
         
         updateAudioSpeed();
-        updateUIProgress(); // 초기화 시 UI 갱신
+        updateUIProgress(); 
     };
 }
 
@@ -891,17 +891,20 @@ window.updateAudioSpeed = function() {
     }
 };
 
-// UI 업데이트 함수 (파란 막대 및 빨간 점)
+// UI 업데이트 함수: 흰 배경 위 파란 막대와 빨간 점 위치 갱신
 function updateUIProgress() {
     const audio = document.getElementById('audioElement');
     const progress = document.getElementById('progressIndicator');
-    const trackFill = document.getElementById('trackFill'); // CSS 선택자 수정 필요 가능성
     const realTrackFill = document.getElementById('sliderTrack');
     
     if (audio.duration) {
         const pct = (audio.currentTime / audio.duration) * 100;
-        if (progress) progress.style.left = `calc(${pct}% + ${9 - pct * 0.18}px)`;
+        // 파란색 막대 길이를 재생 위치(빨간 점)까지 늘림
         if (realTrackFill) realTrackFill.style.width = `${pct}%`;
+        // 빨간 점 이동
+        if (progress) {
+            progress.style.left = `calc(${pct}% + ${9 - pct * 0.18}px)`;
+        }
     }
 }
 
