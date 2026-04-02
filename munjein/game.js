@@ -847,7 +847,8 @@ function showAudioPlayer() {
     
     player.classList.remove('hidden');
     
-    audio.addEventListener('loadedmetadata', function() {
+    // 수정 1: { once: true }를 제거하고 onloadedmetadata 직접 할당으로 변경
+    audio.onloadedmetadata = function() {
         const maxTime = Math.floor(audio.duration * 10) / 10;
         
         startTimeSlider.max = maxTime;
@@ -862,7 +863,7 @@ function showAudioPlayer() {
         
         updateAudioSpeed();
         updateSliderTrack();
-    }, { once: true });
+    };
 }
 
 window.updateAudioSpeed = function() {
@@ -1226,10 +1227,11 @@ window.addEventListener('load', async () => {
                 progress.style.left = `${pct}%`;
             }
             
-            if (audio.currentTime >= end && audio.currentTime < audio.duration && !audio.paused) {
+            // 수정 2: < audio.duration 조건을 제거하여 안정적인 반복 보장
+            if (audio.currentTime >= end && !audio.paused) {
                 if (loopBtn && loopBtn.classList.contains('active')) { 
                     audio.currentTime = start; 
-                    audio.play(); 
+                    audio.play().catch(e => console.log('재생 지연:', e)); 
                 } else { 
                     audio.pause(); 
                     audio.currentTime = start; 
