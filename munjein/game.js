@@ -10,15 +10,6 @@ let userClass = '';
 let solvedProblems = new Set();
 let usedHintOrAnswer = false;
 
-// [설정] 메뉴별로 표시할 과(파일) 목록을 설정합니다.
-const lessonConfig = {
-    '문법': ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'],
-    '단어': ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'],
-    '받아쓰기': ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'],
-    '듣기': ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'],
-    '대화': ['01', '02', '03', '04', '05'] // 대화는 5과까지만 표시
-};
-
 async function initWasm() {
     try {
         const wasm = await import('./pkg/korean_game_wasm.js');
@@ -120,15 +111,13 @@ window.selectMainMenu = function(menu) {
     const levelButtonsContainer = document.getElementById('levelButtons');
     levelButtonsContainer.innerHTML = '';
     
-    const files = lessonConfig[menu] || [];
-    
-    files.forEach(fileName => {
+    for (let i = 1; i <= 12; i++) {
         const btn = document.createElement('button');
         btn.className = 'level-btn';
-        btn.textContent = isNaN(fileName) ? fileName : `${parseInt(fileName)}과`;
-        btn.onclick = () => selectLevel(menu, fileName);
+        btn.textContent = `${i}과`;
+        btn.onclick = () => selectLevel(menu, String(i).padStart(2, '0'));
         levelButtonsContainer.appendChild(btn);
-    });
+    }
 };
 
 window.backToMainMenu = function() {
@@ -195,6 +184,7 @@ window.startGame = function() {
     
     const currentProblem = gameData[level];
     
+    // jimuns 모드 확인
     if (isJimunsMode(currentProblem)) {
         document.getElementById('buttons').innerHTML = '<button class="btn btn-submit" onclick="checkJimunsAnswer()">정답 확인</button><button class="btn btn-stop" onclick="stopGameManually()">▢ 게임 중단</button>';
     } else if (currentProblem.number && currentProblem.number.length > 0) {
@@ -289,8 +279,8 @@ function loadProblem() {
         
         if (content.startsWith('[') && content.endsWith(']')) {
             const audioName = content.slice(1, -1);
-            // 오디오 태그를 발견하면 즉시 재생 버튼으로 치환
-            return `<button class="inline-audio-btn" onclick="playSpecificAudio('${audioName}')">🔊 듣기</button>`;
+            currentProblem.currentAudio = audioName;
+            return '<span class="blank">소리를 들으세요</span>';
         }
         
         if (content.startsWith('{') && content.endsWith('}')) {
@@ -318,9 +308,14 @@ function loadProblem() {
         passageBtn.classList.add('hidden');
     }
     
-    // 오디오는 인라인 버튼으로 처리하므로 기본 오디오 버튼은 숨김
-    document.getElementById('audioToggleBtn').classList.add('hidden');
-    hideAudioPlayer();
+    const audioToggleBtn = document.getElementById('audioToggleBtn');
+    if (currentProblem.currentAudio) {
+        audioToggleBtn.classList.add('hidden');
+        showAudioPlayer();
+    } else {
+        audioToggleBtn.classList.add('hidden');
+        hideAudioPlayer();
+    }
     
     const optDesc = document.getElementById('optDescription');
     if (currentProblem.opt) {
@@ -386,15 +381,6 @@ function loadProblem() {
     window.hidePicture();
     window.hidePassage();
 }
-
-// 특정 오디오 즉시 재생 함수
-window.playSpecificAudio = function(audioName) {
-    currentProblem.currentAudio = audioName; 
-    showAudioPlayer(); 
-    setTimeout(() => {
-        playAudio(); 
-    }, 150);
-};
 
 function loadJimunsProblem() {
     const jimunsText = currentProblem.jimuns;
@@ -905,6 +891,7 @@ window.updateAudioSpeed = function() {
     }
 };
 
+// UI 업데이트 함수: 흰 배경 위 파란 막대와 빨간 점 위치 갱신
 function updateUIProgress() {
     const audio = document.getElementById('audioElement');
     const progress = document.getElementById('progressIndicator');
@@ -912,7 +899,9 @@ function updateUIProgress() {
     
     if (audio.duration) {
         const pct = (audio.currentTime / audio.duration) * 100;
+        // 파란색 막대 길이를 재생 위치(빨간 점)까지 늘림
         if (realTrackFill) realTrackFill.style.width = `${pct}%`;
+        // 빨간 점 이동
         if (progress) {
             progress.style.left = `calc(${pct}% + ${9 - pct * 0.18}px)`;
         }
