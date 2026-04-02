@@ -208,6 +208,11 @@ window.updateProblemDropdown = function() {
         });
         document.getElementById('totalNum').textContent = gameData.length;
     }
+
+    const prevBtn = document.getElementById('prevProblemBtn');
+    const nextBtn = document.getElementById('nextProblemBtn');
+    if (prevBtn) prevBtn.disabled = (level <= 0);
+    if (nextBtn) nextBtn.disabled = (!gameData || level >= gameData.length - 1);
 };
 
 window.jumpToProblem = function() {
@@ -216,6 +221,24 @@ window.jumpToProblem = function() {
     level = parseInt(select.value);
     hideAudioPlayer();
     loadProblem();
+};
+
+window.prevProblem = function() {
+    if (gameState !== 'playing') return;
+    if (level > 0) {
+        level--;
+        hideAudioPlayer();
+        loadProblem();
+    }
+};
+
+window.nextProblem = function() {
+    if (gameState !== 'playing') return;
+    if (gameData && level < gameData.length - 1) {
+        level++;
+        hideAudioPlayer();
+        loadProblem();
+    }
 };
 
 function isJimunsMode(problem) {
@@ -840,26 +863,20 @@ function showAudioPlayer() {
     audio.loop = false;
     
     const startTimeSlider = document.getElementById('audioStartTime');
-    const endTimeSlider = document.getElementById('audioEndTime');
     
     startTimeSlider.value = 0;
     document.getElementById('startTimeDisplay').textContent = '0.0';
     
     player.classList.remove('hidden');
     
-    // 수정 1: { once: true }를 제거하고 onloadedmetadata 직접 할당으로 변경
     audio.onloadedmetadata = function() {
         const maxTime = Math.floor(audio.duration * 10) / 10;
         
         startTimeSlider.max = maxTime;
-        if(endTimeSlider) {
-            endTimeSlider.max = maxTime;
-            endTimeSlider.value = maxTime;
-            document.getElementById('endTimeDisplay').textContent = maxTime.toFixed(1);
-        }
+        document.getElementById('durationDisplay').textContent = maxTime.toFixed(1);
         
         const progress = document.getElementById('progressIndicator');
-        if (progress) progress.style.left = '0%';
+        if (progress) progress.style.left = 'calc(0% + 9px)';
         
         updateAudioSpeed();
         updateSliderTrack();
@@ -876,22 +893,20 @@ window.updateAudioSpeed = function() {
 
 window.updateSliderTrack = function() {
     const start = document.getElementById('audioStartTime');
-    const end = document.getElementById('audioEndTime');
     const track = document.getElementById('sliderTrack');
     
-    if(start && end && track) {
+    if(start && track) {
         const min = parseFloat(start.min) || 0;
         const max = parseFloat(start.max) || 10;
         if(max === 0) return;
         
         const startVal = parseFloat(start.value);
-        const endVal = parseFloat(end.value);
         
         const percent1 = ((startVal - min) / (max - min)) * 100;
-        const percent2 = ((endVal - min) / (max - min)) * 100;
         
-        track.style.left = percent1 + '%';
-        track.style.width = (percent2 - percent1) + '%';
+        // 썸(18px)의 넓이에 맞춰 트랙 위치와 너비를 픽셀 단위로 완벽하게 보정 (끝까지 채움)
+        track.style.left = `calc(${percent1}% + ${9 - percent1 * 0.18}px)`;
+        track.style.width = `calc(${100 - percent1}% - ${(100 - percent1) * 0.18}px)`;
     }
 };
 
@@ -908,10 +923,8 @@ function hideAudioPlayer() {
 window.playAudio = function() {
     const audio = document.getElementById('audioElement');
     const startTime = parseFloat(document.getElementById('audioStartTime').value);
-    const endTimeElement = document.getElementById('audioEndTime');
-    const endTime = endTimeElement ? parseFloat(endTimeElement.value) : audio.duration;
     
-    if (audio.currentTime >= endTime) {
+    if (audio.currentTime >= audio.duration) {
         audio.currentTime = startTime;
     }
     
@@ -941,13 +954,6 @@ window.toggleAudioLoop = function() {
 window.updateStartTime = function() {
     const audio = document.getElementById('audioElement');
     let startTime = parseFloat(document.getElementById('audioStartTime').value);
-    const endTimeSlider = document.getElementById('audioEndTime');
-    let endTime = endTimeSlider ? parseFloat(endTimeSlider.value) : audio.duration;
-    
-    if (startTime > endTime) {
-        startTime = endTime;
-        document.getElementById('audioStartTime').value = startTime;
-    }
     
     document.getElementById('startTimeDisplay').textContent = startTime.toFixed(1);
     updateSliderTrack();
@@ -956,26 +962,14 @@ window.updateStartTime = function() {
     
     const progress = document.getElementById('progressIndicator');
     if (progress && audio.duration) {
-        progress.style.left = `${(audio.currentTime / audio.duration) * 100}%`;
+        const pct = (audio.currentTime / audio.duration) * 100;
+        progress.style.left = `calc(${pct}% + ${9 - pct * 0.18}px)`;
     }
     
-    const isPlaying = !audio.paused;
-    if (isPlaying) {
-        audio.play();
+    // 클릭(또는 드래그) 시 이미 재생 중이었다면 계속 재생
+    if (!audio.paused) {
+        audio.play().catch(e => console.log('재생 지연:', e));
     }
-};
-
-window.updateEndTime = function() {
-    let startTime = parseFloat(document.getElementById('audioStartTime').value);
-    let endTime = parseFloat(document.getElementById('audioEndTime').value);
-    
-    if (endTime < startTime) {
-        endTime = startTime;
-        document.getElementById('audioEndTime').value = endTime;
-    }
-    
-    document.getElementById('endTimeDisplay').textContent = endTime.toFixed(1);
-    updateSliderTrack();
 };
 
 window.toggleHint = function() {
@@ -1212,30 +1206,11 @@ window.addEventListener('load', async () => {
     const audio = document.getElementById('audioElement');
     if (audio) {
         audio.addEventListener('timeupdate', () => {
-            const startElement = document.getElementById('audioStartTime');
-            const endElement = document.getElementById('audioEndTime');
-            const loopBtn = document.getElementById('audioLoopBtn');
             const progress = document.getElementById('progressIndicator');
-            
-            if (!startElement || !endElement) return;
-
-            const start = parseFloat(startElement.value);
-            const end = parseFloat(endElement.value);
             
             if (progress && audio.duration) {
                 const pct = (audio.currentTime / audio.duration) * 100;
-                progress.style.left = `${pct}%`;
-            }
-            
-            // 수정 2: < audio.duration 조건을 제거하여 안정적인 반복 보장
-            if (audio.currentTime >= end && !audio.paused) {
-                if (loopBtn && loopBtn.classList.contains('active')) { 
-                    audio.currentTime = start; 
-                    audio.play().catch(e => console.log('재생 지연:', e)); 
-                } else { 
-                    audio.pause(); 
-                    audio.currentTime = start; 
-                }
+                progress.style.left = `calc(${pct}% + ${9 - pct * 0.18}px)`;
             }
         });
 
@@ -1247,7 +1222,7 @@ window.addEventListener('load', async () => {
             const start = parseFloat(startElement.value);
             if (loopBtn && loopBtn.classList.contains('active')) {
                 audio.currentTime = start;
-                audio.play();
+                audio.play().catch(e => console.log('재생 지연:', e));
             } else {
                 audio.currentTime = start;
             }
