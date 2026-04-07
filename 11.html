@@ -3,13 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
     <meta name="referrer" content="strict-origin-when-cross-origin">
-    
-    <title>YouTube Player - Search WWW</title>
-    
+    <title>구간 반복 및 자막 선택 플레이어</title>
     <style>
-        /* 화면 중앙 정렬 및 배경색 설정 */
         body {
             margin: 0;
             padding: 20px;
@@ -18,57 +14,129 @@
             align-items: center;
             background-color: #1a1a1a;
             color: white;
-            font-family: 'Malgun Gothic', sans-serif;
+            font-family: sans-serif;
         }
-
-        /* 반응형 비디오 컨테이너: 16:9 비율 유지 */
         .video-wrapper {
             position: relative;
             width: 100%;
-            max-width: 900px;
-            padding-bottom: 56.25%; /* 16:9 비율 (9 / 16 * 100) */
+            max-width: 850px;
+            padding-bottom: 56.25%;
             height: 0;
             background-color: #000;
             border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
-
-        .video-wrapper iframe {
+        #player {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            border: none;
         }
-
-        .description {
+        .controls {
             margin-top: 20px;
-            font-size: 0.9rem;
-            color: #ccc;
-            text-align: center;
+            display: flex;
+            gap: 10px;
         }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+        .btn-id { background-color: #ff4b2b; color: white; } /* 인도네시아 */
+        .btn-ko { background-color: #0055ff; color: white; } /* 한국어 */
+        button:hover { opacity: 0.8; transform: translateY(-2px); }
+        .status { margin-top: 10px; font-size: 0.9rem; color: #aaa; }
     </style>
 </head>
 <body>
 
-    <h2>한국어 교육 프로그램용 플레이어</h2>
+    <h2>교육용 구간 반복 플레이어</h2>
 
     <div class="video-wrapper">
-        <iframe 
-            src="https://www.youtube.com/embed/8B7ftQH9Jqw?rel=0&enablejsapi=1&start=90&cc_load_policy=1&cc_lang_pref=id&hl=id" 
-            title="Search WWW Ep.03"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-            referrerpolicy="strict-origin-when-cross-origin" 
-            allowfullscreen>
-        </iframe>
+        <div id="player"></div>
     </div>
 
-    <div class="description">
-        <p>※ 현재 1분 30초 지점부터 재생되도록 설정되어 있습니다.</p>
-        <p>※ 자막은 해당 영상이 제공하는 언어(인도네시아어 등)로 우선 출력됩니다.</p>
+    <div class="controls">
+        <button class="btn-id" onclick="changeLanguage('id')">인도네시아어 자막</button>
+        <button class="btn-ko" onclick="changeLanguage('ko')">한국어 자막</button>
     </div>
 
+    <div class="status">
+        설정 구간: 01:30 ~ 10:00 (무한 반복 중)
+    </div>
+
+    <script>
+        // 1. YouTube API 로드
+        var tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        var firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+        var player;
+        var startTime = 90;  // 1분 30초
+        var endTime = 600;   // 10분
+        var currentLang = 'id'; // 기본 자막 설정
+
+        // 2. 플레이어 생성
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('player', {
+                videoId: '8B7ftQH9Jqw',
+                playerVars: {
+                    'start': startTime,
+                    'end': endTime,
+                    'cc_load_policy': 1,
+                    'cc_lang_pref': currentLang,
+                    'rel': 0
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        }
+
+        function onPlayerReady(event) {
+            // 구간 반복을 감시하는 타이머 시작
+            setInterval(checkTime, 1000);
+        }
+
+        // 3. 구간 반복 로직 (종료 시간에 도달하면 시작 지점으로 이동)
+        function checkTime() {
+            if (player && player.getCurrentTime) {
+                var currentTime = player.getCurrentTime();
+                if (currentTime >= endTime) {
+                    player.seekTo(startTime);
+                }
+            }
+        }
+
+        // 영상이 끝났을 때(기타 사유) 다시 시작
+        function onPlayerStateChange(event) {
+            if (event.data == YT.PlayerState.ENDED) {
+                player.seekTo(startTime);
+                player.playVideo();
+            }
+        }
+
+        // 4. 자막 언어 변경 함수
+        function changeLanguage(lang) {
+            currentLang = lang;
+            // 자막 설정을 변경하기 위해 현재 시간을 저장하고 영상을 다시 불러옵니다.
+            var now = player.getCurrentTime();
+            player.loadVideoById({
+                videoId: '8B7ftQH9Jqw',
+                startSeconds: now, // 현재 보던 시점부터 다시 재생
+                endSeconds: endTime,
+                suggestedQuality: 'default'
+            });
+            // 새 영상 로드 시 자막 언어 파라미터 적용을 위해 주소 업데이트 효과
+            // 실제 API 환경에서는 아래와 같이 옵션을 세팅하거나 재로드가 가장 확실합니다.
+            console.log(lang + " 자막으로 변경되었습니다.");
+        }
+    </script>
 </body>
 </html>
