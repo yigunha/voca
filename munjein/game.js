@@ -184,7 +184,6 @@ window.startGame = function() {
     
     const currentProblem = gameData[level];
     
-    // jimuns 모드 확인
     if (isJimunsMode(currentProblem)) {
         document.getElementById('buttons').innerHTML = '<button class="btn btn-submit" onclick="checkJimunsAnswer()">정답 확인</button><button class="btn btn-stop" onclick="stopGameManually()">▢ 게임 중단</button>';
     } else if (currentProblem.number && currentProblem.number.length > 0) {
@@ -855,11 +854,6 @@ function showAudioPlayer() {
     
     audio.src = `./data_mp3/${currentProblem.currentAudio}.mp3`;
     
-    const loopBtn = document.getElementById('audioLoopBtn');
-    if (loopBtn) {
-        loopBtn.classList.add('active');
-        loopBtn.textContent = '🔁 반복 ON';
-    }
     audio.loop = false;
     
     const startTimeSlider = document.getElementById('audioStartTime');
@@ -881,6 +875,8 @@ function showAudioPlayer() {
         updateAudioSpeed();
         updateUIProgress(); 
     };
+
+    updateAudioSpeed(); 
 }
 
 window.updateAudioSpeed = function() {
@@ -891,7 +887,6 @@ window.updateAudioSpeed = function() {
     }
 };
 
-// UI 업데이트 함수: 흰 배경 위 파란 막대와 빨간 점 위치 갱신
 function updateUIProgress() {
     const audio = document.getElementById('audioElement');
     const progress = document.getElementById('progressIndicator');
@@ -899,9 +894,7 @@ function updateUIProgress() {
     
     if (audio.duration) {
         const pct = (audio.currentTime / audio.duration) * 100;
-        // 파란색 막대 길이를 재생 위치(빨간 점)까지 늘림
         if (realTrackFill) realTrackFill.style.width = `${pct}%`;
-        // 빨간 점 이동
         if (progress) {
             progress.style.left = `calc(${pct}% + ${9 - pct * 0.18}px)`;
         }
@@ -921,6 +914,8 @@ function hideAudioPlayer() {
 window.playAudio = function() {
     const audio = document.getElementById('audioElement');
     const startTime = parseFloat(document.getElementById('audioStartTime').value);
+    
+    updateAudioSpeed(); 
     
     if (audio.currentTime >= audio.duration || audio.currentTime < startTime) {
         audio.currentTime = startTime;
