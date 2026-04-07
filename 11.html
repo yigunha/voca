@@ -3,10 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
     <meta name="referrer" content="strict-origin-when-cross-origin">
-    <title>유튜브 플레이어 - 검색어를 입력하세요 WWW</title>
+    
+    <title>YouTube Player - Search WWW</title>
+    
     <style>
-        /* 기본 스타일 초기화 */
+        /* 화면 중앙 정렬 및 배경색 설정 */
         body {
             margin: 0;
             padding: 20px;
@@ -15,20 +18,20 @@
             align-items: center;
             background-color: #1a1a1a;
             color: white;
-            font-family: sans-serif;
+            font-family: 'Malgun Gothic', sans-serif;
         }
 
-        /* 반응형 비디오 컨테이너 (16:9 비율 유지) */
+        /* 반응형 비디오 컨테이너: 16:9 비율 유지 */
         .video-wrapper {
             position: relative;
             width: 100%;
-            max-width: 800px; /* 최대 너비 제한 */
-            padding-bottom: 56.25%; /* 16:9 비율 계산 (9 / 16 * 100) */
+            max-width: 900px;
+            padding-bottom: 56.25%; /* 16:9 비율 (9 / 16 * 100) */
             height: 0;
             background-color: #000;
-            border-radius: 8px;
+            border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
         .video-wrapper iframe {
@@ -40,23 +43,31 @@
             border: none;
         }
 
-        .info-text {
-            margin-top: 15px;
+        .description {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: #ccc;
             text-align: center;
-            line-height: 1.6;
         }
     </style>
 </head>
 <body>
-    
+
+    <h2>한국어 교육 프로그램용 플레이어</h2>
+
     <div class="video-wrapper">
         <iframe 
-            src="https://www.youtube.com/embed/8B7ftQH9Jqw?rel=0&enablejsapi=1" 
+            src="https://www.youtube.com/embed/8B7ftQH9Jqw?rel=0&enablejsapi=1&start=90&cc_load_policy=1&cc_lang_pref=id&hl=id" 
             title="Search WWW Ep.03"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
             referrerpolicy="strict-origin-when-cross-origin" 
             allowfullscreen>
         </iframe>
+    </div>
+
+    <div class="description">
+        <p>※ 현재 1분 30초 지점부터 재생되도록 설정되어 있습니다.</p>
+        <p>※ 자막은 해당 영상이 제공하는 언어(인도네시아어 등)로 우선 출력됩니다.</p>
     </div>
 
 </body>
