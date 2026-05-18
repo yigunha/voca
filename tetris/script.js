@@ -3,7 +3,7 @@ let wasmModule = null;
 const CONFIG = {
     GRID_ROWS: 8,
     GRID_COLS: 9,
-    FALL_SPEED: 600,
+    FALL_SPEED: 100, 
     GRAVITY_SPEED: 150,
     SPAWN_DELAY_MIN: 800,
     SPAWN_DELAY_MAX: 1500,
@@ -42,8 +42,12 @@ let userClass = '';
 let solvedProblems = new Set();
 let usedTargetInCurrentProblem = false;
 let nextSpawnLane = 0;
-let rowQueue = []; // 행별 블록 대기열
-let activeRowCount = 0; // 현재 활성화된 행 수
+let rowQueue = []; 
+let activeRowCount = 0; 
+
+// 화면 울렁임 원천 해제를 위한 고정 상태 변수
+let isGridCompressed = false;
+let compressedRowIndex = 0;
 
 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
@@ -156,15 +160,11 @@ function parseAnswer(answer) {
 }
 
 function binPackBlocks(blocks) {
-    // 1. 블록들을 크기 순으로 정렬 (큰 것부터)
     const sortedBlocks = [...blocks].sort((a, b) => b.length - a.length);
-    
     const rows = [];
     
     for (const block of sortedBlocks) {
         const blockLen = block.length;
-        
-        // 2. 가장 적합한 행 찾기 (Best Fit)
         let bestRowIndex = -1;
         let minRemainingSpace = CONFIG.GRID_COLS + 1;
         
@@ -172,14 +172,12 @@ function binPackBlocks(blocks) {
             const currentLength = rows[i].reduce((sum, b) => sum + b.length, 0);
             const remainingSpace = CONFIG.GRID_COLS - currentLength;
             
-            // 블록이 들어갈 수 있고, 남은 공간이 최소인 행 선택
             if (blockLen <= remainingSpace && remainingSpace < minRemainingSpace) {
                 bestRowIndex = i;
                 minRemainingSpace = remainingSpace;
             }
         }
         
-        // 3. 적합한 행이 있으면 추가, 없으면 새 행 생성
         if (bestRowIndex !== -1) {
             rows[bestRowIndex].push(block);
         } else {
@@ -187,7 +185,6 @@ function binPackBlocks(blocks) {
         }
     }
     
-    // 4. 각 행 내부의 블록들을 랜덤하게 섞기
     rows.forEach(row => {
         for (let i = row.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
@@ -195,7 +192,6 @@ function binPackBlocks(blocks) {
         }
     });
     
-    // 5. 각 행에 랜덤 딜레이 추가하여 반환
     return rows.map((row, rowIndex) => ({
         blocks: row,
         rowIndex: rowIndex,
@@ -204,14 +200,7 @@ function binPackBlocks(blocks) {
 }
 
 function getFakeBlocks(currentLevel) {
-    const fakeBlocks = [];
-    gameData.forEach((game, idx) => {
-        if (idx !== currentLevel) {
-            const parseResult = parseAnswer(game.answer);
-            fakeBlocks.push(...parseResult.blocks);
-        }
-    });
-    return fakeBlocks.filter(block => !FIXED_JOSA_BLOCKS.includes(block));
+    return []; 
 }
 
 function getBlockColor(blockText) {
@@ -288,17 +277,11 @@ function findBestLane(blockText) {
 }
 
 // ==========================================
-// 3. 게임 진행 로직
+// 3. 게임 진행 로직 (짜잔 즉시 완성 배치 시스템)
 // ==========================================
 
 function prepareInitialBlocks(correctBlocks) {
     let pool = [...correctBlocks];
-    
-    const fakes = getFakeBlocks(level);
-    const availableFakes = fakes.filter(f => !pool.includes(f) && !usedFakeBlocks.includes(f)).slice(0, 3);
-    
-    pool.push(...availableFakes);
-    usedFakeBlocks.push(...availableFakes);
     
     for (let i = pool.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -306,6 +289,66 @@ function prepareInitialBlocks(correctBlocks) {
     }
     
     return binPackBlocks(pool);
+}
+
+function instantlyPlaceBlocks() {
+    rowQueue.forEach(rowData => {
+        rowData.blocks.forEach(blockText => {
+            const lane = findBestLane(blockText);
+            if (lane !== null) {
+                const blockLen = blockText.length;
+                let maxRowForThisLane = CONFIG.GRID_ROWS;
+                
+                const colHeights = Array(CONFIG.GRID_COLS).fill(CONFIG.GRID_ROWS);
+                for (let c = 0; c < CONFIG.GRID_COLS; c++) {
+                    for (let r = 0; r < CONFIG.GRID_ROWS; r++) {
+                        if (grid[r][c] !== null) {
+                            colHeights[c] = r;
+                            break;
+                        }
+                    }
+                }
+                
+                for (let i = 0; i < blockLen; i++) {
+                    maxRowForThisLane = Math.min(maxRowForThisLane, colHeights[lane + i]);
+                }
+                
+                const targetRow = maxRowForThisLane - 1;
+                if (targetRow >= 0) {
+                    const cells = blockText.split('');
+                    const blockId = blockIdCounter++;
+                    const blockColor = getBlockColor(blockText);
+                    
+                    cells.forEach((cell, idx) => {
+                        grid[targetRow][lane + idx] = {
+                            char: cell,
+                            blockText: blockText,
+                            color: blockColor,
+                            id: blockId,
+                            blockLength: blockLen,
+                            posInBlock: idx
+                        };
+                    });
+                }
+            }
+        });
+    });
+    
+    rowQueue = [];
+    activeRowCount = 0;
+    fallingBlocks = [];
+    
+    let highestActiveRow = CONFIG.GRID_ROWS;
+    for (let r = 0; r < CONFIG.GRID_ROWS; r++) {
+        if (grid[r].some(cell => cell !== null)) {
+            highestActiveRow = r;
+            break;
+        }
+    }
+    compressedRowIndex = Math.max(0, highestActiveRow - 1);
+    isGridCompressed = true;
+    
+    updateDisplay();
 }
 
 window.startGame = function() {
@@ -327,6 +370,9 @@ window.startGame = function() {
     rowQueue = [];
     activeRowCount = 0;
     
+    isGridCompressed = false;
+    compressedRowIndex = 0;
+    
     gameState = 'playing';
     blockIdCounter = 0;
     gameStartTime = Date.now();
@@ -338,158 +384,29 @@ window.startGame = function() {
     wasmModule.reset_undo_count();
     wasmModule.reset_bomb_usage();
     
-    document.getElementById('description').textContent = '문장: ' + currentGame.description;
-    document.getElementById('target').textContent = '목표: ' + correctAnswer.split('').map(c => c === " " ? "□" : c).join('');
+    document.getElementById('description').textContent = currentGame.description;
+    document.getElementById('target').textContent = correctAnswer.split('').map(c => c === " " ? "□" : c).join('');
     document.getElementById('target').classList.remove('show');
     document.getElementById('message').textContent = '';
     document.getElementById('buttons').innerHTML = '<button class="btn btn-stop" onclick="stopGameManually()">■ 게임 중단</button>';
     
+    const gridEl = document.getElementById('grid');
+    if (gridEl) gridEl.removeAttribute('data-init');
+
     rowQueue = prepareInitialBlocks(blocks);
-    console.log("초기 배치 (행별):", rowQueue);
+    console.log("초기 배치 계산 완료:", rowQueue);
 
     stopGame();
-    updateDisplay();
-    
-    spawnRowBlocks();
+    instantlyPlaceBlocks();
     
     startFalling();
     startGravity();
 };
 
-
-
-
-
-
-
-
-
-
-function spawnRowBlocks() {
-    if (gameState !== 'playing') return;
-    if (rowQueue.length === 0) return;
-    if (activeRowCount >= 5) return;
-    
-    const rowData = rowQueue.shift();
-    activeRowCount++;
-    
-    console.log(`${rowData.rowIndex + 1}번째 행 스폰 시작 (${rowData.blocks.length}개 블록, 대기: ${rowQueue.length}행)`);
-    
-    // 이 행의 총 길이 계산
-    const totalLength = rowData.blocks.reduce((sum, block) => sum + block.length, 0);
-    const emptySpace = CONFIG.GRID_COLS - totalLength;
-    
-    // 빈 칸이 있으면 랜덤하게 시작 위치 결정
-    let startOffset = 0;
-    if (emptySpace > 0) {
-        startOffset = Math.floor(Math.random() * (emptySpace + 1));
-        console.log(`  → 빈칸 ${emptySpace}개, 랜덤 오프셋: ${startOffset}칸`);
-    }
-    
-    // 블록별 위치 계산
-    const blockPositions = [];
-    let currentLane = startOffset;
-    
-    rowData.blocks.forEach((blockText) => {
-        const blockLen = blockText.length;
-        blockPositions.push({
-            text: blockText,
-            lane: currentLane,
-            length: blockLen
-        });
-        currentLane += blockLen;
-    });
-    
-    // 블록 순서를 랜덤하게 섞기 (떨어지는 순서)
-    const shuffledBlocks = [...blockPositions];
-    for (let i = shuffledBlocks.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffledBlocks[i], shuffledBlocks[j]] = [shuffledBlocks[j], shuffledBlocks[i]];
-    }
-    
-    // 랜덤 순서로 블록 스폰
-    let cumulativeDelay = 0;
-    shuffledBlocks.forEach((blockData, index) => {
-        // 랜덤 간격 생성
-        const randomInterval = Math.floor(
-            Math.random() * (CONFIG.BLOCK_SPAWN_INTERVAL_MAX - CONFIG.BLOCK_SPAWN_INTERVAL_MIN)
-        ) + CONFIG.BLOCK_SPAWN_INTERVAL_MIN;
-        
-        cumulativeDelay += randomInterval;
-        
-        setTimeout(() => {
-            if (gameState !== 'playing') return;
-            
-            const cells = blockData.text.split('');
-            
-            const newBlock = {
-                text: blockData.text,
-                cells: cells,
-                position: -1,
-                lane: blockData.lane,
-                id: blockIdCounter++,
-                color: getBlockColor(blockData.text),
-                rowGroup: rowData.rowIndex
-            };
-            
-            fallingBlocks.push(newBlock);
-            updateDisplay();
-            
-            // 마지막 블록이 스폰되면 다음 행 스폰 시도
-            if (index === shuffledBlocks.length - 1) {
-                setTimeout(() => {
-                    if (gameState === 'playing' && rowQueue.length > 0 && activeRowCount < 5) {
-                        spawnRowBlocks();
-                    }
-                }, 500);
-            }
-        }, cumulativeDelay);
-    });
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function checkRowCompletion() {
-    const activeRows = new Set(fallingBlocks.map(fb => fb.rowGroup).filter(rg => rg >= 0));
-    const previousCount = activeRowCount;
-    activeRowCount = activeRows.size;
-    
-    console.log(`활성 행: ${activeRowCount}개 (이전: ${previousCount}개, 대기: ${rowQueue.length}행)`);
-    
-    if (previousCount > activeRowCount && rowQueue.length > 0 && gameState === 'playing') {
-        console.log('→ 다음 행 스폰 트리거!');
-        setTimeout(() => spawnRowBlocks(), 300);
-    }
-}
-
-function spawnBlock() {
-    return;
-}
-
-function refillSpaceB() {
-    return;
-}
+function spawnRowBlocks() { return; }
+function checkRowCompletion() { return; }
+function spawnBlock() { return; }
+function refillSpaceB() { return; }
 
 function checkAndInjectMissingBlock() {
     const parseResult = parseAnswer(gameData[level].answer);
@@ -507,53 +424,52 @@ function checkAndInjectMissingBlock() {
     }
     
     if (!nextNeededBlock) return;
-    
-    const existsFalling = fallingBlocks.some(fb => fb.text === nextNeededBlock);
     const existsGrid = grid.some(row => row.some(c => c && c.blockText === nextNeededBlock));
-    const existsInQueue = rowQueue.some(rowData => rowData.blocks.includes(nextNeededBlock));
     
-    if (!existsFalling && !existsGrid && !existsInQueue) {
-        console.log(`긴급 투입: [${nextNeededBlock}] 즉시 스폰`);
-        
-        const cells = nextNeededBlock.split('');
+    if (!existsGrid) {
+        console.log(`긴급 복구 투입: [${nextNeededBlock}] 즉시 그리드 안착`);
         const lane = findBestLane(nextNeededBlock);
-        
         if (lane !== null) {
-            const newBlock = {
-                text: nextNeededBlock,
-                cells: cells,
-                position: -1,
-                lane: lane,
-                id: blockIdCounter++,
-                color: getBlockColor(nextNeededBlock),
-                rowGroup: -1
-            };
-            
-            fallingBlocks.push(newBlock);
-            updateDisplay();
+            const blockLen = nextNeededBlock.length;
+            let maxRowForThisLane = CONFIG.GRID_ROWS;
+            const colHeights = Array(CONFIG.GRID_COLS).fill(CONFIG.GRID_ROWS);
+            for (let c = 0; c < CONFIG.GRID_COLS; c++) {
+                for (let r = 0; r < CONFIG.GRID_ROWS; r++) {
+                    if (grid[r][c] !== null) {
+                        colHeights[c] = r;
+                        break;
+                    }
+                }
+            }
+            for (let i = 0; i < blockLen; i++) {
+                maxRowForThisLane = Math.min(maxRowForThisLane, colHeights[lane + i]);
+            }
+            const targetRow = maxRowForThisLane - 1;
+            if (targetRow >= 0) {
+                const cells = nextNeededBlock.split('');
+                const blockId = blockIdCounter++;
+                const blockColor = getBlockColor(nextNeededBlock);
+                cells.forEach((cell, idx) => {
+                    grid[targetRow][lane + idx] = {
+                        char: cell,
+                        blockText: nextNeededBlock,
+                        color: blockColor,
+                        id: blockId,
+                        blockLength: blockLen,
+                        posInBlock: idx
+                    };
+                });
+            }
         }
+        updateDisplay();
     }
 }
 
-function scheduleNextBlock() {
-    return;
-}
+function scheduleNextBlock() { return; }
 
 function startFalling() {
     fallInterval = setInterval(() => {
         if (gameState !== 'playing') return;
-        fallingBlocks.forEach(block => {
-            const nextBlock = { ...block, position: block.position + 1 };
-            if (checkCollision(nextBlock)) {
-                stackBlock(block);
-                fallingBlocks = fallingBlocks.filter(b => b.id !== block.id);
-                checkRowCompletion();
-                checkAndInjectMissingBlock();
-            } else {
-                block.position++;
-            }
-        });
-        updateDisplay();
     }, speed);
 }
 
@@ -574,17 +490,7 @@ function stopGame() {
 // 4. 이벤트 핸들러 및 UI 업데이트
 // ==========================================
 
-function handleBlockClick(blockId) {
-    if (gameState !== 'playing') return;
-    const block = fallingBlocks.find(b => b.id === blockId);
-    if (!block) return;
-    
-    playClickSound();
-    processInput(block.text);
-    fallingBlocks = fallingBlocks.filter(b => b.id !== blockId);
-    checkRowCompletion();
-    updateDisplay();
-}
+function handleBlockClick(blockId) { return; }
 
 function handleCellClick(row, col) {
     if (gameState !== 'playing') return;
@@ -603,7 +509,6 @@ function handleCellClick(row, col) {
         }
         
         applyGravityStep();
-        checkRowCompletion();
         updateDisplay();
     }
 }
@@ -640,23 +545,39 @@ function handleUndo() {
     if (!isFixedJosa) {
         const parseResult = parseAnswer(gameData[level].answer);
         if (parseResult.blocks.includes(lastBlock)) {
-            console.log(`되돌리기: [${lastBlock}] 긴급 재투입`);
-            
-            const cells = lastBlock.split('');
+            console.log(`되돌리기: [${lastBlock}] 즉시 그리드 재배치`);
             const lane = findBestLane(lastBlock);
-            
             if (lane !== null) {
-                const newBlock = {
-                    text: lastBlock,
-                    cells: cells,
-                    position: -1,
-                    lane: lane,
-                    id: blockIdCounter++,
-                    color: getBlockColor(lastBlock),
-                    rowGroup: -1
-                };
-                
-                fallingBlocks.push(newBlock);
+                const blockLen = lastBlock.length;
+                let maxRowForThisLane = CONFIG.GRID_ROWS;
+                const colHeights = Array(CONFIG.GRID_COLS).fill(CONFIG.GRID_ROWS);
+                for (let c = 0; c < CONFIG.GRID_COLS; c++) {
+                    for (let r = 0; r < CONFIG.GRID_ROWS; r++) {
+                        if (grid[r][c] !== null) {
+                            colHeights[c] = r;
+                            break;
+                        }
+                    }
+                }
+                for (let i = 0; i < blockLen; i++) {
+                    maxRowForThisLane = Math.min(maxRowForThisLane, colHeights[lane + i]);
+                }
+                const targetRow = maxRowForThisLane - 1;
+                if (targetRow >= 0) {
+                    const cells = lastBlock.split('');
+                    const blockId = blockIdCounter++;
+                    const blockColor = getBlockColor(lastBlock);
+                    cells.forEach((cell, idx) => {
+                        grid[targetRow][lane + idx] = {
+                            char: cell,
+                            blockText: lastBlock,
+                            color: blockColor,
+                            id: blockId,
+                            blockLength: blockLen,
+                            posInBlock: idx
+                        };
+                    });
+                }
             }
         }
     }
@@ -665,74 +586,38 @@ function handleUndo() {
     checkAndInjectMissingBlock();
 }
 
-function handleBomb() {
+// 단순 스위칭 제어 핸들러 (이동만 순수 처리)
+window.goToPrevProblem = function() {
     if (gameState !== 'playing') return;
-    currentLevelBombCount++;
-    playClickSound();
-    
-    grid = Array(CONFIG.GRID_ROWS).fill(null).map(() => Array(CONFIG.GRID_COLS).fill(null));
-    fallingBlocks = [];
-    rowQueue = [];
-    activeRowCount = 0;
-    nextSpawnLane = 0;
-    
-    const parseResult = parseAnswer(gameData[level].answer);
-    const allCorrectBlocks = parseResult.blocks;
-    
-    let remainingAnswer = correctAnswer.slice(userAnswer.length);
-    let remainingBlocks = [];
-    let tempAnswer = remainingAnswer;
-    
-    for (const block of allCorrectBlocks) {
-        if (tempAnswer.startsWith(block)) {
-            remainingBlocks.push(block);
-            tempAnswer = tempAnswer.slice(block.length);
-        }
+    if (level > 0) {
+        playClickSound();
+        level--;
+        document.getElementById('levelNum').textContent = level + 1;
+        startGame();
     }
-    
-    const fakes = getFakeBlocks(level);
-    const maxFakes = 3;
-    const availableFakes = fakes.filter(f => !usedFakeBlocks.includes(f)).slice(0, maxFakes - usedFakeBlocks.length);
-    remainingBlocks.push(...availableFakes);
-    usedFakeBlocks.push(...availableFakes);
-    
-    rowQueue = prepareInitialBlocks(remainingBlocks);
-    console.log('폭탄 사용 - 남은 블록으로 재구성:', rowQueue.length + '행');
-    
-    updateDisplay();
-    setTimeout(() => {
-        spawnRowBlocks();
-    }, 300);
-}
+};
+
+window.goToNextProblem = function() {
+    if (gameState !== 'playing') return;
+    if (gameData && level < gameData.length - 1) {
+        playClickSound();
+        level++;
+        document.getElementById('levelNum').textContent = level + 1;
+        startGame();
+    }
+};
+
+function handleBomb() { return; }
+window.handleResetSolved = function() { return; }
 
 // ==========================================
 // 5. 기타 필수 함수들
 // ==========================================
 
-function checkCollision(block) {
-    const row = block.position;
-    if (row < 0) return false;
-    for (let i = 0; i < block.cells.length; i++) {
-        const col = block.lane + i;
-        if (col >= CONFIG.GRID_COLS) return false;
-        const nextRow = row + 1;
-        if (nextRow >= CONFIG.GRID_ROWS) return true;
-        if (grid[nextRow][col] !== null) return true;
-    }
-    return false;
-}
+function checkCollision(block) { return false; }
 
 function stackBlock(block) {
-    if (block.position < 0) {
-        console.log("Game Over: 블록이 화면 밖에서 쌓였습니다.");
-        document.getElementById('message').textContent = '⚠️ 공간 부족! 게임 오버.';
-        document.getElementById('message').className = 'message fail show';
-        gameState = 'stopped';
-        stopGame();
-        setTimeout(() => showButtons(), 2000);
-        return; 
-    }
-    
+    if (block.position < 0) return;
     block.cells.forEach((cell, idx) => {
         const row = block.position;
         const col = block.lane + idx;
@@ -762,13 +647,10 @@ function applyGravityStep() {
     
     blockIds.forEach(blockId => {
         const blockCells = [];
-        let minRow = CONFIG.GRID_ROWS;
-        
         for(let r=0; r<CONFIG.GRID_ROWS; r++) {
             for(let c=0; c<CONFIG.GRID_COLS; c++) {
                 if(grid[r][c] && grid[r][c].id === blockId) {
                     blockCells.push({r, c, data: grid[r][c]});
-                    minRow = Math.min(minRow, r);
                 }
             }
         }
@@ -807,24 +689,6 @@ function applyGravityStep() {
     }
 }
 
-function renderFixedJosa(gridEl) {
-    const josaRow = document.createElement('div');
-    josaRow.className = 'row fixed-josa-row';
-    FIXED_JOSA_BLOCKS.forEach(josa => {
-        const cell = document.createElement('div');
-        cell.className = 'cell clickable block-cell block-single fixed-josa';
-        const color = getBlockColor(josa);
-        cell.style.backgroundColor = color.bg;
-        cell.style.color = color.text;
-        cell.textContent = josa === ' ' ? '' : josa;
-        cell.onclick = () => handleFixedJosaClick(josa);
-        josaRow.appendChild(cell);
-    });
-    const remaining = CONFIG.GRID_COLS - FIXED_JOSA_BLOCKS.length;
-    for(let i=0; i<remaining; i++) josaRow.appendChild(document.createElement('div')).className = 'cell empty';
-    gridEl.appendChild(josaRow);
-}
-
 function renderCell(el, char, color, id, idx, len, isFalling) {
     el.style.backgroundColor = color.bg;
     el.style.color = color.text;
@@ -837,55 +701,97 @@ function renderCell(el, char, color, id, idx, len, isFalling) {
     else el.classList.add('block-middle');
     
     el.dataset.blockId = id;
-    
-    el.onmouseenter = () => highlightBlock(id, true);
-    el.onmouseleave = () => highlightBlock(id, false);
 }
 
+// 고성능 무진동 인플레이스 고정 렌더러
 function updateDisplay() {
     const gridEl = document.getElementById('grid');
-    gridEl.innerHTML = '';
+    if (!gridEl) return;
+
+    const firstVisibleEmptyRow = isGridCompressed ? compressedRowIndex : 0;
     
+    if (!gridEl.getAttribute('data-init')) {
+        gridEl.innerHTML = '';
+        for (let r = 0; r < CONFIG.GRID_ROWS; r++) {
+            const rowEl = document.createElement('div');
+            rowEl.className = 'row grid-row-static';
+            for (let c = 0; c < CONFIG.GRID_COLS; c++) {
+                const cellEl = document.createElement('div');
+                cellEl.className = 'cell';
+                rowEl.appendChild(cellEl);
+            }
+            gridEl.appendChild(rowEl);
+        }
+        
+        const josaRow = document.createElement('div');
+        josaRow.className = 'row fixed-josa-row';
+        FIXED_JOSA_BLOCKS.forEach(josa => {
+            const cell = document.createElement('div');
+            cell.className = 'cell clickable block-cell block-single fixed-josa';
+            const color = getBlockColor(josa);
+            cell.style.backgroundColor = color.bg;
+            cell.style.color = color.text;
+            cell.textContent = josa === ' ' ? '' : josa;
+            cell.onclick = () => handleFixedJosaClick(josa);
+            josaRow.appendChild(cell);
+        });
+        const remaining = CONFIG.GRID_COLS - FIXED_JOSA_BLOCKS.length;
+        for(let i=0; i<remaining; i++) {
+            const emptyCell = document.createElement('div');
+            emptyCell.className = 'cell empty';
+            josaRow.appendChild(emptyCell);
+        }
+        gridEl.appendChild(josaRow);
+        gridEl.setAttribute('data-init', 'true');
+    }
+
+    const rowElements = gridEl.querySelectorAll('.grid-row-static');
     for (let row = 0; row < CONFIG.GRID_ROWS; row++) {
-        const rowEl = document.createElement('div');
-        rowEl.className = 'row';
+        const rowEl = rowElements[row];
+        if (row < firstVisibleEmptyRow) {
+            rowEl.style.display = 'none'; 
+            continue;
+        }
+        rowEl.style.display = 'flex';
+        
+        const cellElements = rowEl.children;
         for (let col = 0; col < CONFIG.GRID_COLS; col++) {
-            const cellEl = document.createElement('div');
+            const cellEl = cellElements[col];
+            
             cellEl.className = 'cell';
+            cellEl.style.backgroundColor = '';
+            cellEl.style.color = '';
+            cellEl.textContent = '';
+            cellEl.onclick = null;
+            if (cellEl.dataset.blockId) delete cellEl.dataset.blockId;
             
-            const fallingBlock = fallingBlocks.find(fb => fb.position === row && col >= fb.lane && col < fb.lane + fb.cells.length);
-            
-            if (fallingBlock) {
-                const idx = col - fallingBlock.lane;
-                renderCell(cellEl, fallingBlock.cells[idx], fallingBlock.color, fallingBlock.id, idx, fallingBlock.cells.length, true);
-                cellEl.onclick = () => handleBlockClick(fallingBlock.id);
-            } else if (grid[row][col]) {
+            if (grid[row][col]) {
                 const cell = grid[row][col];
                 renderCell(cellEl, cell.char, cell.color, cell.id, cell.posInBlock, cell.blockLength, false);
                 cellEl.onclick = () => handleCellClick(row, col);
             } else {
                 cellEl.classList.add('empty');
             }
-            rowEl.appendChild(cellEl);
         }
-        gridEl.appendChild(rowEl);
     }
-    renderFixedJosa(gridEl);
     updateAnswerDisplay();
-}
-
-
-function highlightBlock(id, on) {
-    document.querySelectorAll(`[data-block-id="${id}"]`).forEach(el => 
-        on ? el.classList.add('block-hover') : el.classList.remove('block-hover')
-    );
 }
 
 function updateAnswerDisplay() {
     const display = document.getElementById('answerDisplay');
-    display.innerHTML = userAnswer.split('').map(c => c === " " ? "□" : c).join('') + '<span class="blink">|</span>';
-    document.getElementById('undoBtn').disabled = answerHistory.length === 0 || gameState !== 'playing';
-    document.getElementById('bombBtn').disabled = gameState !== 'playing';
+    if (display) {
+        display.innerHTML = userAnswer.split('').map(c => c === " " ? "□" : c).join('') + '<span class="blink">|</span>';
+    }
+    
+    const undoBtn = document.getElementById('undoBtn');
+    if (undoBtn) {
+        undoBtn.disabled = answerHistory.length === 0 || gameState !== 'playing';
+    }
+    
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    if (prevBtn) prevBtn.disabled = (level === 0);
+    if (nextBtn) nextBtn.disabled = (gameData.length === 0 || level === gameData.length - 1);
 }
 
 function checkAnswer() {
@@ -906,24 +812,25 @@ function checkAnswer() {
             if (level < gameData.length - 1) {
                 level++;
                 document.getElementById('levelNum').textContent = level + 1;
-                speed = Math.max(400, speed - 100);
                 startGame();
             } else {
                 messageEl.innerHTML = '🏆 학습 완료! 축하합니다!';
                 messageEl.className = 'message success show';
                 gameState = 'complete';
-                setTimeout(() => showButtons(), 3000);
+                /* 학습완료 팝업이 1초 후에 화면에서 사라지도록 타임아웃 조율 */
+                setTimeout(() => {
+                    messageEl.classList.remove('show');
+                }, 1000);
+                setTimeout(() => showButtons(), 1000);
             }
         }, 2000);
     } else {
         mistakeCount++;
         messageEl.textContent = '❌ 틀렸습니다!';
         messageEl.className = 'message fail show';
-        gameState = 'failed';
-        stopGame();
+        
         setTimeout(() => {
             messageEl.classList.remove('show');
-            showButtons();
         }, 2000);
     }
 }
@@ -937,6 +844,16 @@ function showButtons() {
         <button class="btn btn-stop" onclick="logout()">로그아웃</button>
     `;
 }
+
+function showNextProblemSelector(nextLevel) {
+    showButtons();
+}
+
+window.selectNextProblem = function(idx) {
+    level = idx;
+    document.getElementById('levelNum').textContent = level + 1;
+    startGame();
+};
 
 window.selectMainMenu = function(menu) {
     selectedMainMenu = menu;
@@ -976,12 +893,8 @@ window.selectLevel = async function(category, levelNum) {
             id: `${userClass}_${category}_${levelNum}_Q${String(i+1).padStart(3,'0')}`,
             description: item.description, answer: item.answer, category
         }));
-        const unsolved = converted.filter(i => !solvedProblems.has(i.id));
-        if (unsolved.length === 0) {
-            console.log('모든 문제를 해결했습니다! 초기화할까요?');
-            return;
-        }
-        gameData = unsolved;
+        
+        gameData = converted;
         document.getElementById('levelSelector').classList.add('hidden');
         document.getElementById('gameArea').classList.remove('hidden');
         resetGame();
@@ -998,6 +911,13 @@ function resetGame() {
     document.getElementById('buttons').innerHTML = '<button class="btn btn-start" onclick="startGame()">▶ 게임 시작</button>';
     grid = Array(CONFIG.GRID_ROWS).fill(null).map(() => Array(CONFIG.GRID_COLS).fill(null));
     fallingBlocks = [];
+    
+    isGridCompressed = false;
+    compressedRowIndex = 0;
+    
+    const gridEl = document.getElementById('grid');
+    if (gridEl) gridEl.removeAttribute('data-init');
+    
     updateDisplay();
 }
 
@@ -1019,16 +939,60 @@ window.stopGameManually = function() {
     showButtons();
 };
 
+// 순수 아라비아 숫자 형태 인덱스만 드롭다운에 출력
+window.toggleLevelDropdown = function() {
+    const dropdown = document.getElementById('levelDropdown');
+    
+    if (dropdown.classList.contains('hidden')) {
+        dropdown.innerHTML = '';
+        
+        if (gameData.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'level-dropdown-item';
+            empty.textContent = '-';
+            dropdown.appendChild(empty);
+        } else {
+            for (let i = 0; i < gameData.length; i++) {
+                const item = document.createElement('div');
+                item.className = 'level-dropdown-item';
+                if (i === level) item.classList.add('level-dropdown-current');
+                
+                item.textContent = `${i + 1}`;
+                item.onclick = (e) => {
+                    e.stopPropagation();
+                    closeLevelDropdown();
+                    level = i;
+                    document.getElementById('levelNum').textContent = level + 1;
+                    startGame();
+                };
+                dropdown.appendChild(item);
+            }
+        }
+        
+        dropdown.classList.remove('hidden');
+        setTimeout(() => document.addEventListener('click', closeLevelDropdownOutside), 0);
+    } else {
+        closeLevelDropdown();
+    }
+};
+
+function closeLevelDropdown() {
+    const dropdown = document.getElementById('levelDropdown');
+    if (dropdown) dropdown.classList.add('hidden');
+    document.removeEventListener('click', closeLevelDropdownOutside);
+}
+
+function closeLevelDropdownOutside(e) {
+    const display = document.getElementById('levelDisplay');
+    if (display && !display.contains(e.target)) {
+        closeLevelDropdown();
+    }
+}
+
 window.addEventListener('load', async () => {
     if (await initWasm() && checkLogin()) {
         document.getElementById('loadingScreen').style.display = 'none';
         document.getElementById('gameContent').classList.remove('hidden');
         document.getElementById('undoBtn').onclick = handleUndo;
-        document.getElementById('bombBtn').onclick = handleBomb;
     }
 });
-
-
-
-
-

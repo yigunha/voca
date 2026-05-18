@@ -132,7 +132,7 @@ body {
     font-size: 1em;
     font-weight: bold;
     color: #f3f4f6;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
     padding: 10px;
     background: #374151;
     border-radius: 6px;
@@ -187,6 +187,13 @@ body {
     border: 1px solid #4b5563;
     border-radius: 3px;
     margin: 1px;
+}
+
+/* 지정 조건 외 상단부 빈칸을 안보이게 만드는 투명 스타일 */
+.cell.empty.invisible-empty {
+    background: transparent !important;
+    border: 1px solid transparent !important;
+    box-shadow: none !important;
 }
 
 .cell.block-cell {
@@ -353,14 +360,16 @@ body {
     51%, 100% { opacity: 0; }
 }
 
+/* 제어바 레이아웃: 완벽한 단일 행(Row) 배치 구조로 전면 교정 */
 .answer-header {
     display: flex;
+    flex-direction: row;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 12px;
+    gap: 5px;
+    padding: 8px 10px;
     background-color: #363a40;
     border-radius: 8px;
-    flex-wrap: nowrap;
     width: 100%;
     box-sizing: border-box;
 }
@@ -387,76 +396,124 @@ body {
     justify-content: flex-end;
 }
 
+/* 숫자 표시 및 드롭다운 규격 단일 행 연동 최적화 */
 .level {
     background-color: #2b2f34;
-    padding: 6px 10px;
+    padding: 6px 4px;
     border-radius: 5px;
     color: #e0e0e0;
     font-weight: bold;
     font-size: 14px;
     white-space: nowrap;
-}
-
-.show-target-btn, .bomb-btn, .undo-btn {
-    padding: 6px 8px;
-    border: none;
-    cursor: pointer;
-    border-radius: 5px;
-    transition: background-color 0.2s;
+    min-width: 38px;
+    text-align: center;
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 32px;
-    min-width: 32px;
-    color: white;
+    height: 35px;
 }
 
+/* 정답 버튼 크기 확대 및 좌측 균형 flex 배치 */
 .show-target-btn {
-    background-color: #555c66;
-    font-size: 16px;
-}
-
-.bomb-btn {
-    background-color: #d83a3a;
-    font-size: 18px;
-    line-height: 1;
-}
-
-.undo-btn {
-    background-color: #555c66;
-    font-size: 18px;
-}
-
-.undo-btn:hover {
-    background: #ea580c;
-}
-
-.bomb-btn:hover {
-    background: #b91c1c;
+    background-color: #3b82f6;
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    height: 35px;
+    white-space: nowrap;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background-color 0.2s;
+    flex: 1.2;
 }
 
 .show-target-btn:hover {
-    background: #4b5563;
+    background-color: #2563eb;
+}
+
+/* 삼각형 네비게이션 버튼 단일 행 규격 연동 고정 */
+.nav-btn {
+    padding: 6px 4px;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+    background-color: #555c66;
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+    height: 35px;
+    min-width: 32px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background-color 0.2s;
+}
+
+.nav-btn:hover {
+    background-color: #4b5563;
+}
+
+.nav-btn:disabled {
+    background-color: #2b2f34;
+    color: #555c66;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* 되돌리기 버튼: 요구사항 반영 - 선명한 녹색 배경, 흰색 글자, 우측 균형 배치 */
+.undo-btn {
+    background-color: #22c55e;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: bold;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    height: 35px;
+    white-space: nowrap;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background-color 0.2s;
+    flex: 1.5;
+}
+
+.undo-btn:hover {
+    background-color: #16a34a;
 }
 
 .undo-btn:disabled {
-    background: #4b5563;
+    background-color: #4b5563;
     color: #9ca3af;
     cursor: not-allowed;
 }
 
-.bomb-btn:disabled {
-    background: #6b7280;
-    color: #9ca3af;
-    cursor: not-allowed;
-}
-
+/* 상단 배치용 목표 정답 디자인 커스텀 - 글자 색만 빼고 크기, 굵기, 여백, 정렬까지 완전 일치 교정 */
 .target {
-    font-size: 1.0em;
-    color: #9ca3af;
-    margin-top: 6px;
+    font-family: monospace;
+    font-size: 1.3em;
+    font-weight: bold;
+    color: #facc15;             /* 오직 글자 색상만 다르게 유지 */
+    background-color: #1f2937;
+    border: 2px solid #4b5563;  /* 테두리선 두께 및 스타일 일치 */
+    border-radius: 6px;
+    padding: 12px;              /* 내부 여백 12px로 완벽 일치 */
+    min-height: 45px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    text-align: left;           /* 왼쪽 정렬로 원천 교정 */
+    
+    /* 외곽 박스(.answer-section) 두께와 패딩만큼 좌우 마진을 주어 정렬 시작 라인을 자석처럼 일치시킴 */
+    margin-left: 14px;
+    margin-right: 14px;
+    margin-top: 8px;
+    margin-bottom: 8px;
+    
     display: none;
-    letter-spacing: 2px;
 }
 
 .target.show {
@@ -524,4 +581,122 @@ body {
 
 .fixed-josa:active {
     transform: scale(0.95);
+}
+
+/* 다음 문제 선택기 */
+.next-problem-selector {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+}
+
+.next-problem-toggle {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 6px;
+}
+
+.next-arrow {
+    font-size: 0.75em;
+    transition: transform 0.2s;
+}
+
+.next-problem-list {
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    background: #1f2937;
+    border: 2px solid #3b82f6;
+    border-radius: 8px;
+    z-index: 999;
+    max-height: 220px;
+    overflow-y: auto;
+    box-shadow: 0 -4px 16px rgba(0,0,0,0.5);
+}
+
+.next-problem-option {
+    padding: 10px 14px;
+    color: #e5e7eb;
+    font-size: 0.85em;
+    cursor: pointer;
+    border-bottom: 1px solid #374151;
+    transition: background 0.15s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.next-problem-option:last-child {
+    border-bottom: none;
+}
+
+.next-problem-option:hover {
+    background: #3b82f6;
+    color: white;
+}
+
+/* 레벨 드롭다운 */
+.level-clickable {
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+    transition: background 0.2s;
+}
+
+.level-clickable:hover {
+    background-color: #3b82f6;
+    color: white;
+}
+
+.level-arrow {
+    font-size: 0.7em;
+    margin-left: 2px;
+}
+
+.level-dropdown {
+    position: absolute;
+    bottom: calc(100% + 6px);
+    right: 0;
+    min-width: 60px;
+    background: #1f2937;
+    border: 2px solid #3b82f6;
+    border-radius: 8px;
+    z-index: 9999;
+    max-height: 200px;
+    overflow-y: auto;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+}
+
+.level-dropdown-item {
+    padding: 9px 14px;
+    color: #e5e7eb;
+    font-size: 0.85em;
+    font-weight: bold;
+    cursor: pointer;
+    border-bottom: 1px solid #374151;
+    text-align: center;
+    transition: background 0.15s;
+}
+
+.level-dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.level-dropdown-item:hover {
+    background: #3b82f6;
+    color: white;
+}
+
+.level-dropdown-current {
+    background: #374151;
+    color: #facc15;
+}
+
+.level-dropdown-empty {
+    color: #9ca3af;
+    cursor: default;
+    text-align: center;
 }

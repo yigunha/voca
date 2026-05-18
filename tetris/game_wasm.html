@@ -15,7 +15,6 @@
             </div>
 
             <div id="gameContent" class="hidden">
-                <!-- 메인 메뉴 -->
                 <div class="main-menu" id="mainMenu">
                     <h2 id="mainMenuTitle">학습 모드 선택</h2>
                     <div class="main-menu-buttons">
@@ -27,16 +26,22 @@
                     </div>
                 </div>
 
-                <!-- 레벨 선택 -->
                 <div class="level-selector hidden" id="levelSelector">
                     <div class="level-title" id="levelTitle"></div>
                     <button class="back-btn" onclick="backToMainMenu()">← 메인 메뉴</button>
                     <div class="level-buttons" id="levelButtons"></div>
                 </div>
 
-                <!-- 게임 영역 -->
                 <div id="gameArea" class="hidden">
-                    <div class="description" id="description">문장을 완성하세요</div>
+                    <div class="description" id="description"></div>
+                    
+                    <div class="answer-section">
+                        <div class="answer-display" id="answerDisplay">
+                            <span class="blink">|</span>
+                        </div>
+                    </div>
+
+                    <div class="target" id="target"></div>
                     
                     <div class="grid-container">
                         <div class="grid" id="grid"></div>
@@ -47,27 +52,16 @@
                     <div class="buttons" id="buttons">
                         <button class="btn btn-start" onclick="startGame()">▶ 게임 시작</button>
                     </div>
-                    
-                    <div class="answer-section">
-                        <div class="answer-display" id="answerDisplay">
-                            <span class="blink">|</span>
+
+                    <div class="answer-header" style="margin-top: 10px;">
+                        <button class="show-target-btn" onclick="toggleTarget()">정답</button>
+                        <button class="nav-btn" id="prevBtn" onclick="goToPrevProblem()">◀</button>
+                        <div class="level level-clickable" id="levelDisplay" onclick="toggleLevelDropdown()">
+                            <span id="levelNum">1</span>
+                            <div class="level-dropdown hidden" id="levelDropdown"></div>
                         </div>
-                        
-                        <div class="answer-header">
-                            <div class="header-left-group">
-                                <div class="answer-label">
-                                    <h3>정답칸:</h3>
-                                </div>
-                                <button class="show-target-btn" onclick="toggleTarget()">👁️</button>
-                            </div>
-                            <div class="header-right-group">
-                                <button class="bomb-btn" id="bombBtn" disabled onclick="handleBomb()">💣</button>
-                                <div class="level">레벨 <span id="levelNum">1</span> / <span id="totalNum">12</span></div>
-                                <button class="undo-btn" id="undoBtn" disabled onclick="handleUndo()">↶</button>
-                            </div>
-                        </div>
-                        
-                        <div class="target" id="target"></div>
+                        <button class="nav-btn" id="nextBtn" onclick="goToNextProblem()">▶</button>
+                        <button class="undo-btn" id="undoBtn" disabled onclick="handleUndo()">↶ 되돌리기</button>
                     </div>
                 </div>
             </div>
